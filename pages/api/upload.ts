@@ -71,7 +71,7 @@ function parseCSV(filePath: string): Promise<ParsedCSVRow[]> {
       complete: (results) => {
         resolve(results.data as ParsedCSVRow[]);
       },
-      error: (error) => {
+      error: (error: Error) => {
         reject(error);
       },
     });
