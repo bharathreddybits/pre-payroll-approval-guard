@@ -28,33 +28,72 @@ interface ParsedCSVRow {
 }
 
 /**
- * Run Python CSV validation script
+ * Validate CSV file using JavaScript (Vercel-compatible)
  */
-function validateCSV(filePath: string): Promise<{ valid: boolean; errors: string[]; warnings: string[]; row_count: number }> {
-  return new Promise((resolve, reject) => {
-    const pythonScript = path.join(process.cwd(), 'tools', 'validate_csv.py');
-    const python = spawn('python', [pythonScript, filePath]);
-
-    let stdout = '';
-    let stderr = '';
-
-    python.stdout.on('data', (data) => {
-      stdout += data.toString();
+async function validateCSV(filePath: string): Promise<{ valid: boolean; errors: string[]; warnings: string[]; row_count: number }> {
+  try {
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const rows: ParsedCSVRow[] = await new Promise((resolve, reject) => {
+      Papa.parse(fileContent, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.toLowerCase().trim(),
+        complete: (results) => resolve(results.data as ParsedCSVRow[]),
+        error: (error: Error) => reject(error),
+      });
     });
 
-    python.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
+    const errors: string[] = [];
+    const warnings: string[] = [];
 
-    python.on('close', (code) => {
-      try {
-        const result = JSON.parse(stdout);
-        resolve(result);
-      } catch (error) {
-        reject(new Error(`Validation failed: ${stderr || error}`));
+    // Check if file has rows
+    if (rows.length === 0) {
+      errors.push('CSV file is empty');
+      return { valid: false, errors, warnings, row_count: 0 };
+    }
+
+    // Check for required columns
+    const firstRow = rows[0];
+    const requiredColumns = ['employee_id', 'net_pay', 'gross_pay', 'total_deductions'];
+    const missingColumns = requiredColumns.filter(col => !(col in firstRow));
+
+    if (missingColumns.length > 0) {
+      errors.push(`Missing required columns: ${missingColumns.join(', ')}`);
+      return { valid: false, errors, warnings, row_count: rows.length };
+    }
+
+    // Validate data types
+    rows.forEach((row, index) => {
+      const rowNum = index + 2; // +2 because index 0 is row 2 (after header)
+
+      if (!row.employee_id || row.employee_id.trim() === '') {
+        errors.push(`Row ${rowNum}: Missing employee_id`);
       }
+
+      ['net_pay', 'gross_pay', 'total_deductions'].forEach(field => {
+        const value = row[field];
+        if (value === undefined || value === null || value === '') {
+          warnings.push(`Row ${rowNum}: Missing ${field}`);
+        } else if (isNaN(Number(value))) {
+          errors.push(`Row ${rowNum}: ${field} must be a number`);
+        }
+      });
     });
-  });
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      row_count: rows.length
+    };
+  } catch (error: any) {
+    return {
+      valid: false,
+      errors: [`Validation error: ${error.message}`],
+      warnings: [],
+      row_count: 0
+    };
+  }
 }
 
 /**
