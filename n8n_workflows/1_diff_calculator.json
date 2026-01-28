@@ -55,14 +55,14 @@
       "position": [650, 300],
       "credentials": {
         "supabaseApi": {
-          "id": "1",
+          "id": "kBVwbuHyCUoGnS9v",
           "name": "Supabase Account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Extract baseline and current dataset IDs\nconst datasets = $input.all();\nconst baseline = datasets.find(d => d.json.dataset_type === 'baseline');\nconst current = datasets.find(d => d.json.dataset_type === 'current');\n\nif (!baseline || !current) {\n  throw new Error('Missing baseline or current dataset');\n}\n\nreturn [\n  {\n    json: {\n      baseline_dataset_id: baseline.json.dataset_id,\n      current_dataset_id: current.json.dataset_id,\n      review_session_id: baseline.json.review_session_id\n    }\n  }\n];"
+        "jsCode": "// Extract baseline and current dataset IDs\nconst datasets = $input.all();\nconst baseline = datasets.find(d => d.json.dataset_type === 'baseline');\nconst current = datasets.find(d => d.json.dataset_type === 'current');\n\nif (!baseline || !current) {\n  throw new Error('Missing baseline or current dataset');\n}\n\nreturn [\n  {\n    json: {\n      baseline_dataset_id: baseline.json.dataset_id,\n      current_dataset_id: current.json.dataset_id,\n      review_session_id: baseline.json.review_session_id,\n      organization_id: baseline.json.organization_id\n    }\n  }\n];"
       },
       "id": "extract-dataset-ids",
       "name": "Extract Dataset IDs",
@@ -93,7 +93,7 @@
       "position": [1050, 200],
       "credentials": {
         "supabaseApi": {
-          "id": "1",
+          "id": "kBVwbuHyCUoGnS9v",
           "name": "Supabase Account"
         }
       }
@@ -121,14 +121,14 @@
       "position": [1050, 400],
       "credentials": {
         "supabaseApi": {
-          "id": "1",
+          "id": "kBVwbuHyCUoGnS9v",
           "name": "Supabase Account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Calculate deltas between baseline and current payroll\nconst baselineData = $input.first().json;\nconst currentData = $input.last().json;\n\nconst baselineEmployees = $('Get Baseline Employees').all().map(item => item.json);\nconst currentEmployees = $('Get Current Employees').all().map(item => item.json);\n\nconst reviewSessionId = baselineData.review_session_id;\n\n// Create employee maps\nconst baselineMap = new Map(baselineEmployees.map(e => [e.employee_id, e]));\nconst currentMap = new Map(currentEmployees.map(e => [e.employee_id, e]));\n\nconst deltas = [];\n\n// Find removed employees\nfor (const [employeeId, baselineEmp] of baselineMap) {\n  if (!currentMap.has(employeeId)) {\n    deltas.push({\n      review_session_id: reviewSessionId,\n      employee_id: employeeId,\n      metric: 'employee_status',\n      change_type: 'removed_employee',\n      baseline_value: baselineEmp.net_pay,\n      current_value: null,\n      delta_absolute: null,\n      delta_percentage: null\n    });\n  }\n}\n\n// Find new employees and changes\nfor (const [employeeId, currentEmp] of currentMap) {\n  const baselineEmp = baselineMap.get(employeeId);\n  \n  if (!baselineEmp) {\n    // New employee\n    deltas.push({\n      review_session_id: reviewSessionId,\n      employee_id: employeeId,\n      metric: 'employee_status',\n      change_type: 'new_employee',\n      baseline_value: null,\n      current_value: currentEmp.net_pay,\n      delta_absolute: null,\n      delta_percentage: null\n    });\n  } else {\n    // Check for changes in net_pay, gross_pay, total_deductions\n    const metrics = [\n      { key: 'net_pay', name: 'net_pay' },\n      { key: 'gross_pay', name: 'gross_pay' },\n      { key: 'total_deductions', name: 'total_deductions' }\n    ];\n    \n    for (const metric of metrics) {\n      const baselineValue = baselineEmp[metric.key];\n      const currentValue = currentEmp[metric.key];\n      \n      if (baselineValue !== currentValue) {\n        const deltaAbs = currentValue - baselineValue;\n        const deltaPct = baselineValue !== 0 ? (deltaAbs / baselineValue) * 100 : null;\n        const changeType = deltaAbs > 0 ? 'increase' : 'decrease';\n        \n        deltas.push({\n          review_session_id: reviewSessionId,\n          employee_id: employeeId,\n          metric: metric.name,\n          change_type: changeType,\n          baseline_value: baselineValue,\n          current_value: currentValue,\n          delta_absolute: deltaAbs,\n          delta_percentage: deltaPct\n        });\n      }\n    }\n  }\n}\n\nreturn deltas.map(delta => ({ json: delta }));"
+        "jsCode": "// Calculate deltas between baseline and current payroll\nconst idData = $('Extract Dataset IDs').first().json;\nconst baselineEmployees = $('Get Baseline Employees').all().map(item => item.json);\nconst currentEmployees = $('Get Current Employees').all().map(item => item.json);\n\nconst reviewSessionId = idData.review_session_id;\nconst organizationId = idData.organization_id;\n\n// Create employee maps\nconst baselineMap = new Map(baselineEmployees.map(e => [e.employee_id, e]));\nconst currentMap = new Map(currentEmployees.map(e => [e.employee_id, e]));\n\nconst deltas = [];\n\n// Find removed employees\nfor (const [employeeId, baselineEmp] of baselineMap) {\n  if (!currentMap.has(employeeId)) {\n    deltas.push({\n      review_session_id: reviewSessionId,\n      organization_id: organizationId,\n      employee_id: employeeId,\n      metric: 'net_pay',\n      change_type: 'removed_employee',\n      baseline_value: baselineEmp.net_pay,\n      current_value: null,\n      delta_absolute: null,\n      delta_percentage: null\n    });\n  }\n}\n\n// Find new employees and changes\nfor (const [employeeId, currentEmp] of currentMap) {\n  const baselineEmp = baselineMap.get(employeeId);\n  \n  if (!baselineEmp) {\n    // New employee\n    deltas.push({\n      review_session_id: reviewSessionId,\n      organization_id: organizationId,\n      employee_id: employeeId,\n      metric: 'net_pay',\n      change_type: 'new_employee',\n      baseline_value: null,\n      current_value: currentEmp.net_pay,\n      delta_absolute: null,\n      delta_percentage: null\n    });\n  } else {\n    // Check for changes in net_pay, gross_pay, total_deductions\n    const metrics = [\n      { key: 'net_pay', name: 'net_pay' },\n      { key: 'gross_pay', name: 'gross_pay' },\n      { key: 'total_deductions', name: 'total_deductions' }\n    ];\n    \n    for (const metric of metrics) {\n      const baselineValue = baselineEmp[metric.key];\n      const currentValue = currentEmp[metric.key];\n      \n      if (baselineValue !== currentValue) {\n        const deltaAbs = currentValue - baselineValue;\n        const deltaPct = baselineValue !== 0 ? (deltaAbs / baselineValue) * 100 : null;\n        const changeType = deltaAbs > 0 ? 'increase' : 'decrease';\n        \n        deltas.push({\n          review_session_id: reviewSessionId,\n          organization_id: organizationId,\n          employee_id: employeeId,\n          metric: metric.name,\n          change_type: changeType,\n          baseline_value: baselineValue,\n          current_value: currentValue,\n          delta_absolute: deltaAbs,\n          delta_percentage: deltaPct\n        });\n      }\n    }\n  }\n}\n\nreturn deltas.map(delta => ({ json: delta }));"
       },
       "id": "calculate-deltas",
       "name": "Calculate Deltas",
@@ -146,6 +146,7 @@
           "mappingMode": "defineBelow",
           "value": {
             "review_session_id": "={{ $json.review_session_id }}",
+            "organization_id": "={{ $json.organization_id }}",
             "employee_id": "={{ $json.employee_id }}",
             "metric": "={{ $json.metric }}",
             "change_type": "={{ $json.change_type }}",
@@ -163,7 +164,7 @@
       "position": [1450, 300],
       "credentials": {
         "supabaseApi": {
-          "id": "1",
+          "id": "kBVwbuHyCUoGnS9v",
           "name": "Supabase Account"
         }
       }
