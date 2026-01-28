@@ -11,7 +11,9 @@
       "Bash(node tools/apply_migration_pg.js:*)",
       "Bash(node tools/apply_via_api.js:*)",
       "Bash(curl:*)",
-      "Bash(node tools/test_full_workflow.js:*)"
+      "Bash(node tools/test_full_workflow.js:*)",
+      "Bash(git config:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Pre-Payroll Approval Guard MVP\n\nComplete end-to-end workflow implementation:\n- CSV upload with validation\n- Diff calculation between baseline and current payroll\n- 12 deterministic judgement rules \\(2 blockers, 7 material, 1 non-material, 2 defaults\\)\n- One-screen review UI with material changes and blockers\n- Approval workflow with audit trail\n- Multi-tenant architecture with RLS\n- Mobile responsive design\n\nTech stack:\n- Next.js 14 with Pages Router\n- Supabase PostgreSQL\n- Python processing tools\n- Tailwind CSS v3\n\nDocumentation:\n- Deterministic rules reference \\(docs/DETERMINISTIC_RULES.md\\)\n- Judgements workflow guide \\(docs/JUDGEMENTS.md\\)\n- Workflow SOPs \\(workflows/\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

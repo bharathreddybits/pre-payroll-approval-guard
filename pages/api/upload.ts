@@ -236,6 +236,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('Inserting current employee records...');
       await insertEmployeeRecords(currentRows, currentDataset.dataset_id);
 
+      // Trigger n8n workflows for automated processing
+      const n8nDiffUrl = process.env.N8N_DIFF_WEBHOOK_URL;
+      const n8nJudgementUrl = process.env.N8N_JUDGEMENT_WEBHOOK_URL;
+
+      if (n8nDiffUrl && n8nJudgementUrl) {
+        try {
+          console.log('Triggering n8n diff calculator...');
+          const diffResponse = await fetch(n8nDiffUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ review_session_id: reviewSessionId }),
+          });
+
+          if (!diffResponse.ok) {
+            console.error('n8n diff calculator failed:', await diffResponse.text());
+          } else {
+            const diffResult = await diffResponse.json();
+            console.log('Diff calculator success:', diffResult);
+
+            // Trigger judgement engine after diff calculation completes
+            console.log('Triggering n8n judgement engine...');
+            const judgementResponse = await fetch(n8nJudgementUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ review_session_id: reviewSessionId }),
+            });
+
+            if (!judgementResponse.ok) {
+              console.error('n8n judgement engine failed:', await judgementResponse.text());
+            } else {
+              const judgementResult = await judgementResponse.json();
+              console.log('Judgement engine success:', judgementResult);
+            }
+          }
+        } catch (n8nError: any) {
+          console.error('n8n workflow trigger error:', n8nError.message);
+          // Don't fail the upload if n8n fails - data is already saved
+        }
+      } else {
+        console.warn('n8n webhook URLs not configured - skipping automated processing');
+      }
+
       // Clean up uploaded files
       fs.unlinkSync(baselineFile.filepath);
       fs.unlinkSync(currentFile.filepath);

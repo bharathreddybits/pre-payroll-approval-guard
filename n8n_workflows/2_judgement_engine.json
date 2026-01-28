@@ -1,0 +1,151 @@
+{
+  "name": "PPG - Judgement Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ppg-judgement-engine",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "review_session_id",
+              "value": "={{ $json.body.review_session_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-review-session-id",
+      "name": "Extract Review Session ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "serviceAccountKey": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}",
+        "operation": "select",
+        "tableId": "payroll_delta",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "review_session_id",
+              "keyValue": "={{ $json.review_session_id }}"
+            }
+          ]
+        }
+      },
+      "id": "get-deltas",
+      "name": "Get Deltas",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Apply deterministic rules to classify deltas\nfunction applyRules(delta) {\n  const employeeId = delta.employee_id;\n  const metric = delta.metric;\n  const changeType = delta.change_type;\n  const baselineValue = delta.baseline_value;\n  const currentValue = delta.current_value;\n  const deltaPercentage = delta.delta_percentage;\n\n  // RULE 1: BLOCKER - Negative Net Pay\n  if (metric === 'net_pay' && currentValue !== null && currentValue < 0) {\n    return {\n      is_material: true,\n      is_blocker: true,\n      confidence_score: 1.0,\n      reasoning: `Net pay is negative ($${currentValue.toFixed(2)}). This will fail payroll processing and may violate labor laws. Immediate correction required before approval.`,\n      rule_id: 'R001_NEGATIVE_NET_PAY'\n    };\n  }\n\n  // RULE 2: BLOCKER - Net Pay Decrease > 20%\n  if (metric === 'net_pay' && changeType === 'decrease' && deltaPercentage !== null && deltaPercentage < -20) {\n    return {\n      is_material: true,\n      is_blocker: true,\n      confidence_score: 0.95,\n      reasoning: `Net pay decreased by ${Math.abs(deltaPercentage).toFixed(1)}% (from $${baselineValue.toFixed(2)} to $${currentValue.toFixed(2)}). Large decreases may indicate errors in deductions or gross pay. Verify accuracy before processing.`,\n      rule_id: 'R002_NET_PAY_DECREASE_20PCT'\n    };\n  }\n\n  // RULE 3: MATERIAL - Net Pay Increase > 50%\n  if (metric === 'net_pay' && changeType === 'increase' && deltaPercentage !== null && deltaPercentage > 50) {\n    return {\n      is_material: true,\n      is_blocker: false,\n      confidence_score: 0.90,\n      reasoning: `Net pay increased by ${deltaPercentage.toFixed(1)}% (from $${baselineValue.toFixed(2)} to $${currentValue.toFixed(2)}). Typical increases are 2-5%. Verify this is due to promotion, bonus, or other legitimate reason rather than data entry error.`,\n      rule_id: 'R003_NET_PAY_INCREASE_50PCT'\n    };\n  }\n\n  // RULE 4: MATERIAL - Removed Employee\n  if (changeType === 'removed_employee') {\n    return {\n      is_material: true,\n      is_blocker: false,\n      confidence_score: 0.85,\n      reasoning: `Employee ${employeeId} removed from payroll. Confirm termination was processed correctly and final pay is accurate. Baseline pay was $${baselineValue.toFixed(2)}.`,\n      rule_id: 'R004_REMOVED_EMPLOYEE'\n    };\n  }\n\n  // RULE 5: MATERIAL - New Employee\n  if (changeType === 'new_employee') {\n    return {\n      is_material: true,\n      is_blocker: false,\n      confidence_score: 0.75,\n      reasoning: `New employee ${employeeId} added to payroll with net pay of $${currentValue.toFixed(2)}. Verify onboarding paperwork, tax withholdings, and pay rate are correct.`,\n      rule_id: 'R005_NEW_EMPLOYEE'\n    };\n  }\n\n  // RULE 6: MATERIAL - Gross Pay Decrease > 15%\n  if (metric === 'gross_pay' && changeType === 'decrease' && deltaPercentage !== null && deltaPercentage < -15) {\n    return {\n      is_material: true,\n      is_blocker: false,\n      confidence_score: 0.88,\n      reasoning: `Gross pay decreased by ${Math.abs(deltaPercentage).toFixed(1)}% (from $${baselineValue.toFixed(2)} to $${currentValue.toFixed(2)}). Verify this reflects actual hours worked or authorized pay reduction.`,\n      rule_id: 'R006_GROSS_PAY_DECREASE_15PCT'\n    };\n  }\n\n  // RULE 7: MATERIAL - Gross Pay Increase > 50%\n  if (metric === 'gross_pay' && changeType === 'increase' && deltaPercentage !== null && deltaPercentage > 50) {\n    return {\n      is_material: true,\n      is_blocker: false,\n      confidence_score: 0.87,\n      reasoning: `Gross pay increased by ${deltaPercentage.toFixed(1)}% (from $${baselineValue.toFixed(2)} to $${currentValue.toFixed(2)}). Verify this is due to overtime, bonus, or promotion rather than error.`,\n      rule_id: 'R007_GROSS_PAY_INCREASE_50PCT'\n    };\n  }\n\n  // RULE 8: MATERIAL - Deduction Increase > 100%\n  if (metric === 'total_deductions' && changeType === 'increase' && deltaPercentage !== null && deltaPercentage > 100) {\n    return {\n      is_material: true,\n      is_blocker: false,\n      confidence_score: 0.90,\n      reasoning: `Total deductions more than doubled (from $${baselineValue.toFixed(2)} to $${currentValue.toFixed(2)}, ${deltaPercentage.toFixed(1)}% increase). Verify new deductions are correct and authorized.`,\n      rule_id: 'R008_DEDUCTION_INCREASE_100PCT'\n    };\n  }\n\n  // RULE 9: MATERIAL - Component Changes\n  if (metric === 'component' && deltaPercentage !== null && Math.abs(deltaPercentage) > 30) {\n    return {\n      is_material: true,\n      is_blocker: false,\n      confidence_score: 0.80,\n      reasoning: `Component changed by ${deltaPercentage.toFixed(1)}% (from $${baselineValue.toFixed(2)} to $${currentValue.toFixed(2)}). Verify this component change is intentional.`,\n      rule_id: 'R009_COMPONENT_CHANGE_30PCT'\n    };\n  }\n\n  // RULE 10: NON-MATERIAL - Minor Net Pay Changes\n  if (metric === 'net_pay' && deltaPercentage !== null && Math.abs(deltaPercentage) < 5) {\n    return {\n      is_material: false,\n      is_blocker: false,\n      confidence_score: 0.70,\n      reasoning: `Net pay changed by ${deltaPercentage.toFixed(1)}% (from $${baselineValue.toFixed(2)} to $${currentValue.toFixed(2)}). Small variation within normal range.`,\n      rule_id: 'R010_MINOR_NET_PAY_CHANGE'\n    };\n  }\n\n  // DEFAULT: Moderate changes (material but not blocker)\n  if (deltaPercentage !== null) {\n    const metricName = metric.replace(/_/g, ' ');\n    return {\n      is_material: true,\n      is_blocker: false,\n      confidence_score: 0.70,\n      reasoning: `${metricName.charAt(0).toUpperCase() + metricName.slice(1)} changed by ${deltaPercentage.toFixed(1)}% (from $${baselineValue.toFixed(2)} to $${currentValue.toFixed(2)}). Review to ensure this change is expected.`,\n      rule_id: 'R099_DEFAULT_MATERIAL_CHANGE'\n    };\n  }\n\n  // Catch-all\n  return {\n    is_material: false,\n    is_blocker: false,\n    confidence_score: 0.50,\n    reasoning: 'Change detected but does not match standard materiality rules.',\n    rule_id: 'R000_NO_RULE_MATCH'\n  };\n}\n\n// Apply rules to each delta\nconst deltas = $input.all().map(item => item.json);\nconst judgements = [];\n\nfor (const delta of deltas) {\n  const judgement = applyRules(delta);\n  judgements.push({\n    delta_id: delta.delta_id,\n    is_material: judgement.is_material,\n    is_blocker: judgement.is_blocker,\n    confidence_score: judgement.confidence_score,\n    reasoning: judgement.reasoning,\n    rule_id: judgement.rule_id\n  });\n}\n\nreturn judgements.map(j => ({ json: j }));"
+      },
+      "id": "apply-rules",
+      "name": "Apply Rules",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "serviceAccountKey": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}",
+        "operation": "insert",
+        "tableId": "material_judgement",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "delta_id": "={{ $json.delta_id }}",
+            "is_material": "={{ $json.is_material }}",
+            "is_blocker": "={{ $json.is_blocker }}",
+            "confidence_score": "={{ $json.confidence_score }}",
+            "reasoning": "={{ $json.reasoning }}",
+            "rule_id": "={{ $json.rule_id }}"
+          }
+        }
+      },
+      "id": "insert-judgements",
+      "name": "Insert Judgements",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate statistics\nconst judgements = $('Apply Rules').all().map(item => item.json);\nconst materialCount = judgements.filter(j => j.is_material).length;\nconst blockerCount = judgements.filter(j => j.is_blocker).length;\n\nreturn [{\n  json: {\n    success: true,\n    judgement_count: judgements.length,\n    material_count: materialCount,\n    blocker_count: blockerCount\n  }\n}];"
+      },
+      "id": "calculate-stats",
+      "name": "Calculate Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [[{ "node": "Extract Review Session ID", "type": "main", "index": 0 }]]
+    },
+    "Extract Review Session ID": {
+      "main": [[{ "node": "Get Deltas", "type": "main", "index": 0 }]]
+    },
+    "Get Deltas": {
+      "main": [[{ "node": "Apply Rules", "type": "main", "index": 0 }]]
+    },
+    "Apply Rules": {
+      "main": [[{ "node": "Insert Judgements", "type": "main", "index": 0 }]]
+    },
+    "Insert Judgements": {
+      "main": [[{ "node": "Calculate Stats", "type": "main", "index": 0 }]]
+    },
+    "Calculate Stats": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-01-28T00:00:00.000Z",
+  "versionId": "1"
+}

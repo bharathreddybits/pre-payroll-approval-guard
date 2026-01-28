@@ -1,0 +1,218 @@
+{
+  "name": "PPG - Diff Calculator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ppg-diff-calculator",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "review_session_id",
+              "value": "={{ $json.body.review_session_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-review-session-id",
+      "name": "Extract Review Session ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "serviceAccountKey": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}",
+        "operation": "select",
+        "tableId": "payroll_dataset",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "review_session_id",
+              "keyValue": "={{ $json.review_session_id }}"
+            }
+          ]
+        }
+      },
+      "id": "get-datasets",
+      "name": "Get Datasets",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract baseline and current dataset IDs\nconst datasets = $input.all();\nconst baseline = datasets.find(d => d.json.dataset_type === 'baseline');\nconst current = datasets.find(d => d.json.dataset_type === 'current');\n\nif (!baseline || !current) {\n  throw new Error('Missing baseline or current dataset');\n}\n\nreturn [\n  {\n    json: {\n      baseline_dataset_id: baseline.json.dataset_id,\n      current_dataset_id: current.json.dataset_id,\n      review_session_id: baseline.json.review_session_id\n    }\n  }\n];"
+      },
+      "id": "extract-dataset-ids",
+      "name": "Extract Dataset IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "serviceAccountKey": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}",
+        "operation": "select",
+        "tableId": "employee_pay_record",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "dataset_id",
+              "keyValue": "={{ $json.baseline_dataset_id }}"
+            }
+          ]
+        }
+      },
+      "id": "get-baseline-employees",
+      "name": "Get Baseline Employees",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1050, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "serviceAccountKey": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}",
+        "operation": "select",
+        "tableId": "employee_pay_record",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "dataset_id",
+              "keyValue": "={{ $json.current_dataset_id }}"
+            }
+          ]
+        }
+      },
+      "id": "get-current-employees",
+      "name": "Get Current Employees",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1050, 400],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate deltas between baseline and current payroll\nconst baselineData = $input.first().json;\nconst currentData = $input.last().json;\n\nconst baselineEmployees = $('Get Baseline Employees').all().map(item => item.json);\nconst currentEmployees = $('Get Current Employees').all().map(item => item.json);\n\nconst reviewSessionId = baselineData.review_session_id;\n\n// Create employee maps\nconst baselineMap = new Map(baselineEmployees.map(e => [e.employee_id, e]));\nconst currentMap = new Map(currentEmployees.map(e => [e.employee_id, e]));\n\nconst deltas = [];\n\n// Find removed employees\nfor (const [employeeId, baselineEmp] of baselineMap) {\n  if (!currentMap.has(employeeId)) {\n    deltas.push({\n      review_session_id: reviewSessionId,\n      employee_id: employeeId,\n      metric: 'employee_status',\n      change_type: 'removed_employee',\n      baseline_value: baselineEmp.net_pay,\n      current_value: null,\n      delta_absolute: null,\n      delta_percentage: null\n    });\n  }\n}\n\n// Find new employees and changes\nfor (const [employeeId, currentEmp] of currentMap) {\n  const baselineEmp = baselineMap.get(employeeId);\n  \n  if (!baselineEmp) {\n    // New employee\n    deltas.push({\n      review_session_id: reviewSessionId,\n      employee_id: employeeId,\n      metric: 'employee_status',\n      change_type: 'new_employee',\n      baseline_value: null,\n      current_value: currentEmp.net_pay,\n      delta_absolute: null,\n      delta_percentage: null\n    });\n  } else {\n    // Check for changes in net_pay, gross_pay, total_deductions\n    const metrics = [\n      { key: 'net_pay', name: 'net_pay' },\n      { key: 'gross_pay', name: 'gross_pay' },\n      { key: 'total_deductions', name: 'total_deductions' }\n    ];\n    \n    for (const metric of metrics) {\n      const baselineValue = baselineEmp[metric.key];\n      const currentValue = currentEmp[metric.key];\n      \n      if (baselineValue !== currentValue) {\n        const deltaAbs = currentValue - baselineValue;\n        const deltaPct = baselineValue !== 0 ? (deltaAbs / baselineValue) * 100 : null;\n        const changeType = deltaAbs > 0 ? 'increase' : 'decrease';\n        \n        deltas.push({\n          review_session_id: reviewSessionId,\n          employee_id: employeeId,\n          metric: metric.name,\n          change_type: changeType,\n          baseline_value: baselineValue,\n          current_value: currentValue,\n          delta_absolute: deltaAbs,\n          delta_percentage: deltaPct\n        });\n      }\n    }\n  }\n}\n\nreturn deltas.map(delta => ({ json: delta }));"
+      },
+      "id": "calculate-deltas",
+      "name": "Calculate Deltas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "serviceAccountKey": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}",
+        "operation": "insert",
+        "tableId": "payroll_delta",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "review_session_id": "={{ $json.review_session_id }}",
+            "employee_id": "={{ $json.employee_id }}",
+            "metric": "={{ $json.metric }}",
+            "change_type": "={{ $json.change_type }}",
+            "baseline_value": "={{ $json.baseline_value }}",
+            "current_value": "={{ $json.current_value }}",
+            "delta_absolute": "={{ $json.delta_absolute }}",
+            "delta_percentage": "={{ $json.delta_percentage }}"
+          }
+        }
+      },
+      "id": "insert-deltas",
+      "name": "Insert Deltas",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1450, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, delta_count: $('Calculate Deltas').all().length, baseline_employee_count: $('Get Baseline Employees').all().length, current_employee_count: $('Get Current Employees').all().length, new_employees: $('Calculate Deltas').all().filter(d => d.json.change_type === 'new_employee').length, removed_employees: $('Calculate Deltas').all().filter(d => d.json.change_type === 'removed_employee').length } }}"
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1650, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [[{ "node": "Extract Review Session ID", "type": "main", "index": 0 }]]
+    },
+    "Extract Review Session ID": {
+      "main": [[{ "node": "Get Datasets", "type": "main", "index": 0 }]]
+    },
+    "Get Datasets": {
+      "main": [[{ "node": "Extract Dataset IDs", "type": "main", "index": 0 }]]
+    },
+    "Extract Dataset IDs": {
+      "main": [[
+        { "node": "Get Baseline Employees", "type": "main", "index": 0 },
+        { "node": "Get Current Employees", "type": "main", "index": 0 }
+      ]]
+    },
+    "Get Baseline Employees": {
+      "main": [[{ "node": "Calculate Deltas", "type": "main", "index": 0 }]]
+    },
+    "Get Current Employees": {
+      "main": [[{ "node": "Calculate Deltas", "type": "main", "index": 0 }]]
+    },
+    "Calculate Deltas": {
+      "main": [[{ "node": "Insert Deltas", "type": "main", "index": 0 }]]
+    },
+    "Insert Deltas": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-01-28T00:00:00.000Z",
+  "versionId": "1"
+}
