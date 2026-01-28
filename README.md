@@ -111,6 +111,13 @@ npm run dev
 3. Configure webhook endpoints
 4. Update `.env` with n8n credentials
 
+**Production Configuration:**
+- n8n instance: https://n8n.srv1304590.hstgr.cloud/
+- Diff Calculator webhook: `/webhook/ppg-diff-calculator`
+- Judgement Engine webhook: `/webhook/ppg-judgement-engine`
+- Workflows automatically triggered after CSV upload
+- See [docs/N8N_WORKFLOWS.md](docs/N8N_WORKFLOWS.md) for complete setup guide
+
 ## Development Guidelines
 
 ### Core Principles
