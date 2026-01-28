@@ -200,7 +200,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Helper function to insert employee records
-      async function insertEmployeeRecords(rows: ParsedCSVRow[], datasetId: string) {
+      const insertEmployeeRecords = async (rows: ParsedCSVRow[], datasetId: string) => {
         const employeeRecords = rows.map((row) => ({
           dataset_id: datasetId,
           employee_id: row.employee_id,
@@ -227,7 +227,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             throw new Error('Failed to insert employee records');
           }
         }
-      }
+      };
 
       // Insert employee records for both datasets
       console.log('Inserting baseline employee records...');
