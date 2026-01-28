@@ -1,0 +1,24 @@
+# Python dependencies for Pre-Payroll Approval Guard tools
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# CSV handling
+# Note: csv-validator is optional, we'll build custom validation
+
+# Supabase client
+supabase>=2.0.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# HTTP requests
+requests>=2.31.0
+
+# Testing
+pytest>=7.4.0
+pytest-mock>=3.11.0
+
+# OpenAI API (for AI judgements - using GPT-4o-mini for cost optimization)
+openai>=1.0.0

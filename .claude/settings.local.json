@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(node --version:*)",
+      "Bash(npm:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(node tools/test_supabase_connection.js:*)",
+      "Bash(psql:*)",
+      "Bash(node tools/apply_migration_pg.js:*)",
+      "Bash(node tools/apply_via_api.js:*)",
+      "Bash(curl:*)",
+      "Bash(node tools/test_full_workflow.js:*)"
+    ]
+  }
+}

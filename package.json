@@ -1,0 +1,46 @@
+{
+  "name": "pre-payroll-approval-guard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pre-Payroll Approval Guard SaaS - Detect and flag material payroll changes before processing",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@supabase/supabase-js": "^2.39.0",
+    "@types/formidable": "^3.4.6",
+    "@types/papaparse": "^5.5.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "form-data": "^4.0.5",
+    "formidable": "^3.5.4",
+    "lucide-react": "^0.563.0",
+    "next": "^14.0.4",
+    "node-fetch": "^2.7.0",
+    "papaparse": "^5.5.3",
+    "postgres": "^3.4.8",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.3.8",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@types/react": "^18.2.46",
+    "@types/react-dom": "^18.2.18",
+    "autoprefixer": "^10.4.23",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^14.0.4",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.3.3"
+  }
+}
