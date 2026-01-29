@@ -25,7 +25,15 @@ export function Header() {
 
         {user ? (
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600 hidden sm:inline">
+            <nav className="hidden sm:flex items-center gap-4">
+              <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
+                Dashboard
+              </Link>
+              <Link href="/upload" className="text-sm text-gray-600 hover:text-gray-900">
+                Upload
+              </Link>
+            </nav>
+            <span className="text-sm text-gray-600 hidden md:inline">
               {user.email}
             </span>
             <Button variant="outline" size="sm" onClick={handleSignOut}>
