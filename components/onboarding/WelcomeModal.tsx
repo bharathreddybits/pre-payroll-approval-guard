@@ -13,7 +13,7 @@ interface WelcomeModalProps {
   isNewUser: boolean;
 }
 
-const STORAGE_KEY = 'ppg_welcome_dismissed';
+const STORAGE_KEY = 'payrollshield_welcome_dismissed';
 
 export function WelcomeModal({ isNewUser }: WelcomeModalProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,7 +58,7 @@ export function WelcomeModal({ isNewUser }: WelcomeModalProps) {
               />
             </svg>
           </div>
-          <DialogTitle className="text-2xl">Welcome to PPG!</DialogTitle>
+          <DialogTitle className="text-2xl">Welcome to PayrollShield!</DialogTitle>
           <DialogDescription className="text-base">
             You're all set to catch costly payroll errors before they happen.
           </DialogDescription>

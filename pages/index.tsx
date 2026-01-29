@@ -16,7 +16,7 @@ const Home: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Pre-Payroll Approval Guard - Stop $50K Payroll Mistakes</title>
+        <title>PayrollShield - Stop $50K Payroll Mistakes</title>
         <meta
           name="description"
           content="Automatically detect and flag material payroll changes. Review everything in under 5 minutes with complete audit trail. Start your 14-day free trial."

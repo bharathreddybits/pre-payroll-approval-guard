@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function Footer() {
   return (
@@ -9,8 +10,13 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl font-bold text-white">PPG</span>
-              <span className="text-sm text-gray-500">Pre-Payroll Approval Guard</span>
+              <Image
+                src="/logo.png"
+                alt="PayrollShield"
+                width={140}
+                height={35}
+                className="h-8 w-auto brightness-0 invert"
+              />
             </div>
             <p className="text-sm max-w-md">
               Stop costly payroll mistakes before they happen. Review material changes
@@ -45,7 +51,7 @@ export function Footer() {
             <h4 className="text-white font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="mailto:support@ppg.com" className="hover:text-white transition-colors">
+                <a href="mailto:support@payrollshield.com" className="hover:text-white transition-colors">
                   Contact
                 </a>
               </li>
@@ -60,7 +66,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm">
-          <p>&copy; {new Date().getFullYear()} Pre-Payroll Approval Guard. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} PayrollShield. All rights reserved.</p>
         </div>
       </div>
     </footer>

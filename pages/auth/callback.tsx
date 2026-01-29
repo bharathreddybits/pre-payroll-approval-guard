@@ -66,7 +66,7 @@ export default function AuthCallback() {
   return (
     <>
       <Head>
-        <title>Confirming... - Pre-Payroll Approval Guard</title>
+        <title>Confirming... - PayrollShield</title>
       </Head>
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

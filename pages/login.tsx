@@ -53,14 +53,14 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>Login - Pre-Payroll Approval Guard</title>
-        <meta name="description" content="Sign in to your account" />
+        <title>Login - PayrollShield</title>
+        <meta name="description" content="Sign in to your PayrollShield account" />
       </Head>
 
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <h1 className="text-center text-3xl font-bold text-gray-900 mb-2">
-            Pre-Payroll Approval Guard
+            PayrollShield
           </h1>
           <p className="text-center text-gray-600">
             Sign in to manage payroll approvals

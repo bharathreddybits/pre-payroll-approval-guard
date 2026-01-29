@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,8 +20,14 @@ export function Header() {
     <header className="bg-white border-b">
       <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-gray-900">PPG</span>
-          <span className="text-sm text-gray-500 hidden sm:inline">Pre-Payroll Approval Guard</span>
+          <Image
+            src="/logo.png"
+            alt="PayrollShield"
+            width={160}
+            height={40}
+            className="h-8 w-auto"
+            priority
+          />
         </Link>
 
         {user ? (

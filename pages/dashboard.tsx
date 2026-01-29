@@ -124,7 +124,7 @@ export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <Head>
-        <title>Dashboard - Pre-Payroll Approval Guard</title>
+        <title>Dashboard - PayrollShield</title>
         <meta name="description" content="View payroll review history and audit trail" />
       </Head>
 

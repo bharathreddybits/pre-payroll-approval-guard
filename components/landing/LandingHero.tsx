@@ -58,7 +58,7 @@ export function LandingHero() {
                 <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                 <div className="w-3 h-3 rounded-full bg-green-400"></div>
               </div>
-              <div className="text-xs text-gray-500 ml-2">Pre-Payroll Approval Guard</div>
+              <div className="text-xs text-gray-500 ml-2">PayrollShield</div>
             </div>
             <div className="p-6">
               {/* Mock Review Interface */}

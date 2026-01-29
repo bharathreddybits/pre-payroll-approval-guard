@@ -211,7 +211,7 @@ export default function UploadPage() {
   return (
     <ProtectedRoute>
       <Head>
-        <title>Upload Payroll Data - Pre-Payroll Approval Guard</title>
+        <title>Upload Payroll Data - PayrollShield</title>
         <meta name="description" content="Upload baseline and current payroll CSV files for comparison" />
       </Head>
 

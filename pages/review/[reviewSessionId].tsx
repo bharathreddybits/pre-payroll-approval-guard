@@ -136,7 +136,7 @@ export default function ReviewPage() {
     return (
       <ProtectedRoute>
         <Head>
-          <title>Loading Review - Pre-Payroll Approval Guard</title>
+          <title>Loading Review - PayrollShield</title>
         </Head>
         <Header />
         <SkeletonReviewPage />
@@ -148,7 +148,7 @@ export default function ReviewPage() {
     return (
       <ProtectedRoute>
         <Head>
-          <title>Error - Pre-Payroll Approval Guard</title>
+          <title>Error - PayrollShield</title>
         </Head>
         <Header />
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
