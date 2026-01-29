@@ -175,11 +175,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      // Validate/Create organization
+      // Check if organizationId is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      let finalOrganizationId = organizationId;
+
+      if (!uuidRegex.test(organizationId)) {
+        // Not a UUID - check if organization with this name exists
+        const { data: existingOrg } = await supabase
+          .from('organization')
+          .select('organization_id')
+          .eq('organization_name', organizationId)
+          .single();
+
+        if (existingOrg) {
+          finalOrganizationId = existingOrg.organization_id;
+        } else {
+          // Create new organization with the provided name
+          const { data: newOrg, error: orgError } = await supabase
+            .from('organization')
+            .insert({ organization_name: organizationId })
+            .select('organization_id')
+            .single();
+
+          if (orgError || !newOrg) {
+            console.error('Failed to create organization:', orgError);
+            return res.status(500).json({
+              error: 'Failed to create organization',
+              details: orgError?.message
+            });
+          }
+
+          finalOrganizationId = newOrg.organization_id;
+          console.log(`Created new organization: ${organizationId} (${finalOrganizationId})`);
+        }
+      }
+
       // Create review session
       const { data: reviewSession, error: sessionError } = await supabase
         .from('review_session')
         .insert({
-          organization_id: organizationId,
+          organization_id: finalOrganizationId,
           status: 'in_progress',
         })
         .select()
@@ -202,7 +238,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('payroll_dataset')
         .insert({
           review_session_id: reviewSessionId,
-          organization_id: organizationId,
+          organization_id: finalOrganizationId,
           dataset_type: 'baseline',
           period_start_date: periodStartDate,
           period_end_date: periodEndDate,
@@ -223,7 +259,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .from('payroll_dataset')
         .insert({
           review_session_id: reviewSessionId,
-          organization_id: organizationId,
+          organization_id: finalOrganizationId,
           dataset_type: 'current',
           period_start_date: periodStartDate,
           period_end_date: periodEndDate,
