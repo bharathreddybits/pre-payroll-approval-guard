@@ -23,9 +23,9 @@ export function Header() {
           <Image
             src="/logo.png"
             alt="PayrollShield"
-            width={240}
-            height={60}
-            style={{ height: '48px', width: 'auto' }}
+            width={280}
+            height={70}
+            style={{ height: '56px', width: 'auto' }}
             priority
           />
         </Link>
