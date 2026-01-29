@@ -1,6 +1,5 @@
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 export function Footer() {
   return (
@@ -10,11 +9,11 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/logo.png"
                 alt="PayrollShield"
-                width={180}
-                height={45}
+                className="footer-logo"
                 style={{ height: '40px', width: 'auto', filter: 'brightness(0) invert(1)' }}
               />
             </div>

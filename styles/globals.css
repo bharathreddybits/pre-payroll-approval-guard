@@ -117,3 +117,41 @@
     text-wrap: balance;
   }
 }
+
+/* ===========================================
+   LOGO SIZING - HIGH SPECIFICITY RULES
+   Forces logo to display at proper size
+   =========================================== */
+
+/* Header logo - target with multiple selectors for high specificity */
+header img.header-logo,
+.header-logo,
+header a img[alt="PayrollShield"],
+header img[alt*="Payroll"] {
+  height: 48px !important;
+  width: auto !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+/* Prevent any parent container from constraining the logo */
+header a:has(img.header-logo),
+header a:has(img[alt="PayrollShield"]) {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  flex-shrink: 0 !important;
+}
+
+/* Desktop: larger logo */
+@media (min-width: 768px) {
+  header img.header-logo,
+  .header-logo,
+  header a img[alt="PayrollShield"] {
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+  }
+}

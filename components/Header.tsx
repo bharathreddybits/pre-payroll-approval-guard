@@ -1,6 +1,5 @@
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,26 +16,20 @@ export function Header() {
   };
 
   return (
-    <header className="bg-white border-b" style={{ minHeight: '56px' }}>
-      <div className="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center">
-        {/* Logo container: flex-shrink-0 prevents flexbox compression, explicit height ensures space */}
-        <Link
-          href="/"
-          className="flex items-center flex-shrink-0"
-          style={{ height: '40px' }}
-        >
-          <Image
+    <header className="bg-white border-b">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        {/* Logo - using standard img tag to bypass Next.js Image constraints */}
+        <Link href="/" className="flex-shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/logo.png"
             alt="PayrollShield"
-            width={160}
-            height={40}
+            className="header-logo"
             style={{
-              height: '40px',
+              height: '48px',
               width: 'auto',
-              maxHeight: '40px',
-              objectFit: 'contain'
+              display: 'block'
             }}
-            priority
           />
         </Link>
 

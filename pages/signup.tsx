@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import Image from 'next/image';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -74,14 +73,12 @@ export default function SignupPage() {
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
           <Link href="/" className="inline-block mb-8">
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/logo.png"
               alt="PayrollShield"
-              width={400}
-              height={100}
+              className="auth-logo mx-auto"
               style={{ height: '80px', width: 'auto' }}
-              className="mx-auto"
-              priority
             />
           </Link>
           <p className="text-gray-600">
