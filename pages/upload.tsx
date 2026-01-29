@@ -103,27 +103,16 @@ export default function UploadPage() {
         setState((prev) => ({ ...prev, warnings: uploadResult.warnings }));
       }
 
-      // Step 2: Process comparison
-      setState((prev) => ({ ...prev, uploading: false, processing: true }));
-
-      const compareResponse = await fetch('/api/compare', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          review_session_id: reviewSessionId,
-        }),
-      });
-
-      if (!compareResponse.ok) {
-        const errorData = await compareResponse.json();
-        throw new Error(errorData.error || 'Comparison failed');
+      // Check processing result
+      if (uploadResult.processing && uploadResult.processing.success) {
+        console.log('Processing completed:', uploadResult.processing);
+      } else {
+        console.warn('Processing may have failed:', uploadResult.processing);
+        // Still proceed to review page - user can see results there
       }
 
-      const compareResult = await compareResponse.json();
-
-      // Success! Navigate to review page
+      // Success! Navigate to review page (processing already completed in upload API)
+      setState((prev) => ({ ...prev, uploading: false, processing: false }));
       router.push(`/review/${reviewSessionId}`);
     } catch (error: any) {
       console.error('Upload/processing error:', error);
