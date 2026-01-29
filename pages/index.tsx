@@ -2,6 +2,7 @@ import { NextPage } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
 import { Button } from '../components/ui/button';
+import { Header } from '../components/Header';
 
 const Home: NextPage = () => {
   return (
@@ -11,6 +12,8 @@ const Home: NextPage = () => {
         <meta name="description" content="Detect and flag material payroll changes before processing" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+
+      <Header />
 
       <main className="min-h-screen py-16 flex flex-col justify-center items-center bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">

@@ -5,6 +5,8 @@ import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Header } from '../components/Header';
+import { ProtectedRoute } from '../components/ProtectedRoute';
 
 interface UploadState {
   baselineFile: File | null;
@@ -207,11 +209,13 @@ export default function UploadPage() {
     state.payDate;
 
   return (
-    <>
+    <ProtectedRoute>
       <Head>
         <title>Upload Payroll Data - Pre-Payroll Approval Guard</title>
         <meta name="description" content="Upload baseline and current payroll CSV files for comparison" />
       </Head>
+
+      <Header />
 
       <div className="min-h-screen bg-gray-50 py-12 px-4">
         <div className="max-w-5xl mx-auto">
@@ -431,6 +435,6 @@ export default function UploadPage() {
           )}
         </div>
       </div>
-    </>
+    </ProtectedRoute>
   );
 }

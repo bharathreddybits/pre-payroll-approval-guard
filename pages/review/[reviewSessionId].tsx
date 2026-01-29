@@ -7,6 +7,8 @@ import { MaterialChangeCard } from '../../components/MaterialChangeCard';
 import { ChangeSummaryCards } from '../../components/ChangeSummaryCards';
 import { ApprovalActions } from '../../components/ApprovalActions';
 import { SkeletonReviewPage } from '../../components/ui/skeleton';
+import { Header } from '../../components/Header';
+import { ProtectedRoute } from '../../components/ProtectedRoute';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../components/ui/accordion';
 
 interface ReviewData {
@@ -132,21 +134,23 @@ export default function ReviewPage() {
 
   if (loading) {
     return (
-      <>
+      <ProtectedRoute>
         <Head>
           <title>Loading Review - Pre-Payroll Approval Guard</title>
         </Head>
+        <Header />
         <SkeletonReviewPage />
-      </>
+      </ProtectedRoute>
     );
   }
 
   if (error || !reviewData) {
     return (
-      <>
+      <ProtectedRoute>
         <Head>
           <title>Error - Pre-Payroll Approval Guard</title>
         </Head>
+        <Header />
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center max-w-md bg-white p-8 rounded-lg border shadow-sm">
             <div className="text-red-500 text-5xl mb-4">
@@ -172,22 +176,24 @@ export default function ReviewPage() {
             </div>
           </div>
         </div>
-      </>
+      </ProtectedRoute>
     );
   }
 
   const { session, summary, blockers, material_changes, non_material_changes } = reviewData;
 
   return (
-    <>
+    <ProtectedRoute>
       <Head>
         <title>Review Payroll - {session.organization_name}</title>
         <meta name="description" content="Review and approve payroll changes" />
       </Head>
 
+      <Header />
+
       <div className="min-h-screen bg-gray-50 pb-24">
-        {/* Header */}
-        <div className="bg-white border-b shadow-sm sticky top-0 z-20">
+        {/* Page Header */}
+        <div className="bg-white border-b shadow-sm sticky top-12 z-20">
           <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="flex justify-between items-start flex-wrap gap-4">
               <div>
@@ -346,6 +352,6 @@ export default function ReviewPage() {
           onReject={handleReject}
         />
       </div>
-    </>
+    </ProtectedRoute>
   );
 }
