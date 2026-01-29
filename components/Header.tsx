@@ -18,14 +18,14 @@ export function Header() {
 
   return (
     <header className="bg-white border-b">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/logo.png"
             alt="PayrollShield"
-            width={280}
-            height={70}
-            style={{ height: '56px', width: 'auto' }}
+            width={320}
+            height={80}
+            style={{ height: '72px', width: 'auto' }}
             priority
           />
         </Link>
