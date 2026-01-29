@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useDropzone } from 'react-dropzone';
+import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
@@ -41,8 +42,17 @@ export default function UploadPage() {
       'text/csv': ['.csv'],
     },
     multiple: false,
-    onDrop: (acceptedFiles) => {
+    onDrop: (acceptedFiles, rejectedFiles) => {
+      if (rejectedFiles.length > 0) {
+        toast.error('Invalid file type', {
+          description: 'Please upload a CSV file',
+        });
+        return;
+      }
       if (acceptedFiles.length > 0) {
+        toast.success('Baseline file added', {
+          description: acceptedFiles[0].name,
+        });
         setState((prev) => ({ ...prev, baselineFile: acceptedFiles[0], error: null }));
       }
     },
@@ -53,8 +63,17 @@ export default function UploadPage() {
       'text/csv': ['.csv'],
     },
     multiple: false,
-    onDrop: (acceptedFiles) => {
+    onDrop: (acceptedFiles, rejectedFiles) => {
+      if (rejectedFiles.length > 0) {
+        toast.error('Invalid file type', {
+          description: 'Please upload a CSV file',
+        });
+        return;
+      }
       if (acceptedFiles.length > 0) {
+        toast.success('Current file added', {
+          description: acceptedFiles[0].name,
+        });
         setState((prev) => ({ ...prev, currentFile: acceptedFiles[0], error: null }));
       }
     },
@@ -63,15 +82,22 @@ export default function UploadPage() {
   const handleUpload = async () => {
     // Validation
     if (!state.baselineFile || !state.currentFile) {
+      toast.error('Missing files', {
+        description: 'Please upload both baseline and current CSV files',
+      });
       setState((prev) => ({ ...prev, error: 'Please upload both baseline and current CSV files' }));
       return;
     }
 
     if (!state.organizationId || !state.periodStartDate || !state.periodEndDate || !state.payDate) {
+      toast.error('Missing information', {
+        description: 'Please fill in all required fields',
+      });
       setState((prev) => ({ ...prev, error: 'Please fill in all required fields' }));
       return;
     }
 
+    toast.loading('Processing payroll data...', { id: 'upload' });
     setState((prev) => ({ ...prev, uploading: true, error: null, warnings: [] }));
 
     try {
@@ -112,10 +138,18 @@ export default function UploadPage() {
       }
 
       // Success! Navigate to review page (processing already completed in upload API)
+      toast.success('Processing complete!', {
+        id: 'upload',
+        description: 'Redirecting to review page...',
+      });
       setState((prev) => ({ ...prev, uploading: false, processing: false }));
       router.push(`/review/${reviewSessionId}`);
     } catch (error: any) {
       console.error('Upload/processing error:', error);
+      toast.error('Processing failed', {
+        id: 'upload',
+        description: error.message || 'Failed to process payroll data',
+      });
       setState((prev) => ({
         ...prev,
         uploading: false,

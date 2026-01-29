@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { toast } from 'sonner';
 import { BlockerAlert } from '../../components/BlockerAlert';
 import { MaterialChangeCard } from '../../components/MaterialChangeCard';
 import { ChangeSummaryCards } from '../../components/ChangeSummaryCards';
 import { ApprovalActions } from '../../components/ApprovalActions';
+import { SkeletonReviewPage } from '../../components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../components/ui/accordion';
 
 interface ReviewData {
@@ -89,7 +91,9 @@ export default function ReviewPage() {
 
       // Refresh review data
       await fetchReviewData();
-      alert('Payroll approved successfully!');
+      toast.success('Payroll approved successfully!', {
+        description: 'The payroll run has been marked as approved.',
+      });
     } catch (err: any) {
       console.error('Approval error:', err);
       throw err;
@@ -117,7 +121,9 @@ export default function ReviewPage() {
 
       // Refresh review data
       await fetchReviewData();
-      alert('Payroll rejected successfully!');
+      toast.success('Payroll rejected', {
+        description: 'The payroll run has been marked as rejected with your notes.',
+      });
     } catch (err: any) {
       console.error('Rejection error:', err);
       throw err;
@@ -126,30 +132,47 @@ export default function ReviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading review data...</p>
-        </div>
-      </div>
+      <>
+        <Head>
+          <title>Loading Review - Pre-Payroll Approval Guard</title>
+        </Head>
+        <SkeletonReviewPage />
+      </>
     );
   }
 
   if (error || !reviewData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md">
-          <div className="text-red-600 text-5xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Review</h1>
-          <p className="text-gray-600 mb-4">{error || 'Review data not found'}</p>
-          <button
-            onClick={() => router.push('/')}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
-          >
-            Return to Home
-          </button>
+      <>
+        <Head>
+          <title>Error - Pre-Payroll Approval Guard</title>
+        </Head>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center max-w-md bg-white p-8 rounded-lg border shadow-sm">
+            <div className="text-red-500 text-5xl mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Review</h1>
+            <p className="text-gray-600 mb-6">{error || 'Review data not found'}</p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => fetchReviewData()}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => router.push('/')}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Return to Home
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 

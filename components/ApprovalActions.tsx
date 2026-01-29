@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from './ui/button';
 import {
   AlertDialog,
@@ -46,7 +47,9 @@ export function ApprovalActions({
       setShowApproveDialog(false);
     } catch (error) {
       console.error('Approval failed:', error);
-      alert('Failed to approve payroll. Please try again.');
+      toast.error('Approval failed', {
+        description: 'Please try again or contact support if the issue persists.',
+      });
     } finally {
       setIsApproving(false);
     }
@@ -64,7 +67,9 @@ export function ApprovalActions({
       setRejectNotes('');
     } catch (error) {
       console.error('Rejection failed:', error);
-      alert('Failed to reject payroll. Please try again.');
+      toast.error('Rejection failed', {
+        description: 'Please try again or contact support if the issue persists.',
+      });
     } finally {
       setIsRejecting(false);
     }
