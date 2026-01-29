@@ -104,19 +104,24 @@ npm run dev
 3. Configure Row Level Security (RLS) policies
 4. Update `.env` with Supabase credentials
 
-### n8n Setup
+### Processing Architecture
 
-1. Deploy n8n to Hostinger VPS or use n8n cloud
-2. Import workflows from `n8n_workflows/`
-3. Configure webhook endpoints
-4. Update `.env` with n8n credentials
+**Automated Processing Pipeline:**
+- CSV upload triggers automatic delta calculation and judgement application
+- All processing happens within the Next.js API using TypeScript
+- No external dependencies required for core functionality
+- Processing completes in ~5-7 seconds for typical payroll datasets
 
-**Production Configuration:**
-- n8n instance: https://n8n.srv1304590.hstgr.cloud/
-- Diff Calculator webhook: `/webhook/ppg-diff-calculator`
-- Judgement Engine webhook: `/webhook/ppg-judgement-engine`
-- Workflows automatically triggered after CSV upload
-- See [docs/N8N_WORKFLOWS.md](docs/N8N_WORKFLOWS.md) for complete setup guide
+**Technical Details:**
+- Processing logic: `lib/processReview.ts`
+- 12 deterministic rules for material change classification
+- Automatic blocker detection
+- Results stored in Supabase for audit trail
+
+**Legacy n8n Workflows (Deprecated):**
+- n8n workflows in `n8n_workflows/` are deprecated
+- Python scripts in `tools/*.py.deprecated` are no longer used
+- Current implementation uses TypeScript for better reliability and performance
 
 ## Development Guidelines
 

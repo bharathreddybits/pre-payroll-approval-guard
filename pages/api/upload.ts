@@ -1,11 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
 import fs from 'fs';
-import { spawn } from 'child_process';
-import path from 'path';
 import Papa from 'papaparse';
 import { getServiceSupabase } from '../../lib/supabase';
 import { processReview } from '../../lib/processReview';
+import { createErrorResponse, ErrorCodes, sanitizeErrorMessage } from '../../lib/errorHandler';
 
 // Disable body parser to handle multipart/form-data
 export const config = {
@@ -63,7 +62,29 @@ async function validateCSV(filePath: string): Promise<{ valid: boolean; errors: 
       return { valid: false, errors, warnings, row_count: rows.length };
     }
 
-    // Validate data types
+    // Check for duplicate employee IDs
+    const employeeIds = new Set<string>();
+    const duplicates: string[] = [];
+
+    rows.forEach((row) => {
+      const empId = row.employee_id?.trim();
+      if (empId) {
+        if (employeeIds.has(empId)) {
+          duplicates.push(empId);
+        } else {
+          employeeIds.add(empId);
+        }
+      }
+    });
+
+    if (duplicates.length > 0) {
+      errors.push(`Duplicate employee IDs found: ${duplicates.slice(0, 5).join(', ')}${duplicates.length > 5 ? ` (+${duplicates.length - 5} more)` : ''}`);
+    }
+
+    // Validate data types and ranges
+    const MAX_PAY_VALUE = 10000000; // $10M reasonable maximum
+    const MIN_PAY_VALUE = -100000; // Allow some negative values for corrections
+
     rows.forEach((row, index) => {
       const rowNum = index + 2; // +2 because index 0 is row 2 (after header)
 
@@ -71,14 +92,32 @@ async function validateCSV(filePath: string): Promise<{ valid: boolean; errors: 
         errors.push(`Row ${rowNum}: Missing employee_id`);
       }
 
+      // Validate employee_id format (alphanumeric, max 50 chars)
+      if (row.employee_id && row.employee_id.length > 50) {
+        errors.push(`Row ${rowNum}: employee_id too long (max 50 characters)`);
+      }
+
       ['net_pay', 'gross_pay', 'total_deductions'].forEach(field => {
         const value = row[field];
         if (value === undefined || value === null || value === '') {
           warnings.push(`Row ${rowNum}: Missing ${field}`);
-        } else if (isNaN(Number(value))) {
-          errors.push(`Row ${rowNum}: ${field} must be a number`);
+        } else {
+          const numValue = Number(value);
+          if (isNaN(numValue)) {
+            errors.push(`Row ${rowNum}: ${field} must be a number`);
+          } else {
+            // Check for extreme values
+            if (numValue > MAX_PAY_VALUE || numValue < MIN_PAY_VALUE) {
+              errors.push(`Row ${rowNum}: ${field} value ${numValue} is outside acceptable range (${MIN_PAY_VALUE} to ${MAX_PAY_VALUE})`);
+            }
+          }
         }
       });
+
+      // Validate employee_name if present
+      if (row.employee_name && row.employee_name.length > 200) {
+        warnings.push(`Row ${rowNum}: employee_name truncated to 200 characters`);
+      }
     });
 
     return {
@@ -181,20 +220,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let finalOrganizationId = organizationId;
 
       if (!uuidRegex.test(organizationId)) {
-        // Not a UUID - check if organization with this name exists
+        // Validate organization name format
+        const orgName = organizationId.trim();
+
+        // Check length
+        if (orgName.length < 2 || orgName.length > 100) {
+          return res.status(400).json({
+            error: 'Invalid organization name',
+            details: 'Organization name must be between 2 and 100 characters'
+          });
+        }
+
+        // Check for valid characters (alphanumeric, spaces, hyphens, underscores, dots)
+        const nameRegex = /^[a-zA-Z0-9\s\-_.]+$/;
+        if (!nameRegex.test(orgName)) {
+          return res.status(400).json({
+            error: 'Invalid organization name',
+            details: 'Organization name can only contain letters, numbers, spaces, hyphens, underscores, and dots'
+          });
+        }
+
+        // Check if organization with this name exists
         const { data: existingOrg } = await supabase
           .from('organization')
           .select('organization_id')
-          .eq('organization_name', organizationId)
+          .eq('organization_name', orgName)
           .single();
 
         if (existingOrg) {
           finalOrganizationId = existingOrg.organization_id;
+          console.log(`Using existing organization: ${orgName} (${finalOrganizationId})`);
         } else {
-          // Create new organization with the provided name
+          // Create new organization with the validated name
           const { data: newOrg, error: orgError } = await supabase
             .from('organization')
-            .insert({ organization_name: organizationId })
+            .insert({ organization_name: orgName })
             .select('organization_id')
             .single();
 
@@ -207,7 +267,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
 
           finalOrganizationId = newOrg.organization_id;
-          console.log(`Created new organization: ${organizationId} (${finalOrganizationId})`);
+          console.log(`Created new organization: ${orgName} (${finalOrganizationId})`);
         }
       }
 

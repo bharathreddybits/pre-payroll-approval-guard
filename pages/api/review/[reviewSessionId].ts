@@ -73,8 +73,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Review session not found' });
     }
 
-    // 2. Get all deltas with their judgements and employee info
-    const { data: deltas, error: deltasError } = await supabase
+    // Parse pagination parameters from query
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 1000;
+    const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+
+    // Validate pagination parameters
+    if (limit < 1 || limit > 1000) {
+      return res.status(400).json({
+        error: 'Invalid limit parameter',
+        details: 'Limit must be between 1 and 1000'
+      });
+    }
+    if (offset < 0) {
+      return res.status(400).json({
+        error: 'Invalid offset parameter',
+        details: 'Offset must be >= 0'
+      });
+    }
+
+    // 2. Get deltas with their judgements and employee info (with pagination)
+    const { data: deltas, error: deltasError, count } = await supabase
       .from('payroll_delta')
       .select(`
         *,
@@ -85,8 +103,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           reasoning,
           rule_id
         )
-      `)
-      .eq('review_session_id', reviewSessionId);
+      `, { count: 'exact' })
+      .eq('review_session_id', reviewSessionId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (deltasError) {
       console.error('Failed to fetch deltas:', deltasError);
@@ -161,10 +181,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         created_at: session.created_at,
       },
       summary: {
-        total_changes: summaryData?.total_changes || allDeltas.length,
+        total_changes: summaryData?.total_changes || count || allDeltas.length,
         material_changes: summaryData?.material_changes || materialChanges.length,
         blockers_count: summaryData?.blockers || blockers.length,
         approval_status: approval?.approval_status || 'pending',
+      },
+      pagination: {
+        limit,
+        offset,
+        total: count || allDeltas.length,
+        has_more: count ? (offset + limit < count) : false,
+        next_offset: count && (offset + limit < count) ? offset + limit : null
       },
       blockers: blockers.map((d: any) => ({
         ...d,
