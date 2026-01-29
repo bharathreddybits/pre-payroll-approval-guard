@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -58,11 +59,18 @@ export default function LoginPage() {
       </Head>
 
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <h1 className="text-center text-3xl font-bold text-gray-900 mb-2">
-            PayrollShield
-          </h1>
-          <p className="text-center text-gray-600">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+          <Link href="/" className="inline-block mb-4">
+            <Image
+              src="/logo.png"
+              alt="PayrollShield"
+              width={200}
+              height={50}
+              className="h-12 w-auto mx-auto"
+              priority
+            />
+          </Link>
+          <p className="text-gray-600">
             Sign in to manage payroll approvals
           </p>
         </div>
