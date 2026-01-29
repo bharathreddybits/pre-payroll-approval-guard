@@ -314,19 +314,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Process deltas and judgements directly (replaced n8n webhooks)
       let processingResult = null;
+      let processingSuccess = false;
+
       try {
         console.log('Processing review session:', reviewSessionId);
         processingResult = await processReview(reviewSessionId);
         console.log('Processing complete:', processingResult);
+        processingSuccess = processingResult.success;
       } catch (processingError: any) {
         console.error('Processing error:', processingError.message);
-        // Don't fail the upload if processing fails - data is already saved
-        // Processing can be retried manually if needed
+        processingResult = {
+          success: false,
+          error: processingError.message,
+          delta_count: 0,
+          material_count: 0,
+          blocker_count: 0
+        };
+      } finally {
+        // Clean up uploaded files after processing attempt
+        try {
+          if (fs.existsSync(baselineFile.filepath)) {
+            fs.unlinkSync(baselineFile.filepath);
+          }
+          if (fs.existsSync(currentFile.filepath)) {
+            fs.unlinkSync(currentFile.filepath);
+          }
+        } catch (cleanupError: any) {
+          console.error('File cleanup error:', cleanupError.message);
+          // Don't fail the request if cleanup fails
+        }
       }
-
-      // Clean up uploaded files
-      fs.unlinkSync(baselineFile.filepath);
-      fs.unlinkSync(currentFile.filepath);
 
       // Return success response with processing results
       return res.status(200).json({
@@ -334,7 +351,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         review_session_id: reviewSessionId,
         baseline_row_count: baselineRows.length,
         current_row_count: currentRows.length,
-        processing: processingResult || { status: 'failed', message: 'Processing encountered an error' },
+        processing: processingResult,
+        processing_completed: processingSuccess,
         warnings: [
           ...(baselineValidation.warnings || []),
           ...(currentValidation.warnings || []),

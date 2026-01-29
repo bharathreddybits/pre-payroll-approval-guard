@@ -173,6 +173,15 @@ export async function processReview(reviewSessionId: string) {
 
     const baseline = datasets.find(d => d.dataset_type === 'baseline');
     const current = datasets.find(d => d.dataset_type === 'current');
+
+    // Validate datasets exist and have required fields
+    if (!baseline || !baseline.dataset_id || !baseline.organization_id) {
+      throw new Error('Baseline dataset is missing or incomplete');
+    }
+    if (!current || !current.dataset_id) {
+      throw new Error('Current dataset is missing or incomplete');
+    }
+
     const orgId = baseline.organization_id;
 
     // Step 2: Get employee records
@@ -185,6 +194,14 @@ export async function processReview(reviewSessionId: string) {
       .from('employee_pay_record')
       .select('*')
       .eq('dataset_id', current.dataset_id);
+
+    // Validate employee data exists
+    if (!baselineEmployees || baselineEmployees.length === 0) {
+      throw new Error('Baseline dataset has no employee records');
+    }
+    if (!currentEmployees || currentEmployees.length === 0) {
+      throw new Error('Current dataset has no employee records');
+    }
 
     // Step 3: Calculate deltas
     const baselineMap = new Map(baselineEmployees?.map(e => [e.employee_id, e]) || []);

@@ -61,26 +61,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Check for blockers if approving
     if (approval_status === 'approved') {
-      const { data: blockers, error: blockersError } = await supabase
+      // First get all deltas for this session
+      const { data: deltas, error: deltasError } = await supabase
         .from('payroll_delta')
-        .select(`
-          delta_id,
-          material_judgement!inner (
-            is_blocker
-          )
-        `)
-        .eq('review_session_id', review_session_id)
-        .eq('material_judgement.is_blocker', true);
+        .select('delta_id')
+        .eq('review_session_id', review_session_id);
+
+      if (deltasError) {
+        console.error('Failed to fetch deltas:', deltasError);
+        return res.status(500).json({ error: 'Failed to validate approval' });
+      }
+
+      if (!deltas || deltas.length === 0) {
+        return res.status(400).json({
+          error: 'Cannot approve - no payroll changes found',
+          message: 'Review session has no delta records',
+        });
+      }
+
+      // Then check for blockers in judgements
+      const deltaIds = deltas.map(d => d.delta_id);
+      const { data: blockerJudgements, error: blockersError } = await supabase
+        .from('material_judgement')
+        .select('judgement_id, delta_id, is_blocker, reasoning')
+        .in('delta_id', deltaIds)
+        .eq('is_blocker', true);
 
       if (blockersError) {
         console.error('Failed to check for blockers:', blockersError);
         return res.status(500).json({ error: 'Failed to validate approval' });
       }
 
-      if (blockers && blockers.length > 0) {
+      if (blockerJudgements && blockerJudgements.length > 0) {
         return res.status(400).json({
           error: 'Cannot approve payroll with active blockers',
-          blocker_count: blockers.length,
+          blocker_count: blockerJudgements.length,
+          blockers: blockerJudgements.map(b => ({
+            delta_id: b.delta_id,
+            reasoning: b.reasoning
+          })),
           message: 'Please resolve all blockers before approving',
         });
       }
