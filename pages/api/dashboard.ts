@@ -103,7 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // 3. Calculate stats
+    // 3. Calculate stats and onboarding progress
     const stats = {
       total_reviews: sessions?.length || 0,
       approved: 0,
@@ -111,13 +111,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       pending: 0,
     };
 
+    let hasCompletedReview = false;
+
     sessions?.forEach(session => {
       const approval = Array.isArray(session.approval) ? session.approval[0] : session.approval;
       const status = approval?.approval_status || 'pending';
-      if (status === 'approved') stats.approved++;
-      else if (status === 'rejected') stats.rejected++;
-      else stats.pending++;
+      if (status === 'approved') {
+        stats.approved++;
+        hasCompletedReview = true;
+      } else if (status === 'rejected') {
+        stats.rejected++;
+        hasCompletedReview = true;
+      } else {
+        stats.pending++;
+      }
     });
+
+    // Onboarding status
+    const isNewUser = (sessions?.length || 0) === 0;
+    const onboarding = {
+      account_created: true, // Always true for logged-in users
+      first_upload: (sessions?.length || 0) > 0,
+      first_review: hasCompletedReview,
+    };
 
     // 4. Format sessions for response
     const formattedSessions = sessions?.map(session => {
@@ -202,10 +218,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     }) || [];
 
+    // Find latest session ID for onboarding checklist
+    const latestSessionId = formattedSessions.length > 0
+      ? formattedSessions[0].review_session_id
+      : null;
+
     return res.status(200).json({
       stats,
       recent_activity: recentActivity,
       sessions: formattedSessions,
+      is_new_user: isNewUser,
+      onboarding,
+      latest_session_id: latestSessionId,
       pagination: {
         limit,
         offset,

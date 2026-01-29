@@ -9,6 +9,7 @@ import { AuditTrail } from '../components/AuditTrail';
 import { ReviewSessionsTable } from '../components/ReviewSessionsTable';
 import { Skeleton } from '../components/ui/skeleton';
 import { Button } from '../components/ui/button';
+import { WelcomeModal, OnboardingChecklist } from '../components/onboarding';
 
 interface DashboardData {
   stats: {
@@ -40,6 +41,13 @@ interface DashboardData {
     approval_status: string;
     created_at: string;
   }>;
+  is_new_user: boolean;
+  onboarding: {
+    account_created: boolean;
+    first_upload: boolean;
+    first_review: boolean;
+  };
+  latest_session_id: string | null;
 }
 
 function DashboardSkeleton() {
@@ -156,6 +164,19 @@ export default function DashboardPage() {
           {/* Dashboard Content */}
           {!loading && data && (
             <>
+              {/* Welcome Modal for new users */}
+              <WelcomeModal isNewUser={data.is_new_user} />
+
+              {/* Show onboarding checklist if not all steps complete */}
+              {(!data.onboarding.first_upload || !data.onboarding.first_review) && (
+                <div className="mb-8">
+                  <OnboardingChecklist
+                    progress={data.onboarding}
+                    latestSessionId={data.latest_session_id || undefined}
+                  />
+                </div>
+              )}
+
               {/* Stats Cards */}
               <DashboardStats stats={data.stats} />
 
