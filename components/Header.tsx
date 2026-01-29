@@ -17,21 +17,31 @@ export function Header() {
   };
 
   return (
-    <header className="bg-white border-b">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-2">
+    <header className="bg-white border-b" style={{ minHeight: '56px' }}>
+      <div className="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center">
+        {/* Logo container: flex-shrink-0 prevents flexbox compression, explicit height ensures space */}
+        <Link
+          href="/"
+          className="flex items-center flex-shrink-0"
+          style={{ height: '40px' }}
+        >
           <Image
             src="/logo.png"
             alt="PayrollShield"
-            width={320}
-            height={80}
-            style={{ height: '72px', width: 'auto' }}
+            width={160}
+            height={40}
+            style={{
+              height: '40px',
+              width: 'auto',
+              maxHeight: '40px',
+              objectFit: 'contain'
+            }}
             priority
           />
         </Link>
 
         {user ? (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-shrink-0">
             <nav className="hidden sm:flex items-center gap-4">
               <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
                 Dashboard
@@ -40,7 +50,7 @@ export function Header() {
                 Upload
               </Link>
             </nav>
-            <span className="text-sm text-gray-600 hidden md:inline">
+            <span className="text-sm text-gray-600 hidden md:inline truncate max-w-[200px]">
               {user.email}
             </span>
             <Button variant="outline" size="sm" onClick={handleSignOut}>
@@ -48,7 +58,7 @@ export function Header() {
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Link href="/login">
               <Button variant="outline" size="sm">Sign in</Button>
             </Link>
