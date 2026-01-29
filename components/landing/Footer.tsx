@@ -13,9 +13,9 @@ export function Footer() {
               <Image
                 src="/logo.png"
                 alt="PayrollShield"
-                width={140}
-                height={35}
-                className="h-8 w-auto brightness-0 invert"
+                width={180}
+                height={45}
+                style={{ height: '40px', width: 'auto', filter: 'brightness(0) invert(1)' }}
               />
             </div>
             <p className="text-sm max-w-md">

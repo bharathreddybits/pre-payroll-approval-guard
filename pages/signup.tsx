@@ -79,7 +79,8 @@ export default function SignupPage() {
               alt="PayrollShield"
               width={400}
               height={100}
-              className="h-24 w-auto mx-auto"
+              style={{ height: '80px', width: 'auto' }}
+              className="mx-auto"
               priority
             />
           </Link>

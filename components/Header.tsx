@@ -25,7 +25,7 @@ export function Header() {
             alt="PayrollShield"
             width={240}
             height={60}
-            className="h-14 w-auto"
+            style={{ height: '48px', width: 'auto' }}
             priority
           />
         </Link>
