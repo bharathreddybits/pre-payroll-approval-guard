@@ -73,13 +73,13 @@ export default function SignupPage() {
 
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-          <Link href="/" className="inline-block mb-6">
+          <Link href="/" className="inline-block mb-8">
             <Image
               src="/logo.png"
               alt="PayrollShield"
-              width={320}
-              height={80}
-              className="h-20 w-auto mx-auto"
+              width={400}
+              height={100}
+              className="h-24 w-auto mx-auto"
               priority
             />
           </Link>
