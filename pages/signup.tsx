@@ -77,9 +77,9 @@ export default function SignupPage() {
             <Image
               src="/logo.png"
               alt="PayrollShield"
-              width={280}
-              height={70}
-              className="h-16 w-auto mx-auto"
+              width={320}
+              height={80}
+              className="h-20 w-auto mx-auto"
               priority
             />
           </Link>

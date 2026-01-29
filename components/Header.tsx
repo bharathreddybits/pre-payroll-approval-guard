@@ -23,9 +23,9 @@ export function Header() {
           <Image
             src="/logo.png"
             alt="PayrollShield"
-            width={200}
-            height={50}
-            className="h-12 w-auto"
+            width={240}
+            height={60}
+            className="h-14 w-auto"
             priority
           />
         </Link>
