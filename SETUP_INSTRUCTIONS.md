@@ -27,7 +27,7 @@ npx vercel --prod --yes
 After deployment completes (1-2 minutes), test the automation:
 
 ```powershell
-curl -X POST https://ppg-payroll-guard.vercel.app/api/upload `
+curl -X POST https://payrollshield.cloud/api/upload `
   -F "baseline=@C:\Users\bhara\AppData\Local\Temp\claude\c--Users-bhara-OneDrive-Desktop-PPG\2a9fc2fb-4f0f-4e39-8ec6-0c8b0136ceeb\scratchpad\baseline_payroll.csv" `
   -F "current=@C:\Users\bhara\AppData\Local\Temp\claude\c--Users-bhara-OneDrive-Desktop-PPG\2a9fc2fb-4f0f-4e39-8ec6-0c8b0136ceeb\scratchpad\current_payroll.csv" `
   -F "organizationId=d3048d6c-19b0-4c01-8514-44e9e07f6d04" `

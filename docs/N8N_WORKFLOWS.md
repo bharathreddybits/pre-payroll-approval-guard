@@ -146,7 +146,7 @@ curl -X POST https://your-n8n.com/webhook/ppg-judgement-engine \
 
 ## Step 6: End-to-End Test
 
-1. **Upload CSVs** via production app: https://ppg-payroll-guard.vercel.app/upload
+1. **Upload CSVs** via production app: https://payrollshield.cloud/upload
 2. **Check n8n Executions**: Go to n8n → "Executions" to see workflows running
 3. **View Results**: Navigate to review page to see material changes
 

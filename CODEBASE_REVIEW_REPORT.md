@@ -323,7 +323,7 @@ Key areas:
 - Approval workflow
 
 ✅ **Production deployment successful**
-- URL: https://ppg-payroll-guard.vercel.app
+- URL: https://payrollshield.cloud
 - Build time: ~30 seconds
 - No critical errors
 - Processing time: ~5-7 seconds
