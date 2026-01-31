@@ -16,7 +16,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [user, authLoading, router]);
 
@@ -38,7 +38,7 @@ export default function LoginPage() {
       });
     } else {
       toast.success('Welcome back!');
-      router.push('/');
+      router.push('/dashboard');
     }
   };
 

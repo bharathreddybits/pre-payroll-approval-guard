@@ -45,7 +45,7 @@ export default function AuthCallback() {
 
         if (session) {
           setMessage('Email confirmed! Redirecting...');
-          setTimeout(() => router.push('/'), 1500);
+          setTimeout(() => router.push('/dashboard'), 1500);
         } else if (type === 'signup' || type === 'email_confirmation') {
           setMessage('Email confirmed! Please sign in.');
           setTimeout(() => router.push('/login'), 2000);

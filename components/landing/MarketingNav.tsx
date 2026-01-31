@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const navLinks = [
   { label: 'Product', href: '#features' },
@@ -12,6 +13,7 @@ const navLinks = [
 export function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -54,18 +56,29 @@ export function MarketingNav() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Link
-              href="/login"
-              className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg hover:bg-brand-blue-dark transition-colors"
-            >
-              Start Free Trial
-            </Link>
+            {!loading && user ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg hover:bg-brand-blue-dark transition-colors"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg hover:bg-brand-blue-dark transition-colors"
+                >
+                  Start Free Trial
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile toggle */}
@@ -98,18 +111,29 @@ export function MarketingNav() {
               </a>
             ))}
             <div className="pt-4 mt-2 border-t border-slate-100 space-y-3">
-              <Link
-                href="/login"
-                className="block py-2 text-sm font-medium text-slate-600"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/signup"
-                className="block w-full text-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg"
-              >
-                Start Free Trial
-              </Link>
+              {!loading && user ? (
+                <Link
+                  href="/dashboard"
+                  className="block w-full text-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg"
+                >
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="block py-2 text-sm font-medium text-slate-600"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="block w-full text-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg"
+                  >
+                    Start Free Trial
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
