@@ -1,71 +1,82 @@
 import React from 'react';
 import Link from 'next/link';
 
+const footerLinks = {
+  Product: [
+    { label: 'Features', href: '#features' },
+    { label: 'How It Works', href: '#how-it-works' },
+    { label: 'Security', href: '#trust' },
+  ],
+  Company: [
+    { label: 'About', href: '#' },
+    { label: 'Contact', href: 'mailto:support@payrollshield.com' },
+  ],
+  Legal: [
+    { label: 'Privacy Policy', href: '#' },
+    { label: 'Terms of Service', href: '#' },
+  ],
+};
+
 export function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-400 py-12">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="relative bg-slate-900 text-slate-400">
+      {/* Brand gradient bar */}
+      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-blue via-brand-red to-brand-blue" />
+
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-20">
+        <div className="grid grid-cols-2 md:grid-cols-12 gap-8 lg:gap-12">
           {/* Brand */}
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo.png"
-                alt="PayrollShield"
-                className="footer-logo"
-                style={{ height: '40px', width: 'auto', filter: 'brightness(0) invert(1)' }}
-              />
-            </div>
-            <p className="text-sm max-w-md">
-              Stop costly payroll mistakes before they happen. Review material changes
-              in under 5 minutes with complete audit trail.
+          <div className="col-span-2 md:col-span-5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="PayrollShield"
+              className="h-9 w-auto mb-5 brightness-0 invert"
+            />
+            <p className="text-sm leading-relaxed max-w-sm">
+              Pre-payroll approval guard for teams who need to catch every
+              change, flag every risk, and document every decision.
             </p>
           </div>
 
-          {/* Product */}
-          <div>
-            <h4 className="text-white font-semibold mb-4">Product</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="#how-it-works" className="hover:text-white transition-colors">
-                  How It Works
-                </a>
-              </li>
-              <li>
-                <Link href="/signup" className="hover:text-white transition-colors">
-                  Free Trial
-                </Link>
-              </li>
-              <li>
-                <Link href="/login" className="hover:text-white transition-colors">
-                  Sign In
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h4 className="text-white font-semibold mb-4">Company</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="mailto:support@payrollshield.com" className="hover:text-white transition-colors">
-                  Contact
-                </a>
-              </li>
-              <li>
-                <span className="text-gray-600">Privacy Policy</span>
-              </li>
-              <li>
-                <span className="text-gray-600">Terms of Service</span>
-              </li>
-            </ul>
-          </div>
+          {/* Link columns */}
+          {Object.entries(footerLinks).map(([category, links]) => (
+            <div key={category} className="col-span-1 md:col-span-2">
+              <h4 className="text-sm font-semibold text-white mb-4">
+                {category}
+              </h4>
+              <ul className="space-y-3">
+                {links.map((link) => (
+                  <li key={link.label}>
+                    {link.href.startsWith('mailto:') ||
+                    link.href.startsWith('#') ? (
+                      <a
+                        href={link.href}
+                        className="text-sm text-slate-400 hover:text-white transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-sm text-slate-400 hover:text-white transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm">
-          <p>&copy; {new Date().getFullYear()} PayrollShield. All rights reserved.</p>
+        {/* Bottom bar */}
+        <div className="border-t border-slate-800 mt-16 pt-8">
+          <p className="text-sm text-slate-500">
+            &copy; {new Date().getFullYear()} PayrollShield. All rights
+            reserved.
+          </p>
         </div>
       </div>
     </footer>

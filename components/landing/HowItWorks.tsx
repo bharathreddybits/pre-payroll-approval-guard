@@ -1,61 +1,70 @@
 import React from 'react';
+import { Upload, FileSearch, CircleCheckBig } from 'lucide-react';
 
 const steps = [
   {
-    number: '1',
-    title: 'Upload Your Payroll Files',
-    description: 'Upload your baseline (last approved) and current payroll CSV files. We support all major payroll export formats.',
-    icon: '📤',
+    number: '01',
+    icon: Upload,
+    title: 'Upload your payroll files',
+    description:
+      'Drop your baseline and current payroll CSV files. All major payroll export formats are supported out of the box.',
+    accent: 'text-brand-blue',
+    iconBg: 'bg-brand-blue/10 text-brand-blue',
   },
   {
-    number: '2',
-    title: 'Review Flagged Changes',
-    description: 'Our system automatically detects and flags material changes, blockers, and anomalies. Everything in one screen.',
-    icon: '🔍',
+    number: '02',
+    icon: FileSearch,
+    title: 'Review flagged changes',
+    description:
+      'Material changes, anomalies, and blockers are automatically surfaced in a single review screen with clear explanations.',
+    accent: 'text-brand-red',
+    iconBg: 'bg-brand-red/10 text-brand-red',
   },
   {
-    number: '3',
-    title: 'Approve with Confidence',
-    description: 'Review AI explanations, resolve blockers, and approve. Complete audit trail captures every decision.',
-    icon: '✅',
+    number: '03',
+    icon: CircleCheckBig,
+    title: 'Approve with confidence',
+    description:
+      'Resolve any issues, add notes, and approve. The complete audit trail is captured automatically for compliance.',
+    accent: 'text-brand-blue',
+    iconBg: 'bg-brand-blue/10 text-brand-blue',
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-20 bg-white">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Review Payroll Changes in 3 Simple Steps
+    <section id="how-it-works" className="py-20 lg:py-28">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="max-w-2xl mb-16 animate-fade-in-up">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 mb-4">
+            Three steps to confident payroll approval
           </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-lg text-slate-500 leading-relaxed">
             No complex setup. No training required. Upload, review, approve.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {steps.map((step, index) => (
-            <div key={index} className="relative">
-              {/* Connector line */}
-              {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-12 left-[60%] w-[80%] h-0.5 bg-gray-200" />
-              )}
-
-              <div className="text-center">
-                <div className="relative inline-flex">
-                  <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                    <span className="text-4xl">{step.icon}</span>
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">
-                    {step.number}
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
+          {steps.map((step, i) => {
+            const Icon = step.icon;
+            const delay = i === 0 ? '' : i === 1 ? '-d1' : '-d2';
+            return (
+              <div key={step.number} className={`animate-fade-in-up${delay}`}>
+                <div className={`text-sm font-semibold ${step.accent} tracking-wide mb-5`}>
+                  STEP {step.number}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-gray-600">{step.description}</p>
+                <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl ${step.iconBg} mb-6`}>
+                  <Icon className="h-7 w-7" />
+                </div>
+                <h3 className="text-xl font-semibold text-slate-900 mb-3">
+                  {step.title}
+                </h3>
+                <p className="text-slate-500 leading-relaxed">
+                  {step.description}
+                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

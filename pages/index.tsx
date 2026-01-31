@@ -1,14 +1,11 @@
 import { NextPage } from 'next';
 import Head from 'next/head';
-import { Header } from '../components/Header';
 import {
+  MarketingNav,
   LandingHero,
-  ProblemSection,
+  TrustSignal,
+  CoreValues,
   HowItWorks,
-  FeaturesGrid,
-  PricingSection,
-  FAQ,
-  FinalCTA,
   Footer,
 } from '../components/landing';
 
@@ -16,24 +13,21 @@ const Home: NextPage = () => {
   return (
     <>
       <Head>
-        <title>PayrollShield - Stop $50K Payroll Mistakes</title>
+        <title>PayrollShield — Pre-Payroll Approval Guard</title>
         <meta
           name="description"
-          content="Automatically detect and flag material payroll changes. Review everything in under 5 minutes with complete audit trail. Start your 14-day free trial."
+          content="PayrollShield compares every payroll cycle, surfaces material changes and blockers automatically, and creates a complete audit trail. Review in minutes, not hours."
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Header />
+      <MarketingNav />
 
       <main>
         <LandingHero />
-        <ProblemSection />
+        <TrustSignal />
+        <CoreValues />
         <HowItWorks />
-        <FeaturesGrid />
-        <PricingSection />
-        <FAQ />
-        <FinalCTA />
       </main>
 
       <Footer />

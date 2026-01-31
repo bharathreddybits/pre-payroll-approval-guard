@@ -26,7 +26,7 @@ export function Header() {
             alt="PayrollShield"
             className="header-logo"
             style={{
-              height: '48px',
+              height: '96px',
               width: 'auto',
               display: 'block'
             }}
