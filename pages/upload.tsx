@@ -131,15 +131,18 @@ export default function UploadPage() {
         setState((prev) => ({ ...prev, warnings: uploadResult.warnings }));
       }
 
-      // Check processing result
-      if (uploadResult.processing && uploadResult.processing.success) {
-        console.log('Processing completed:', uploadResult.processing);
-      } else {
-        console.warn('Processing may have failed:', uploadResult.processing);
-        // Still proceed to review page - user can see results there
+      // Paid tier: redirect to mapping page
+      if (uploadResult.needsMapping) {
+        toast.success('Files uploaded!', {
+          id: 'upload',
+          description: 'Redirecting to column mapping...',
+        });
+        setState((prev) => ({ ...prev, uploading: false, processing: false }));
+        router.push(`/mapping/${reviewSessionId}`);
+        return;
       }
 
-      // Success! Navigate to review page (processing already completed in upload API)
+      // Free tier: processing already completed, go to review
       toast.success('Processing complete!', {
         id: 'upload',
         description: 'Redirecting to review page...',
@@ -375,22 +378,28 @@ export default function UploadPage() {
               <CardTitle className="text-base">CSV File Requirements</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm text-gray-600 space-y-2">
-                <p className="font-medium">Required columns:</p>
+              <div className="text-sm text-gray-600 space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <span className="text-blue-600 font-medium">Need a template?</span>
+                  <a
+                    href="/api/template"
+                    download
+                    className="text-blue-700 underline hover:text-blue-900 font-medium"
+                  >
+                    Download CSV template
+                  </a>
+                  <span className="text-blue-500 text-xs">(all canonical columns pre-filled)</span>
+                </div>
+                <p className="font-medium">Free tier — required columns:</p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
                   <li>employee_id</li>
                   <li>gross_pay</li>
-                  <li>deductions (or total_deductions)</li>
+                  <li>total_deductions (or deductions)</li>
                   <li>net_pay</li>
                 </ul>
-                <p className="font-medium mt-3">Optional columns:</p>
-                <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>employee_name</li>
-                  <li>department</li>
-                  <li>hours_worked</li>
-                  <li>rate</li>
-                  <li>employment_status</li>
-                </ul>
+                <p className="text-xs text-gray-500 mt-2">
+                  Pro/Enterprise tiers support flexible column names with AI-powered mapping.
+                </p>
               </div>
             </CardContent>
           </Card>

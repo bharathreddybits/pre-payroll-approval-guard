@@ -139,15 +139,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const baseline = datasets.find((d: any) => d.dataset_type === 'baseline');
     const current = datasets.find((d: any) => d.dataset_type === 'current');
 
-    // Categorize deltas
+    // Categorize deltas — now supports multiple judgements per delta
     const allDeltas = deltas || [];
-    const blockers = allDeltas.filter((d: any) => d.material_judgement?.[0]?.is_blocker);
-    const materialChanges = allDeltas.filter(
-      (d: any) => d.material_judgement?.[0]?.is_material && !d.material_judgement?.[0]?.is_blocker
-    );
-    const nonMaterialChanges = allDeltas.filter((d: any) => !d.material_judgement?.[0]?.is_material);
 
-    // Group material changes by metric
+    // Helper: determine highest severity across all judgements for a delta
+    const hasBlocker = (d: any) =>
+      d.material_judgement?.some((j: any) => j.is_blocker) || false;
+    const hasMaterial = (d: any) =>
+      d.material_judgement?.some((j: any) => j.is_material) || false;
+
+    // Pick the highest-severity judgement for display priority
+    const pickPrimary = (judgements: any[]) => {
+      if (!judgements || judgements.length === 0) return null;
+      const blocker = judgements.find((j: any) => j.is_blocker);
+      if (blocker) return blocker;
+      const material = judgements.find((j: any) => j.is_material);
+      if (material) return material;
+      return judgements[0];
+    };
+
+    const blockers = allDeltas.filter(hasBlocker);
+    const materialChanges = allDeltas.filter(
+      (d: any) => hasMaterial(d) && !hasBlocker(d),
+    );
+    const nonMaterialChanges = allDeltas.filter(
+      (d: any) => !hasMaterial(d),
+    );
+
+    // Group material changes by metric (expanded to all metrics)
     const groupByMetric = (changes: any[]) => {
       return changes.reduce((acc: any, change: any) => {
         const metric = change.metric;
@@ -156,7 +175,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         acc[metric].push({
           ...change,
-          material_judgement: change.material_judgement?.[0] || null,
+          material_judgement: pickPrimary(change.material_judgement),
+          all_judgements: change.material_judgement || [],
         });
         return acc;
       }, {});
@@ -182,7 +202,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       summary: {
         total_changes: summaryData?.total_changes || count || allDeltas.length,
-        material_changes: summaryData?.material_changes || materialChanges.length,
+        material_changes: summaryData?.material_changes || (materialChanges.length + blockers.length),
         blockers_count: summaryData?.blockers || blockers.length,
         approval_status: approval?.approval_status || 'pending',
       },
@@ -191,16 +211,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         offset,
         total: count || allDeltas.length,
         has_more: count ? (offset + limit < count) : false,
-        next_offset: count && (offset + limit < count) ? offset + limit : null
+        next_offset: count && (offset + limit < count) ? offset + limit : null,
       },
       blockers: blockers.map((d: any) => ({
         ...d,
-        material_judgement: d.material_judgement?.[0] || null,
+        material_judgement: pickPrimary(d.material_judgement),
+        all_judgements: d.material_judgement || [],
       })),
       material_changes: materialChangesByMetric,
       non_material_changes: nonMaterialChanges.map((d: any) => ({
         ...d,
-        material_judgement: d.material_judgement?.[0] || null,
+        material_judgement: pickPrimary(d.material_judgement),
+        all_judgements: d.material_judgement || [],
       })),
     };
 
