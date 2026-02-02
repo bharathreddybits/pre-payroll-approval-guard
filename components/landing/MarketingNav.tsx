@@ -4,10 +4,10 @@ import { Menu, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navLinks = [
-  { label: 'Product', href: '#features' },
-  { label: 'Use Cases', href: '#how-it-works' },
-  { label: 'Security', href: '#trust' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'Product', href: '/product' },
+  { label: 'Use Cases', href: '/use-cases' },
+  { label: 'Security', href: '/security' },
+  { label: 'Pricing', href: '/pricing' },
 ];
 
 export function MarketingNav() {
@@ -44,13 +44,13 @@ export function MarketingNav() {
           {/* Desktop links */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.label}
                 href={link.href}
-                className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors nav-link-hover"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -101,14 +101,14 @@ export function MarketingNav() {
         <div className="md:hidden bg-white border-t border-slate-100">
           <div className="px-6 py-4 space-y-1">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.label}
                 href={link.href}
                 className="block py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
             <div className="pt-4 mt-2 border-t border-slate-100 space-y-3">
               {!loading && user ? (

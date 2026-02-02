@@ -3,17 +3,18 @@ import Link from 'next/link';
 
 const footerLinks = {
   Product: [
-    { label: 'Features', href: '#features' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Security', href: '#trust' },
+    { label: 'Product', href: '/product' },
+    { label: 'Use Cases', href: '/use-cases' },
+    { label: 'Pricing', href: '/pricing' },
   ],
   Company: [
-    { label: 'About', href: '#' },
-    { label: 'Contact', href: 'mailto:support@payrollshield.com' },
+    { label: 'About', href: '/about' },
+    { label: 'Security', href: '/security' },
+    { label: 'Contact', href: 'mailto:support@payrollshield.cloud' },
   ],
   Legal: [
-    { label: 'Privacy Policy', href: '#' },
-    { label: 'Terms of Service', href: '#' },
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Terms of Service', href: '/terms' },
   ],
 };
 
@@ -48,8 +49,7 @@ export function Footer() {
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.label}>
-                    {link.href.startsWith('mailto:') ||
-                    link.href.startsWith('#') ? (
+                    {link.href.startsWith('mailto:') ? (
                       <a
                         href={link.href}
                         className="text-sm text-slate-400 hover:text-white transition-colors"
