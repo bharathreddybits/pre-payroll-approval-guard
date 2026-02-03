@@ -338,7 +338,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await insertFlexible(baselineRows, baselineDs.dataset_id, empIdColBaseline);
         await insertFlexible(currentRows, currentDs.dataset_id, empIdColCurrent);
       } else {
-        // Starter tier: insert with known column structure (all canonical fields)
+        // Starter tier: insert with known column structure
+        // Tries expanded columns first (needs migration 003), falls back to base schema.
+        // Expanded data is always stored in metadata JSONB as a safety net.
         const insertStrict = async (rows: Record<string, string>[], datasetId: string) => {
           const parseNum = (val: string | undefined | null): number | null => {
             if (val === undefined || val === null || val === '') return null;
@@ -346,46 +348,79 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return isNaN(n) ? null : n;
           };
 
-          const records = rows.map((row) => ({
-            dataset_id: datasetId,
-            employee_id: row.employee_id,
-            employee_name: row.employee_name || null,
-            department: row.department || null,
-            employment_status: row.employment_status || null,
-            // Identity
+          // Expanded field values — always stored in metadata regardless of schema
+          const getExpandedData = (row: Record<string, string>) => ({
             pay_group: row.pay_group || null,
             pay_frequency: row.pay_frequency || null,
-            // Hours
             regular_hours: parseNum(row.regular_hours),
             overtime_hours: parseNum(row.overtime_hours),
             other_paid_hours: parseNum(row.other_paid_hours),
             total_hours_worked: parseNum(row.total_hours_worked),
-            // Earnings
             base_earnings: parseNum(row.base_earnings),
             overtime_pay: parseNum(row.overtime_pay),
             bonus_earnings: parseNum(row.bonus_earnings),
             other_earnings: parseNum(row.other_earnings),
-            // Taxes
             federal_income_tax: parseNum(row.federal_income_tax),
             social_security_tax: parseNum(row.social_security_tax),
             medicare_tax: parseNum(row.medicare_tax),
             state_income_tax: parseNum(row.state_income_tax),
             local_tax: parseNum(row.local_tax),
-            // Fundamental
+          });
+
+          // Base record — always works with original schema
+          const buildBaseRecord = (row: Record<string, string>) => ({
+            dataset_id: datasetId,
+            employee_id: row.employee_id,
+            employee_name: row.employee_name || null,
+            department: row.department || null,
+            employment_status: row.employment_status || null,
             gross_pay: parseFloat(row.gross_pay) || 0,
             net_pay: parseFloat(row.net_pay) || 0,
             total_deductions: parseFloat(row.total_deductions || row.deductions) || 0,
             metadata: {
+              ...getExpandedData(row),
               hours_worked: row.hours_worked ? parseFloat(row.hours_worked) : null,
               rate: row.rate ? parseFloat(row.rate) : null,
             },
-          }));
+          });
+
+          // Expanded record — includes dedicated columns (needs migration 003)
+          const buildExpandedRecord = (row: Record<string, string>) => ({
+            ...buildBaseRecord(row),
+            ...getExpandedData(row),
+          });
 
           const batchSize = 100;
-          for (let i = 0; i < records.length; i += batchSize) {
-            const batch = records.slice(i, i + batchSize);
-            const { error } = await supabase.from('employee_pay_record').insert(batch);
-            if (error) throw new Error(`Failed to insert employee records: ${error.message}`);
+
+          // Try expanded schema first
+          const expandedRecords = rows.map(buildExpandedRecord);
+          let useExpanded = true;
+
+          // Test with first batch
+          const firstBatch = expandedRecords.slice(0, Math.min(batchSize, expandedRecords.length));
+          const { error: testError } = await supabase.from('employee_pay_record').insert(firstBatch);
+
+          if (testError) {
+            // Expanded columns likely don't exist — fall back to base schema
+            console.warn(`[Upload] Expanded insert failed (${testError.message}), falling back to base schema`);
+            useExpanded = false;
+          }
+
+          if (useExpanded) {
+            // First batch already inserted; continue with remaining batches
+            for (let i = batchSize; i < expandedRecords.length; i += batchSize) {
+              const batch = expandedRecords.slice(i, i + batchSize);
+              const { error } = await supabase.from('employee_pay_record').insert(batch);
+              if (error) throw new Error(`Failed to insert employee records: ${error.message}`);
+            }
+          } else {
+            // Insert using base schema only (expanded data lives in metadata)
+            const baseRecords = rows.map(buildBaseRecord);
+            for (let i = 0; i < baseRecords.length; i += batchSize) {
+              const batch = baseRecords.slice(i, i + batchSize);
+              const { error } = await supabase.from('employee_pay_record').insert(batch);
+              if (error) throw new Error(`Failed to insert employee records: ${error.message}`);
+            }
           }
         };
 

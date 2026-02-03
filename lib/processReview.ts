@@ -31,6 +31,28 @@ interface JudgementRow {
  */
 const DELTA_METRICS = CANONICAL_NUMERIC_FIELDS.map(f => f.dbColumn!);
 
+/** Base metrics that exist in the original schema (before migration 003) */
+const BASE_METRICS = ['net_pay', 'gross_pay', 'total_deductions'];
+
+/**
+ * Get a numeric field value from an employee record.
+ * Checks the dedicated column first, then falls back to metadata JSONB.
+ * This ensures delta calculation works even if migration 003 hasn't been applied.
+ */
+function getFieldValue(emp: any, field: string): number | null {
+  // Check dedicated column first
+  if (emp[field] != null) {
+    const val = Number(emp[field]);
+    return isNaN(val) ? null : val;
+  }
+  // Fall back to metadata
+  if (emp.metadata && emp.metadata[field] != null) {
+    const val = Number(emp.metadata[field]);
+    return isNaN(val) ? null : val;
+  }
+  return null;
+}
+
 export async function processReview(reviewSessionId: string) {
   console.log(`[ProcessReview] Starting processing for session: ${reviewSessionId}`);
 
@@ -92,6 +114,8 @@ export async function processReview(reviewSessionId: string) {
       throw new Error('Current dataset has no employee records');
     }
 
+    console.log(`[ProcessReview] Found ${baselineEmployees.length} baseline, ${currentEmployees.length} current employees`);
+
     // Build lookup maps
     const baselineMap = new Map(baselineEmployees.map(e => [e.employee_id, e]));
     const currentMap = new Map(currentEmployees.map(e => [e.employee_id, e]));
@@ -113,7 +137,7 @@ export async function processReview(reviewSessionId: string) {
           employee_id: employeeId,
           metric: 'net_pay',
           change_type: 'removed_employee',
-          baseline_value: baselineEmp.net_pay,
+          baseline_value: getFieldValue(baselineEmp, 'net_pay'),
           current_value: null,
           delta_absolute: null,
           delta_percentage: null,
@@ -134,7 +158,7 @@ export async function processReview(reviewSessionId: string) {
           metric: 'net_pay',
           change_type: 'new_employee',
           baseline_value: null,
-          current_value: currentEmp.net_pay,
+          current_value: getFieldValue(currentEmp, 'net_pay'),
           delta_absolute: null,
           delta_percentage: null,
         });
@@ -143,14 +167,14 @@ export async function processReview(reviewSessionId: string) {
         let hasAnyDelta = false;
 
         for (const metric of DELTA_METRICS) {
-          const bVal = baselineEmp[metric];
-          const cVal = currentEmp[metric];
+          const bVal = getFieldValue(baselineEmp, metric);
+          const cVal = getFieldValue(currentEmp, metric);
 
-          // Skip if both null/undefined
+          // Skip if both null
           if (bVal == null && cVal == null) continue;
 
-          const bNum = bVal != null ? Number(bVal) : 0;
-          const cNum = cVal != null ? Number(cVal) : 0;
+          const bNum = bVal ?? 0;
+          const cNum = cVal ?? 0;
 
           if (bNum !== cNum) {
             const deltaAbs = cNum - bNum;
@@ -180,8 +204,8 @@ export async function processReview(reviewSessionId: string) {
             employee_id: employeeId,
             metric: 'net_pay',
             change_type: 'no_change',
-            baseline_value: baselineEmp.net_pay ?? 0,
-            current_value: currentEmp.net_pay ?? 0,
+            baseline_value: getFieldValue(baselineEmp, 'net_pay') ?? 0,
+            current_value: getFieldValue(currentEmp, 'net_pay') ?? 0,
             delta_absolute: 0,
             delta_percentage: 0,
           });
@@ -199,16 +223,54 @@ export async function processReview(reviewSessionId: string) {
 
     const insertedDeltas: any[] = [];
     const BATCH_SIZE = 200;
-    for (let i = 0; i < deltas.length; i += BATCH_SIZE) {
-      const batch = deltas.slice(i, i + BATCH_SIZE);
-      const { data, error } = await supabase
-        .from('payroll_delta')
-        .insert(batch)
-        .select();
 
-      if (error) throw new Error(`Failed to insert deltas batch: ${error.message}`);
-      if (data) insertedDeltas.push(...data);
+    // Try inserting all deltas (expanded metrics). If the constraint rejects
+    // expanded metrics, filter to base metrics and retry.
+    let deltasToInsert = deltas;
+    const firstBatch = deltasToInsert.slice(0, Math.min(BATCH_SIZE, deltasToInsert.length));
+    const { data: testData, error: testError } = await supabase
+      .from('payroll_delta')
+      .insert(firstBatch)
+      .select();
+
+    if (testError) {
+      console.warn(`[ProcessReview] Delta insert failed (${testError.message}), filtering to base metrics`);
+      // Filter to only base metrics + new/removed employee deltas
+      deltasToInsert = deltas.filter(d =>
+        BASE_METRICS.includes(d.metric) ||
+        d.change_type === 'new_employee' ||
+        d.change_type === 'removed_employee'
+      );
+      console.log(`[ProcessReview] Retrying with ${deltasToInsert.length} base-metric deltas`);
+
+      // Re-insert from scratch
+      for (let i = 0; i < deltasToInsert.length; i += BATCH_SIZE) {
+        const batch = deltasToInsert.slice(i, i + BATCH_SIZE);
+        const { data, error } = await supabase
+          .from('payroll_delta')
+          .insert(batch)
+          .select();
+
+        if (error) throw new Error(`Failed to insert deltas batch: ${error.message}`);
+        if (data) insertedDeltas.push(...data);
+      }
+    } else {
+      // First batch succeeded — continue with rest
+      if (testData) insertedDeltas.push(...testData);
+
+      for (let i = BATCH_SIZE; i < deltasToInsert.length; i += BATCH_SIZE) {
+        const batch = deltasToInsert.slice(i, i + BATCH_SIZE);
+        const { data, error } = await supabase
+          .from('payroll_delta')
+          .insert(batch)
+          .select();
+
+        if (error) throw new Error(`Failed to insert deltas batch: ${error.message}`);
+        if (data) insertedDeltas.push(...data);
+      }
     }
+
+    console.log(`[ProcessReview] Inserted ${insertedDeltas.length} deltas`);
 
     // ── Step 6: Apply judgement rules ─────────────────────────────────────
     const allJudgementRows: JudgementRow[] = [];
