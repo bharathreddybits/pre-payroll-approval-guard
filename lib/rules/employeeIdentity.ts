@@ -30,7 +30,7 @@ export const employeeIdentityRules: RuleDefinition[] = [
     explanation: 'Employee cannot be uniquely identified',
     userAction: 'Populate EmployeeID',
     columnsUsed: ['EmployeeID'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'EMPLOYMENT_STATUS_CHANGE',
@@ -64,7 +64,7 @@ export const employeeIdentityRules: RuleDefinition[] = [
     explanation: 'Duplicate employee records found',
     userAction: 'De-duplicate rows',
     columnsUsed: ['EmployeeID'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'PAY_FREQUENCY_CHANGED',

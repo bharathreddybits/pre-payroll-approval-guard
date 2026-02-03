@@ -381,7 +381,7 @@ export const CANONICAL_FIELDS: CanonicalField[] = [
 // Derived Exports
 // ---------------------------------------------------------------------------
 
-/** Fields that are required for minimum viable processing (free tier) */
+/** Fields that are required for minimum viable processing (starter tier) */
 export const CANONICAL_REQUIRED_FIELDS = CANONICAL_FIELDS.filter(f => f.required);
 
 /** Numeric fields used for delta calculation between baseline and current */

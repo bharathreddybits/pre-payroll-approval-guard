@@ -17,7 +17,7 @@ export const taxesComponentsRules: RuleDefinition[] = [
     explanation: 'Taxes < 0',
     userAction: 'Correct W-4 or calculation.',
     columnsUsed: ['FederalIncomeTaxWithheld', 'SocialSecurityWithheld', 'MedicareWithheld', 'StateIncomeTaxWithheld', 'LocalTaxWithheld'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'MISSING_FEDERAL_TAX',

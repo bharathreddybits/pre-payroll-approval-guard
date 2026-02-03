@@ -75,14 +75,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Update existing mapping rows with user overrides
+    // Update existing mapping rows with user overrides (batched by dataset type)
+    const overridesByType = new Map<string, typeof overrideRows>();
     for (const row of overrideRows) {
-      await supabase
-        .from('column_mapping')
-        .update({ user_override: row.user_override })
-        .eq('review_session_id', row.review_session_id)
-        .eq('dataset_type', row.dataset_type)
-        .eq('uploaded_column', row.uploaded_column);
+      const key = row.dataset_type;
+      if (!overridesByType.has(key)) overridesByType.set(key, []);
+      overridesByType.get(key)!.push(row);
+    }
+
+    for (const [, typeOverrides] of overridesByType) {
+      // Run updates in parallel within each batch for speed
+      await Promise.all(
+        typeOverrides.map(row =>
+          supabase
+            .from('column_mapping')
+            .update({ user_override: row.user_override })
+            .eq('review_session_id', row.review_session_id)
+            .eq('dataset_type', row.dataset_type)
+            .eq('uploaded_column', row.uploaded_column)
+        )
+      );
     }
 
     // 3. Get existing employee records (which have raw data in metadata)
@@ -118,53 +130,58 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const currentLookup = buildMappingLookup(currentMappings);
 
     // 5. Transform and update employee records using confirmed mappings
+    const NUMERIC_COLUMNS = new Set([
+      'regular_hours', 'overtime_hours', 'other_paid_hours', 'total_hours_worked',
+      'base_earnings', 'overtime_pay', 'bonus_earnings', 'other_earnings',
+      'federal_income_tax', 'social_security_tax', 'medicare_tax',
+      'state_income_tax', 'local_tax', 'gross_pay', 'net_pay', 'total_deductions',
+    ]);
+
     const transformAndUpdate = async (
       records: any[],
       lookup: Map<string, string>,
-      datasetId: string,
     ) => {
-      for (const record of records) {
-        const rawData = record.metadata?.raw_row || {};
-        const updates: Record<string, any> = {};
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        const updatePromises = batch.map(record => {
+          const rawData = record.metadata?.raw_row || {};
+          const updates: Record<string, any> = {};
 
-        for (const [uploadedCol, dbCol] of lookup) {
-          const rawValue = rawData[uploadedCol] ?? rawData[uploadedCol.toLowerCase()];
-          if (rawValue !== undefined && rawValue !== null && rawValue !== '') {
-            // For numeric DB columns, parse to number
-            const numericColumns = [
-              'regular_hours', 'overtime_hours', 'other_paid_hours', 'total_hours_worked',
-              'base_earnings', 'overtime_pay', 'bonus_earnings', 'other_earnings',
-              'federal_income_tax', 'social_security_tax', 'medicare_tax',
-              'state_income_tax', 'local_tax', 'gross_pay', 'net_pay', 'total_deductions',
-            ];
-
-            if (numericColumns.includes(dbCol)) {
-              const num = parseFloat(String(rawValue).replace(/[,$]/g, ''));
-              if (!isNaN(num)) {
-                updates[dbCol] = num;
+          for (const [uploadedCol, dbCol] of lookup) {
+            const rawValue = rawData[uploadedCol] ?? rawData[uploadedCol.toLowerCase()];
+            if (rawValue !== undefined && rawValue !== null && rawValue !== '') {
+              if (NUMERIC_COLUMNS.has(dbCol)) {
+                const num = parseFloat(String(rawValue).replace(/[,$]/g, ''));
+                if (!isNaN(num)) {
+                  updates[dbCol] = num;
+                }
+              } else {
+                updates[dbCol] = String(rawValue).trim();
               }
-            } else {
-              updates[dbCol] = String(rawValue).trim();
             }
           }
-        }
 
-        // Only update if there are mapped fields to write
-        if (Object.keys(updates).length > 0) {
-          const { error } = await supabase
-            .from('employee_pay_record')
-            .update(updates)
-            .eq('record_id', record.record_id);
+          if (Object.keys(updates).length > 0) {
+            return supabase
+              .from('employee_pay_record')
+              .update(updates)
+              .eq('record_id', record.record_id);
+          }
+          return null;
+        }).filter(Boolean);
 
-          if (error) {
-            console.error(`Failed to update record ${record.record_id}:`, error.message);
+        const results = await Promise.all(updatePromises);
+        for (const result of results) {
+          if (result && result.error) {
+            console.error('Failed to update employee record:', result.error.message);
           }
         }
       }
     };
 
-    await transformAndUpdate(baselineRecords, baselineLookup, baselineDs.dataset_id);
-    await transformAndUpdate(currentRecords, currentLookup, currentDs.dataset_id);
+    await transformAndUpdate(baselineRecords, baselineLookup);
+    await transformAndUpdate(currentRecords, currentLookup);
 
     // 6. Update session status from pending_mapping to in_progress
     await supabase

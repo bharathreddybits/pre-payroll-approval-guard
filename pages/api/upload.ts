@@ -45,7 +45,7 @@ function getCSVHeaders(filePath: string): Promise<string[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Free-tier Validation (rigid column requirements)
+// Starter-tier Validation (rigid column requirements)
 // ---------------------------------------------------------------------------
 
 async function validateCSVStrict(
@@ -370,7 +370,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await insertFlexible(baselineRows, baselineDs.dataset_id, empIdColBaseline);
         await insertFlexible(currentRows, currentDs.dataset_id, empIdColCurrent);
       } else {
-        // Free tier: insert with known column structure
+        // Starter tier: insert with known column structure
         const insertStrict = async (rows: Record<string, string>[], datasetId: string) => {
           const records = rows.map((row) => ({
             dataset_id: datasetId,
@@ -421,7 +421,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      // ── Free tier: process immediately ───────────────────────────────────
+      // ── Starter tier: process immediately ──────────────────────────────
       let processingResult = null;
       let processingSuccess = false;
 

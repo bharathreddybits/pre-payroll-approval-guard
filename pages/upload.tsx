@@ -142,7 +142,7 @@ export default function UploadPage() {
         return;
       }
 
-      // Free tier: processing already completed, go to review
+      // Starter tier: processing already completed, go to review
       toast.success('Processing complete!', {
         id: 'upload',
         description: 'Redirecting to review page...',
@@ -390,7 +390,7 @@ export default function UploadPage() {
                   </a>
                   <span className="text-blue-500 text-xs">(all canonical columns pre-filled)</span>
                 </div>
-                <p className="font-medium">Free tier — required columns:</p>
+                <p className="font-medium">Starter plan — required columns:</p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
                   <li>employee_id</li>
                   <li>gross_pay</li>
@@ -398,7 +398,7 @@ export default function UploadPage() {
                   <li>net_pay</li>
                 </ul>
                 <p className="text-xs text-gray-500 mt-2">
-                  Pro/Enterprise tiers support flexible column names with AI-powered mapping.
+                  Pro plan supports flexible column names with AI-powered mapping.
                 </p>
               </div>
             </CardContent>

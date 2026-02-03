@@ -27,7 +27,7 @@ export const crossCategoryRules: RuleDefinition[] = [
     explanation: 'Gross − Taxes − Deductions ≠ Net Pay',
     userAction: 'Reconcile pay components immediately.',
     columnsUsed: ['GrossPay', 'NetPay', 'TotalDeductions', 'FederalIncomeTaxWithheld', 'SocialSecurityWithheld', 'MedicareWithheld', 'StateIncomeTaxWithheld', 'LocalTaxWithheld'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'MISSING_BASELINE_ROW',
@@ -48,7 +48,7 @@ export const crossCategoryRules: RuleDefinition[] = [
     explanation: 'Employee not found in baseline — new hire or data gap',
     userAction: 'Confirm new employee addition.',
     columnsUsed: ['EmployeeID'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'EMPLOYEE_MISSING_IN_CURRENT',
@@ -70,6 +70,6 @@ export const crossCategoryRules: RuleDefinition[] = [
     explanation: 'Employee in baseline but missing from current payroll',
     userAction: 'FYI — verify if terminated or on leave.',
     columnsUsed: ['EmployeeID'],
-    minTier: 'free',
+    minTier: 'starter',
   },
 ];

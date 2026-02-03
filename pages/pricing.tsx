@@ -7,57 +7,41 @@ import { Check } from 'lucide-react';
 const plans = [
   {
     name: 'Starter',
-    description: 'For small teams getting started with payroll review.',
-    monthlyPrice: 0,
-    annualPrice: 0,
-    priceLabel: 'Free',
-    cta: 'Start Free',
+    description: 'Essential payroll review for growing teams.',
+    monthlyPrice: 49,
+    annualPrice: 39,
+    priceLabel: null,
+    cta: 'Start 7-Day Free Trial',
     ctaHref: '/signup',
     highlight: false,
     features: [
-      'Up to 50 employees per payroll',
-      '3 review sessions per month',
+      'Up to 100 employees per payroll',
+      'Unlimited review sessions',
+      '15 core detection rules',
+      'Template CSV format',
       'Change detection & blocker alerts',
-      'Basic audit trail',
+      'AI-powered explanations',
+      'Full audit trail',
       'Email support',
     ],
   },
   {
     name: 'Pro',
-    description: 'For payroll teams that need full coverage and AI explanations.',
-    monthlyPrice: 99,
-    annualPrice: 79,
+    description: 'Full coverage with AI mapping and 55+ rules for payroll teams.',
+    monthlyPrice: 249,
+    annualPrice: 199,
     priceLabel: null,
-    cta: 'Start Free Trial',
+    cta: 'Start 7-Day Free Trial',
     ctaHref: '/signup',
     highlight: true,
     features: [
+      'Everything in Starter',
       'Unlimited employees',
-      'Unlimited review sessions',
-      'AI-powered explanations',
-      'Full audit trail with export',
+      '55+ advanced detection rules',
+      'Flexible CSV import (any format)',
+      'AI-powered column mapping',
       'Multi-organization support',
       'Priority support',
-      'Custom materiality rules',
-    ],
-  },
-  {
-    name: 'Enterprise',
-    description: 'For organizations with advanced compliance and integration needs.',
-    monthlyPrice: null,
-    annualPrice: null,
-    priceLabel: 'Custom',
-    cta: 'Contact Sales',
-    ctaHref: 'mailto:sales@payrollshield.cloud',
-    highlight: false,
-    features: [
-      'Everything in Pro',
-      'SSO / SAML integration',
-      'Dedicated account manager',
-      'Custom integrations & API access',
-      'SLA guarantees',
-      'On-premises deployment option',
-      'Security review & compliance docs',
     ],
   },
 ];
@@ -68,16 +52,16 @@ const faqs = [
     a: 'A review session is created each time you upload a baseline and current payroll file for comparison. Each comparison counts as one session, regardless of how many employees are in the file.',
   },
   {
+    q: 'Do both plans include a free trial?',
+    a: 'Yes. Both Starter and Pro include a 7-day free trial with full access to all features. No credit card required to start.',
+  },
+  {
     q: 'Can I switch plans later?',
     a: 'Yes. You can upgrade or downgrade at any time. When upgrading, you get immediate access to the new features. When downgrading, the change takes effect at the start of your next billing cycle.',
   },
   {
-    q: 'Is there a free trial for Pro?',
-    a: 'Yes. The Pro plan includes a 14-day free trial with full access to all features. No credit card required to start.',
-  },
-  {
-    q: 'What happens if I exceed the Starter plan limits?',
-    a: 'We will notify you when you are approaching the limit. You will not lose access to existing reviews, but new sessions will require upgrading to Pro.',
+    q: 'What is the difference between Starter and Pro?',
+    a: 'Starter supports up to 100 employees with 15 core detection rules and template CSV format. Pro adds unlimited employees, 55+ advanced rules, flexible CSV import with AI-powered column mapping, and multi-organization support.',
   },
   {
     q: 'How does annual billing work?',
@@ -96,7 +80,7 @@ export default function PricingPage() {
     <>
       <Head>
         <title>Pricing — PayrollShield</title>
-        <meta name="description" content="Simple, transparent pricing for PayrollShield. Free starter plan, Pro for growing teams, and Enterprise for organizations with advanced needs." />
+        <meta name="description" content="Simple, transparent pricing for PayrollShield. Starter at $49/mo and Pro at $249/mo — both with a 7-day free trial." />
       </Head>
 
       <MarketingNav />
@@ -111,7 +95,7 @@ export default function PricingPage() {
               Simple, transparent pricing
             </h1>
             <p className="text-lg text-slate-500 max-w-2xl mx-auto mb-8">
-              One avoided payroll mistake pays for years of PayrollShield. Start free, upgrade when you need to.
+              One avoided payroll mistake pays for years of PayrollShield. Try any plan free for 7 days.
             </p>
 
             {/* Toggle */}
@@ -134,10 +118,9 @@ export default function PricingPage() {
         {/* Plans */}
         <section className="pb-20 lg:pb-28">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {plans.map((plan) => {
                 const price = plan.priceLabel || (annual ? `$${plan.annualPrice}` : `$${plan.monthlyPrice}`);
-                const isMailto = plan.ctaHref.startsWith('mailto:');
                 return (
                   <div
                     key={plan.name}
@@ -177,29 +160,16 @@ export default function PricingPage() {
                       ))}
                     </ul>
 
-                    {isMailto ? (
-                      <a
-                        href={plan.ctaHref}
-                        className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors ${
-                          plan.highlight
-                            ? 'bg-white text-brand-blue hover:bg-blue-50'
-                            : 'bg-slate-900 text-white hover:bg-slate-800'
-                        }`}
-                      >
-                        {plan.cta}
-                      </a>
-                    ) : (
-                      <Link
-                        href={plan.ctaHref}
-                        className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors ${
-                          plan.highlight
-                            ? 'bg-white text-brand-blue hover:bg-blue-50'
-                            : 'bg-slate-900 text-white hover:bg-slate-800'
-                        }`}
-                      >
-                        {plan.cta}
-                      </Link>
-                    )}
+                    <Link
+                      href={plan.ctaHref}
+                      className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors ${
+                        plan.highlight
+                          ? 'bg-white text-brand-blue hover:bg-blue-50'
+                          : 'bg-slate-900 text-white hover:bg-slate-800'
+                      }`}
+                    >
+                      {plan.cta}
+                    </Link>
                   </div>
                 );
               })}

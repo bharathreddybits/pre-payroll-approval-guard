@@ -60,7 +60,7 @@ ALTER TABLE payroll_delta ADD CONSTRAINT payroll_delta_metric_check
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS column_mapping (
-  mapping_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  mapping_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   review_session_id UUID NOT NULL REFERENCES review_session(review_session_id) ON DELETE CASCADE,
   dataset_type TEXT CHECK (dataset_type IN ('baseline', 'current')) NOT NULL,
   uploaded_column TEXT NOT NULL,

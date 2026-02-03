@@ -14,7 +14,7 @@ export const fundamentalPayRules: RuleDefinition[] = [
     explanation: 'Negative gross pay.',
     userAction: 'Correct earnings sum.',
     columnsUsed: ['GrossPay'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'NET_PAY_NEGATIVE',
@@ -29,7 +29,7 @@ export const fundamentalPayRules: RuleDefinition[] = [
     explanation: 'Net pay cannot be negative',
     userAction: 'Fix taxes/deductions',
     columnsUsed: ['NetPay'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'NET_PAY_UNUSUALLY_LOW',
@@ -61,7 +61,7 @@ export const fundamentalPayRules: RuleDefinition[] = [
     explanation: 'GrossPay < NetPay',
     userAction: 'Fix calculation error.',
     columnsUsed: ['GrossPay', 'NetPay'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'NET_PAY_SPIKE_50PCT',
@@ -76,7 +76,7 @@ export const fundamentalPayRules: RuleDefinition[] = [
     explanation: 'Net ↑ >50%.',
     userAction: 'Check underwithholding.',
     columnsUsed: ['NetPay'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'NET_PAY_DROP_20PCT',
@@ -91,7 +91,7 @@ export const fundamentalPayRules: RuleDefinition[] = [
     explanation: 'Net pay ↓ ≥20%.',
     userAction: 'Verify tax/deduction changes.',
     columnsUsed: ['NetPay'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'GROSS_NOT_EQUAL_EARNINGS_SUM',
@@ -129,7 +129,7 @@ export const fundamentalPayRules: RuleDefinition[] = [
     explanation: 'Gross pay spike detected',
     userAction: 'Review earnings',
     columnsUsed: ['GrossPay'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'GROSS_PAY_DROP_30PCT',
@@ -144,6 +144,6 @@ export const fundamentalPayRules: RuleDefinition[] = [
     explanation: 'Gross pay dropped significantly',
     userAction: 'Confirm changes',
     columnsUsed: ['GrossPay'],
-    minTier: 'free',
+    minTier: 'starter',
   },
 ];

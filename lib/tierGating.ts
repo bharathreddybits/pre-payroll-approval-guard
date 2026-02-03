@@ -1,6 +1,6 @@
 import { getServiceSupabase } from './supabase';
 
-export type Tier = 'free' | 'pro' | 'enterprise';
+export type Tier = 'starter' | 'pro';
 
 export type Feature =
   | 'flexible_import'
@@ -8,14 +8,14 @@ export type Feature =
   | 'full_rules';
 
 const FEATURE_TIERS: Record<Feature, Tier[]> = {
-  flexible_import: ['pro', 'enterprise'],
-  ai_mapping: ['pro', 'enterprise'],
-  full_rules: ['pro', 'enterprise'],
+  flexible_import: ['pro'],
+  ai_mapping: ['pro'],
+  full_rules: ['pro'],
 };
 
 /**
  * Look up the subscription tier for an organization.
- * Defaults to 'free' if no tier record exists.
+ * Defaults to 'starter' if no tier record exists.
  */
 export async function getOrganizationTier(organizationId: string): Promise<Tier> {
   const supabase = getServiceSupabase();
@@ -25,7 +25,9 @@ export async function getOrganizationTier(organizationId: string): Promise<Tier>
     .eq('organization_id', organizationId)
     .single();
 
-  return (data?.tier as Tier) || 'free';
+  const tier = data?.tier;
+  if (tier === 'pro') return 'pro';
+  return 'starter';
 }
 
 /**

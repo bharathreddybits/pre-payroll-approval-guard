@@ -104,7 +104,7 @@ export const earningsComponentsRules: RuleDefinition[] = [
     explanation: 'Negative earnings invalid',
     userAction: 'Correct values',
     columnsUsed: ['Base_Earnings', 'OvertimePay', 'Bonus_Earnings', 'Other_Earnings'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'EARNINGS_WITHOUT_EMPLOYEE',

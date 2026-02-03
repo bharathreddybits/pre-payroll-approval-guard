@@ -60,7 +60,7 @@ export function LandingHero() {
           <p
             className={`text-sm text-slate-400 mb-16 lg:mb-20 scroll-fade-in scroll-delay-3 ${isVisible ? 'is-visible' : ''}`}
           >
-            No credit card required &middot; 14-day free trial &middot; Cancel
+            No credit card required &middot; 7-day free trial &middot; Cancel
             anytime
           </p>
         </div>

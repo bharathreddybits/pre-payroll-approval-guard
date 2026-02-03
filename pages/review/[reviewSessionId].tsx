@@ -29,13 +29,31 @@ interface ReviewData {
     approval_status: string;
   };
   blockers: any[];
-  material_changes: {
-    net_pay?: any[];
-    gross_pay?: any[];
-    total_deductions?: any[];
-    component?: any[];
-  };
+  material_changes: Record<string, any[]>;
   non_material_changes: any[];
+}
+
+function formatMetricLabel(metric: string): string {
+  const labels: Record<string, string> = {
+    net_pay: 'Net Pay',
+    gross_pay: 'Gross Pay',
+    total_deductions: 'Deductions',
+    component: 'Component',
+    regular_hours: 'Regular Hours',
+    overtime_hours: 'Overtime Hours',
+    other_paid_hours: 'Other Paid Hours',
+    total_hours_worked: 'Total Hours',
+    base_earnings: 'Base Earnings',
+    overtime_pay: 'Overtime Pay',
+    bonus_earnings: 'Bonus Earnings',
+    other_earnings: 'Other Earnings',
+    federal_income_tax: 'Federal Tax',
+    social_security_tax: 'Social Security',
+    medicare_tax: 'Medicare',
+    state_income_tax: 'State Tax',
+    local_tax: 'Local Tax',
+  };
+  return labels[metric] || metric.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 export default function ReviewPage() {
@@ -245,58 +263,20 @@ export default function ReviewPage() {
                 </span>
               </div>
 
-              {/* Group by change type */}
-              {material_changes.net_pay && material_changes.net_pay.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Net Pay Changes ({material_changes.net_pay.length})
-                  </h3>
-                  <div className="space-y-3">
-                    {material_changes.net_pay.map((change, index) => (
-                      <MaterialChangeCard key={index} change={change} />
-                    ))}
+              {Object.entries(material_changes)
+                .filter(([, changes]) => changes && changes.length > 0)
+                .map(([metric, changes]) => (
+                  <div key={metric} className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      {formatMetricLabel(metric)} Changes ({changes.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {changes.map((change: any, index: number) => (
+                        <MaterialChangeCard key={index} change={change} />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {material_changes.gross_pay && material_changes.gross_pay.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Gross Pay Changes ({material_changes.gross_pay.length})
-                  </h3>
-                  <div className="space-y-3">
-                    {material_changes.gross_pay.map((change, index) => (
-                      <MaterialChangeCard key={index} change={change} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {material_changes.total_deductions && material_changes.total_deductions.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Deduction Changes ({material_changes.total_deductions.length})
-                  </h3>
-                  <div className="space-y-3">
-                    {material_changes.total_deductions.map((change, index) => (
-                      <MaterialChangeCard key={index} change={change} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {material_changes.component && material_changes.component.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Component Changes ({material_changes.component.length})
-                  </h3>
-                  <div className="space-y-3">
-                    {material_changes.component.map((change, index) => (
-                      <MaterialChangeCard key={index} change={change} />
-                    ))}
-                  </div>
-                </div>
-              )}
+                ))}
             </section>
           )}
 

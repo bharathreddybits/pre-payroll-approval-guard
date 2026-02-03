@@ -25,22 +25,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const {
       reviewSessionId,
-      baselineHeaders,
-      baselineSample,
-      currentHeaders,
-      currentSample,
+      extractFromSession,
     } = req.body;
+
+    let { baselineHeaders, baselineSample, currentHeaders, currentSample } = req.body;
 
     if (!reviewSessionId) {
       return res.status(400).json({ error: 'reviewSessionId is required' });
     }
-    if (!baselineHeaders?.length || !currentHeaders?.length) {
-      return res.status(400).json({ error: 'Headers are required for both datasets' });
-    }
 
     const supabase = getServiceSupabase();
 
-    // Verify the review session exists and is in pending_mapping status
+    // Verify the review session exists
     const { data: session, error: sessionError } = await supabase
       .from('review_session')
       .select('review_session_id, status')
@@ -49,6 +45,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (sessionError || !session) {
       return res.status(404).json({ error: 'Review session not found' });
+    }
+
+    // If headers not provided, extract from stored raw_row metadata in employee records
+    if (extractFromSession || !baselineHeaders?.length || !currentHeaders?.length) {
+      const { data: datasets } = await supabase
+        .from('payroll_dataset')
+        .select('dataset_id, dataset_type')
+        .eq('review_session_id', reviewSessionId);
+
+      if (!datasets || datasets.length === 0) {
+        return res.status(400).json({ error: 'No datasets found for this session' });
+      }
+
+      const baselineDs = datasets.find(d => d.dataset_type === 'baseline');
+      const currentDs = datasets.find(d => d.dataset_type === 'current');
+
+      const extractHeaders = async (datasetId: string) => {
+        const { data: records } = await supabase
+          .from('employee_pay_record')
+          .select('metadata')
+          .eq('dataset_id', datasetId)
+          .limit(10);
+
+        if (!records?.length) return { headers: [] as string[], sample: [] as Record<string, string>[] };
+
+        const rawRows = records
+          .map(r => r.metadata?.raw_row)
+          .filter(Boolean) as Record<string, string>[];
+
+        const headers = rawRows.length > 0 ? Object.keys(rawRows[0]) : [];
+        return { headers, sample: rawRows.slice(0, 5) };
+      };
+
+      if (baselineDs && (!baselineHeaders?.length)) {
+        const extracted = await extractHeaders(baselineDs.dataset_id);
+        baselineHeaders = extracted.headers;
+        baselineSample = extracted.sample;
+      }
+      if (currentDs && (!currentHeaders?.length)) {
+        const extracted = await extractHeaders(currentDs.dataset_id);
+        currentHeaders = extracted.headers;
+        currentSample = extracted.sample;
+      }
+    }
+
+    if (!baselineHeaders?.length || !currentHeaders?.length) {
+      return res.status(400).json({ error: 'Could not determine column headers from stored data' });
     }
 
     // Map both datasets

@@ -26,9 +26,8 @@ export const ALL_RULES: RuleDefinition[] = [
 // ---------------------------------------------------------------------------
 
 const TIER_RANK: Record<string, number> = {
-  free: 0,
+  starter: 0,
   pro: 1,
-  enterprise: 2,
 };
 
 function isRuleAvailable(rule: RuleDefinition, orgTier: string): boolean {
@@ -46,10 +45,10 @@ function isRuleAvailable(rule: RuleDefinition, orgTier: string): boolean {
  * Returns ALL matching judgements (not first-match-wins).
  *
  * @param ctx - The rule context containing current/baseline employee data, metric info, etc.
- * @param orgTier - Organization tier ('free', 'pro', 'enterprise')
+ * @param orgTier - Organization tier ('starter', 'pro')
  * @returns Array of Judgement objects for every rule that fired
  */
-export function applyRules(ctx: RuleContext, orgTier: string = 'free'): Judgement[] {
+export function applyRules(ctx: RuleContext, orgTier: string = 'starter'): Judgement[] {
   const judgements: Judgement[] = [];
 
   for (const rule of ALL_RULES) {
@@ -91,7 +90,7 @@ export function applyDeltaRules(
   baselineValue: number | null,
   allCurrentEmployees?: Record<string, any>[],
   allBaselineEmployees?: Record<string, any>[],
-  orgTier: string = 'free',
+  orgTier: string = 'starter',
 ): Judgement[] {
   const deltaAbsolute = baselineValue != null ? currentValue - baselineValue : null;
   const deltaPercentage = baselineValue != null && baselineValue !== 0
@@ -123,7 +122,7 @@ export function applyEmployeeRules(
   baseline: Record<string, any> | null,
   allCurrentEmployees?: Record<string, any>[],
   allBaselineEmployees?: Record<string, any>[],
-  orgTier: string = 'free',
+  orgTier: string = 'starter',
 ): Judgement[] {
   const ctx: RuleContext = {
     current,

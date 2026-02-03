@@ -82,21 +82,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .in('review_session_id', sessionIds);
 
       if (!deltasError && deltas) {
-        // Aggregate counts by session
+        // Aggregate counts by session — check ALL judgements per delta
         deltas.forEach(delta => {
           if (!deltaCounts[delta.review_session_id]) {
             deltaCounts[delta.review_session_id] = { total: 0, material: 0, blockers: 0 };
           }
           deltaCounts[delta.review_session_id].total++;
 
-          const judgement = Array.isArray(delta.material_judgement)
-            ? delta.material_judgement[0]
-            : delta.material_judgement;
+          const judgements = Array.isArray(delta.material_judgement)
+            ? delta.material_judgement
+            : delta.material_judgement ? [delta.material_judgement] : [];
 
-          if (judgement?.is_material) {
+          const hasMaterial = judgements.some((j: any) => j.is_material);
+          const hasBlocker = judgements.some((j: any) => j.is_blocker);
+
+          if (hasMaterial) {
             deltaCounts[delta.review_session_id].material++;
           }
-          if (judgement?.is_blocker) {
+          if (hasBlocker) {
             deltaCounts[delta.review_session_id].blockers++;
           }
         });

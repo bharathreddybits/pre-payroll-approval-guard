@@ -1,14 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { getServiceSupabase } from './supabase';
 import { CANONICAL_NUMERIC_FIELDS } from './canonicalSchema';
 import { applyDeltaRules, applyEmployeeRules } from './rules';
 import { getOrganizationTier } from './tierGating';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { autoRefreshToken: false, persistSession: false }
-});
 
 interface Delta {
   review_session_id: string;
@@ -40,6 +33,8 @@ const DELTA_METRICS = CANONICAL_NUMERIC_FIELDS.map(f => f.dbColumn!);
 
 export async function processReview(reviewSessionId: string) {
   console.log(`[ProcessReview] Starting processing for session: ${reviewSessionId}`);
+
+  const supabase = getServiceSupabase();
 
   try {
     // ── Step 1: Get datasets ──────────────────────────────────────────────

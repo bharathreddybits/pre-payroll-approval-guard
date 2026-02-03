@@ -15,7 +15,7 @@ export const deductionsComponentsRules: RuleDefinition[] = [
     explanation: 'Total deductions exceed gross pay',
     userAction: 'Review deduction setup immediately.',
     columnsUsed: ['TotalDeductions', 'GrossPay'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'NEW_DEDUCTION_INTRODUCED',
@@ -81,7 +81,7 @@ export const deductionsComponentsRules: RuleDefinition[] = [
     explanation: 'Deduction amount is negative',
     userAction: 'Correct deduction configuration.',
     columnsUsed: ['TotalDeductions'],
-    minTier: 'free',
+    minTier: 'starter',
   },
   {
     id: 'TOTAL_DEDUCTIONS_SUM_MISMATCH',

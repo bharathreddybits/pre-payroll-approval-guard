@@ -127,27 +127,20 @@ export default function MappingPage() {
   useEffect(() => {
     if (!reviewSessionId) return;
 
-    // Fetch mapping suggestions
     const fetchMappings = async () => {
       try {
-        // First check if mappings already exist in the DB
-        const res = await fetch(`/api/map-columns`, {
+        const res = await fetch('/api/map-columns', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             reviewSessionId,
-            // Headers and sample will be fetched from the stored data
-            // The upload API already stored the raw rows — we need to get headers from there
-            baselineHeaders: [],
-            baselineSample: [],
-            currentHeaders: [],
-            currentSample: [],
+            extractFromSession: true,
           }),
         });
 
         if (!res.ok) {
-          // If map-columns fails (e.g., headers empty), try getting from upload response stored in session
-          throw new Error('Failed to fetch mapping suggestions');
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to fetch mapping suggestions');
         }
 
         const data = await res.json();
