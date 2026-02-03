@@ -32,7 +32,8 @@ export function Footer() {
             <img
               src="/logo.png"
               alt="PayrollShield"
-              className="h-9 w-auto mb-5 brightness-0 invert"
+              className="mb-5 brightness-0 invert"
+              style={{ height: '100px', width: 'auto' }}
             />
             <p className="text-sm leading-relaxed max-w-sm">
               Pre-payroll approval guard for teams who need to catch every

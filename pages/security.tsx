@@ -48,7 +48,7 @@ export default function SecurityPage() {
 
       <main>
         {/* Hero */}
-        <section className="relative pt-32 pb-16 lg:pt-44 lg:pb-24 overflow-hidden">
+        <section className="relative pt-48 pb-16 lg:pt-56 lg:pb-24 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pointer-events-none" />
           <div className="absolute top-1/3 left-1/3 w-[500px] h-[400px] bg-brand-blue/[0.08] rounded-full blur-3xl pointer-events-none" />
           <div className="relative max-w-7xl mx-auto px-6 lg:px-8">

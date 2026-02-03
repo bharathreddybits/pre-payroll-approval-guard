@@ -30,14 +30,14 @@ export function MarketingNav() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-between h-[72px]">
+        <div className="flex items-center justify-between h-[160px]">
           {/* Logo */}
           <Link href="/" className="flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
               alt="PayrollShield"
-              className="h-10 w-auto"
+              style={{ height: '120px', width: 'auto' }}
             />
           </Link>
 

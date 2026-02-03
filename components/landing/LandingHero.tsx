@@ -1,13 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { useInView } from '../../hooks/useInView';
 
 export function LandingHero() {
   const { ref, isVisible } = useInView({ threshold: 0.1 });
 
   return (
-    <section ref={ref} className="relative pt-32 pb-20 lg:pt-44 lg:pb-28 overflow-hidden">
+    <section ref={ref} className="relative pt-48 pb-20 lg:pt-56 lg:pb-28 overflow-hidden">
       {/* Animated gradient mesh background */}
       <div className="absolute inset-0 hero-gradient-mesh pointer-events-none" />
 
@@ -17,57 +17,62 @@ export function LandingHero() {
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Headline with staggered reveal */}
+          {/* Headline */}
           <h1
             className={`text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-900 text-balance mb-6 scroll-fade-in ${isVisible ? 'is-visible' : ''}`}
           >
-            Never approve a payroll{' '}
+            Payroll errors don&apos;t start as{' '}
             <span className="bg-gradient-to-r from-brand-red to-brand-red-light bg-clip-text text-transparent">
-              run blind
-            </span>{' '}
-            again
+              errors
+            </span>
           </h1>
 
-          {/* Subtext */}
+          {/* Sub-headline */}
           <p
-            className={`text-lg lg:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed scroll-fade-in scroll-delay-1 ${isVisible ? 'is-visible' : ''}`}
+            className={`text-xl lg:text-2xl text-slate-600 font-medium max-w-3xl mx-auto mb-4 leading-relaxed scroll-fade-in scroll-delay-1 ${isVisible ? 'is-visible' : ''}`}
           >
-            PayrollShield compares every payroll cycle, surfaces material
-            changes and blockers automatically, and creates a complete audit
-            trail. Review in minutes, not hours.
+            They start as small changes no one questioned.
           </p>
 
-          {/* CTAs */}
+          {/* Description */}
+          <p
+            className={`text-lg text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed scroll-fade-in scroll-delay-2 ${isVisible ? 'is-visible' : ''}`}
+          >
+            PayrollShield runs deterministic, pre-payroll judgments that catch the
+            exact conditions that cause payroll reruns, compliance incidents, and
+            executive escalations.
+          </p>
+
+          {/* CTA */}
           <div
-            className={`flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 scroll-fade-in scroll-delay-2 ${isVisible ? 'is-visible' : ''}`}
+            className={`flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 scroll-fade-in scroll-delay-3 ${isVisible ? 'is-visible' : ''}`}
           >
             <Link
               href="/signup"
-              className="group inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-blue-dark rounded-lg shadow-md hover:shadow-xl hover:shadow-brand-blue/25 hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-blue-dark rounded-lg shadow-md hover:shadow-xl hover:shadow-brand-blue/25 hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto"
             >
-              Start Free Trial
+              <Upload className="h-5 w-5" />
+              Upload Last Payroll + Current Payroll
             </Link>
-            <a
-              href="#how-it-works"
-              className="group inline-flex items-center gap-2 px-4 py-3.5 text-base font-medium text-slate-600 hover:text-brand-red transition-colors"
-            >
-              See how it works
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </a>
           </div>
+
+          <p
+            className={`text-sm font-medium text-slate-500 mb-3 scroll-fade-in scroll-delay-3 ${isVisible ? 'is-visible' : ''}`}
+          >
+            See what changed instantly
+          </p>
 
           {/* Trust line */}
           <p
-            className={`text-sm text-slate-400 mb-16 lg:mb-20 scroll-fade-in scroll-delay-3 ${isVisible ? 'is-visible' : ''}`}
+            className={`text-sm text-slate-400 mb-16 lg:mb-20 scroll-fade-in scroll-delay-4 ${isVisible ? 'is-visible' : ''}`}
           >
-            No credit card required &middot; 7-day free trial &middot; Cancel
-            anytime
+            No setup &middot; No system changes &middot; Read-only
           </p>
         </div>
 
         {/* Animated Product Preview */}
         <div
-          className={`relative max-w-3xl mx-auto animate-float scroll-fade-in scroll-delay-4 ${isVisible ? 'is-visible' : ''}`}
+          className={`relative max-w-3xl mx-auto animate-float scroll-fade-in scroll-delay-5 ${isVisible ? 'is-visible' : ''}`}
         >
           <div className="bg-white rounded-xl shadow-2xl border border-slate-200/60 overflow-hidden">
             {/* Browser chrome */}
@@ -84,11 +89,10 @@ export function LandingHero() {
 
             {/* Mock review interface */}
             <div className="p-5 sm:p-6">
-              {/* Header row */}
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="font-semibold text-slate-900 text-sm">
-                    Acme Corp — January 2026 Payroll
+                    Acme Corp &mdash; January 2026 Payroll
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
                     Pay date: Jan 31, 2026
@@ -100,7 +104,6 @@ export function LandingHero() {
                 </span>
               </div>
 
-              {/* Stats grid */}
               <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
                 <div className="bg-slate-50 rounded-lg p-2.5 text-center">
                   <div className="text-lg sm:text-xl font-bold text-slate-900">156</div>
@@ -120,7 +123,6 @@ export function LandingHero() {
                 </div>
               </div>
 
-              {/* Blocker alert */}
               <div className="bg-red-50 border border-red-200/60 rounded-lg p-3">
                 <div className="flex items-start gap-2">
                   <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-red/10 text-brand-red flex items-center justify-center text-xs font-bold">
@@ -131,7 +133,7 @@ export function LandingHero() {
                       Blocker: Negative Net Pay Detected
                     </div>
                     <div className="text-[11px] text-red-600 mt-0.5">
-                      Employee #1042 — Net pay is -$245.00
+                      Employee #1042 &mdash; Net pay is -$245.00
                     </div>
                   </div>
                 </div>
@@ -139,7 +141,6 @@ export function LandingHero() {
             </div>
           </div>
 
-          {/* Gradient glow behind card */}
           <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-r from-brand-blue/[0.06] to-brand-red/[0.06] rounded-full blur-3xl pointer-events-none" />
         </div>
       </div>

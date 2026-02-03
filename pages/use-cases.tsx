@@ -59,7 +59,7 @@ export default function UseCasesPage() {
 
       <main>
         {/* Hero */}
-        <section className="relative pt-32 pb-16 lg:pt-44 lg:pb-24 overflow-hidden">
+        <section className="relative pt-48 pb-16 lg:pt-56 lg:pb-24 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-red-50/20 to-white pointer-events-none" />
           <div className="absolute top-1/2 right-1/3 w-[500px] h-[400px] bg-brand-red/[0.03] rounded-full blur-3xl pointer-events-none" />
           <div className="relative max-w-7xl mx-auto px-6 lg:px-8">

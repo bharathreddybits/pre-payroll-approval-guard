@@ -8,8 +8,8 @@ const plans = [
   {
     name: 'Starter',
     description: 'Essential payroll review for growing teams.',
-    monthlyPrice: 49,
-    annualPrice: 39,
+    monthlyPrice: 249,
+    annualPrice: 199,
     priceLabel: null,
     cta: 'Start 7-Day Free Trial',
     ctaHref: '/signup',
@@ -27,9 +27,9 @@ const plans = [
   },
   {
     name: 'Pro',
-    description: 'Full coverage with AI mapping and 55+ rules for payroll teams.',
-    monthlyPrice: 249,
-    annualPrice: 199,
+    description: 'Full coverage with AI mapping and 60+ rules for payroll teams.',
+    monthlyPrice: 749,
+    annualPrice: 599,
     priceLabel: null,
     cta: 'Start 7-Day Free Trial',
     ctaHref: '/signup',
@@ -37,7 +37,7 @@ const plans = [
     features: [
       'Everything in Starter',
       'Unlimited employees',
-      '55+ advanced detection rules',
+      '60+ advanced detection rules',
       'Flexible CSV import (any format)',
       'AI-powered column mapping',
       'Multi-organization support',
@@ -61,7 +61,7 @@ const faqs = [
   },
   {
     q: 'What is the difference between Starter and Pro?',
-    a: 'Starter supports up to 100 employees with 15 core detection rules and template CSV format. Pro adds unlimited employees, 55+ advanced rules, flexible CSV import with AI-powered column mapping, and multi-organization support.',
+    a: 'Starter supports up to 100 employees with 15 core detection rules and template CSV format. Pro adds unlimited employees, 60+ advanced rules, flexible CSV import with AI-powered column mapping, and multi-organization support.',
   },
   {
     q: 'How does annual billing work?',
@@ -80,14 +80,14 @@ export default function PricingPage() {
     <>
       <Head>
         <title>Pricing — PayrollShield</title>
-        <meta name="description" content="Simple, transparent pricing for PayrollShield. Starter at $49/mo and Pro at $249/mo — both with a 7-day free trial." />
+        <meta name="description" content="Simple, transparent pricing for PayrollShield. Starter at $249/mo and Pro at $749/mo — both with a 7-day free trial." />
       </Head>
 
       <MarketingNav />
 
       <main>
         {/* Hero */}
-        <section className="relative pt-32 pb-12 lg:pt-44 lg:pb-16 overflow-hidden">
+        <section className="relative pt-48 pb-12 lg:pt-56 lg:pb-16 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50/20 pointer-events-none" />
           <div className="relative max-w-7xl mx-auto px-6 lg:px-8 text-center">
             <p className="text-sm font-semibold text-brand-blue uppercase tracking-widest mb-4">Pricing</p>

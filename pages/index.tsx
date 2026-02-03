@@ -4,9 +4,14 @@ import Link from 'next/link';
 import {
   MarketingNav,
   LandingHero,
-  TrustSignal,
-  CoreValues,
-  HowItWorks,
+  TheProblem,
+  WhySystemsMiss,
+  WhatWeDo,
+  WhatWeFlag,
+  SeveritySection,
+  ROISection,
+  TrustAndControl,
+  ObjectionPreEmption,
   Footer,
 } from '../components/landing';
 
@@ -17,7 +22,7 @@ const Home: NextPage = () => {
         <title>PayrollShield — Pre-Payroll Approval Guard</title>
         <meta
           name="description"
-          content="PayrollShield compares every payroll cycle, surfaces material changes and blockers automatically, and creates a complete audit trail. Review in minutes, not hours."
+          content="PayrollShield runs deterministic, pre-payroll judgments that catch the exact conditions that cause payroll reruns, compliance incidents, and executive escalations."
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -26,9 +31,14 @@ const Home: NextPage = () => {
 
       <main>
         <LandingHero />
-        <TrustSignal />
-        <CoreValues />
-        <HowItWorks />
+        <TheProblem />
+        <WhySystemsMiss />
+        <WhatWeDo />
+        <WhatWeFlag />
+        <SeveritySection />
+        <ROISection />
+        <TrustAndControl />
+        <ObjectionPreEmption />
 
         {/* Final CTA */}
         <section className="py-20 lg:py-24 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
@@ -39,7 +49,7 @@ const Home: NextPage = () => {
               Stop reviewing payroll in the dark
             </h2>
             <p className="text-lg text-slate-400 mb-8 max-w-xl mx-auto">
-              Start your free trial and upload your first payroll file. See every change before you approve.
+              Upload your first payroll file and see every change before you approve. No setup required.
             </p>
             <Link
               href="/signup"

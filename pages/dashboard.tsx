@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { Header } from '../components/Header';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { DashboardStats } from '../components/DashboardStats';
-import { AuditTrail } from '../components/AuditTrail';
 import { ReviewSessionsTable } from '../components/ReviewSessionsTable';
 import { Skeleton } from '../components/ui/skeleton';
 import { Button } from '../components/ui/button';
@@ -64,26 +63,12 @@ function DashboardSkeleton() {
       </div>
 
       {/* Content skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg border p-4">
-            <Skeleton className="h-6 w-32 mb-4" />
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          </div>
-        </div>
-        <div>
-          <div className="bg-white rounded-lg border p-4">
-            <Skeleton className="h-6 w-32 mb-4" />
-            <div className="space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          </div>
+      <div className="bg-white rounded-lg border p-4">
+        <Skeleton className="h-6 w-32 mb-4" />
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
         </div>
       </div>
     </div>
@@ -180,18 +165,11 @@ export default function DashboardPage() {
               {/* Stats Cards */}
               <DashboardStats stats={data.stats} />
 
-              {/* Main Content Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Sessions Table (2/3 width) */}
-                <div className="lg:col-span-2">
-                  <ReviewSessionsTable sessions={data.sessions} />
-                </div>
-
-                {/* Audit Trail (1/3 width) */}
-                <div>
-                  <AuditTrail activity={data.recent_activity} />
-                </div>
-              </div>
+              {/* Review Sessions — full width */}
+              <ReviewSessionsTable
+                sessions={data.sessions}
+                recentActivity={data.recent_activity}
+              />
             </>
           )}
         </div>

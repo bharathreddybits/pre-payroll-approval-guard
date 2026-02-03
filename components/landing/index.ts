@@ -1,5 +1,13 @@
 export { MarketingNav } from './MarketingNav';
 export { LandingHero } from './LandingHero';
+export { TheProblem } from './TheProblem';
+export { WhySystemsMiss } from './WhySystemsMiss';
+export { WhatWeDo } from './WhatWeDo';
+export { WhatWeFlag } from './WhatWeFlag';
+export { SeveritySection } from './SeveritySection';
+export { ROISection } from './ROISection';
+export { TrustAndControl } from './TrustAndControl';
+export { ObjectionPreEmption } from './ObjectionPreEmption';
 export { TrustSignal } from './TrustSignal';
 export { CoreValues } from './CoreValues';
 export { HowItWorks } from './HowItWorks';

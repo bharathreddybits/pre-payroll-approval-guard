@@ -12,7 +12,7 @@ export default function TermsPage() {
 
       <MarketingNav />
 
-      <main className="pt-32 pb-20 lg:pt-40 lg:pb-28">
+      <main className="pt-48 pb-20 lg:pt-56 lg:pb-28">
         <div className="max-w-3xl mx-auto px-6 lg:px-8">
           <p className="text-sm font-semibold text-brand-blue uppercase tracking-widest mb-4">Legal</p>
           <h1 className="text-4xl font-extrabold text-slate-900 mb-2">Terms of Service</h1>
