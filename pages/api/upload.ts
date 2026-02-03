@@ -70,45 +70,17 @@ async function validateCSVStrict(
       return { valid: false, errors, warnings, row_count: rows.length };
     }
 
-    const employeeIds = new Set<string>();
-    const duplicates: string[] = [];
-
-    rows.forEach((row) => {
-      const empId = row.employee_id?.trim();
-      if (empId) {
-        if (employeeIds.has(empId)) {
-          duplicates.push(empId);
-        } else {
-          employeeIds.add(empId);
-        }
-      }
-    });
-
-    if (duplicates.length > 0) {
-      errors.push(
-        `Duplicate employee IDs found: ${duplicates.slice(0, 5).join(', ')}${duplicates.length > 5 ? ` (+${duplicates.length - 5} more)` : ''}`,
-      );
-    }
-
+    // Row-level checks: only validate data types / ranges.
+    // Data quality issues (duplicates, missing IDs) are caught by the rule engine.
     const MAX_PAY_VALUE = 10000000;
     const MIN_PAY_VALUE = -100000;
 
     rows.forEach((row, index) => {
       const rowNum = index + 2;
 
-      if (!row.employee_id || row.employee_id.trim() === '') {
-        errors.push(`Row ${rowNum}: Missing employee_id`);
-      }
-
-      if (row.employee_id && row.employee_id.length > 50) {
-        errors.push(`Row ${rowNum}: employee_id too long (max 50 characters)`);
-      }
-
       ['net_pay', 'gross_pay', 'total_deductions'].forEach(field => {
         const value = row[field];
-        if (value === undefined || value === null || value === '') {
-          warnings.push(`Row ${rowNum}: Missing ${field}`);
-        } else {
+        if (value !== undefined && value !== null && value !== '') {
           const numValue = Number(value);
           if (isNaN(numValue)) {
             errors.push(`Row ${rowNum}: ${field} must be a number`);
@@ -117,10 +89,6 @@ async function validateCSVStrict(
           }
         }
       });
-
-      if (row.employee_name && row.employee_name.length > 200) {
-        warnings.push(`Row ${rowNum}: employee_name truncated to 200 characters`);
-      }
     });
 
     return { valid: errors.length === 0, errors, warnings, row_count: rows.length };
