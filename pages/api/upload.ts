@@ -338,14 +338,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await insertFlexible(baselineRows, baselineDs.dataset_id, empIdColBaseline);
         await insertFlexible(currentRows, currentDs.dataset_id, empIdColCurrent);
       } else {
-        // Starter tier: insert with known column structure
+        // Starter tier: insert with known column structure (all canonical fields)
         const insertStrict = async (rows: Record<string, string>[], datasetId: string) => {
+          const parseNum = (val: string | undefined | null): number | null => {
+            if (val === undefined || val === null || val === '') return null;
+            const n = parseFloat(val);
+            return isNaN(n) ? null : n;
+          };
+
           const records = rows.map((row) => ({
             dataset_id: datasetId,
             employee_id: row.employee_id,
             employee_name: row.employee_name || null,
             department: row.department || null,
             employment_status: row.employment_status || null,
+            // Identity
+            pay_group: row.pay_group || null,
+            pay_frequency: row.pay_frequency || null,
+            // Hours
+            regular_hours: parseNum(row.regular_hours),
+            overtime_hours: parseNum(row.overtime_hours),
+            other_paid_hours: parseNum(row.other_paid_hours),
+            total_hours_worked: parseNum(row.total_hours_worked),
+            // Earnings
+            base_earnings: parseNum(row.base_earnings),
+            overtime_pay: parseNum(row.overtime_pay),
+            bonus_earnings: parseNum(row.bonus_earnings),
+            other_earnings: parseNum(row.other_earnings),
+            // Taxes
+            federal_income_tax: parseNum(row.federal_income_tax),
+            social_security_tax: parseNum(row.social_security_tax),
+            medicare_tax: parseNum(row.medicare_tax),
+            state_income_tax: parseNum(row.state_income_tax),
+            local_tax: parseNum(row.local_tax),
+            // Fundamental
             gross_pay: parseFloat(row.gross_pay) || 0,
             net_pay: parseFloat(row.net_pay) || 0,
             total_deductions: parseFloat(row.total_deductions || row.deductions) || 0,

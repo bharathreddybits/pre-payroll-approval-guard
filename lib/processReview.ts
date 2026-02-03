@@ -64,16 +64,26 @@ export async function processReview(reviewSessionId: string) {
     const orgTier = await getOrganizationTier(orgId);
     console.log(`[ProcessReview] Organization tier: ${orgTier}`);
 
-    // ── Step 3: Get employee records (with pay components) ────────────────
-    const { data: baselineEmployees } = await supabase
+    // ── Step 3: Get employee records ────────────────────────────────────────
+    const { data: baselineEmployees, error: blEmpErr } = await supabase
       .from('employee_pay_record')
-      .select('*, pay_component(*)')
+      .select('*')
       .eq('dataset_id', baseline.dataset_id);
 
-    const { data: currentEmployees } = await supabase
+    if (blEmpErr) {
+      console.error('[ProcessReview] Baseline employee query error:', blEmpErr.message);
+      throw new Error(`Failed to fetch baseline employees: ${blEmpErr.message}`);
+    }
+
+    const { data: currentEmployees, error: curEmpErr } = await supabase
       .from('employee_pay_record')
-      .select('*, pay_component(*)')
+      .select('*')
       .eq('dataset_id', current.dataset_id);
+
+    if (curEmpErr) {
+      console.error('[ProcessReview] Current employee query error:', curEmpErr.message);
+      throw new Error(`Failed to fetch current employees: ${curEmpErr.message}`);
+    }
 
     if (!baselineEmployees || baselineEmployees.length === 0) {
       throw new Error('Baseline dataset has no employee records');
@@ -86,9 +96,9 @@ export async function processReview(reviewSessionId: string) {
     const baselineMap = new Map(baselineEmployees.map(e => [e.employee_id, e]));
     const currentMap = new Map(currentEmployees.map(e => [e.employee_id, e]));
 
-    // Attach pay_components as a convenience field for rule evaluation
+    // Attach empty pay_components array for rule evaluation compatibility
     for (const emp of [...baselineEmployees, ...currentEmployees]) {
-      emp.pay_components = emp.pay_component || [];
+      emp.pay_components = [];
     }
 
     // ── Step 4: Calculate deltas for ALL numeric fields ───────────────────
