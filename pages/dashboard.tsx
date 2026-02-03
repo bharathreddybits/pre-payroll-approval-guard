@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { Upload } from 'lucide-react';
 import { Header } from '../components/Header';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { DashboardStats } from '../components/DashboardStats';
@@ -115,20 +116,28 @@ export default function DashboardPage() {
 
       <Header />
 
-      <main className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Page Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600 mt-1">
-                Review history and audit trail
-              </p>
+      <main className="min-h-screen bg-slate-50">
+        {/* Page Header */}
+        <div className="border-b border-slate-200 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  Review history and audit trail
+                </p>
+              </div>
+              <Link href="/upload">
+                <Button className="bg-brand-blue hover:bg-brand-blue-dark text-white shadow-sm">
+                  <Upload className="h-4 w-4 mr-1.5" />
+                  Upload Payroll
+                </Button>
+              </Link>
             </div>
-            <Link href="/upload">
-              <Button>Upload Payroll</Button>
-            </Link>
           </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
           {/* Error State */}
           {error && (
