@@ -178,7 +178,11 @@ export async function processReview(reviewSessionId: string) {
 
           if (bNum !== cNum) {
             const deltaAbs = cNum - bNum;
-            const deltaPct = bNum !== 0 ? (deltaAbs / Math.abs(bNum)) * 100 : null;
+            let deltaPct = bNum !== 0 ? (deltaAbs / Math.abs(bNum)) * 100 : null;
+            // Cap to NUMERIC(5,2) range to avoid DB overflow
+            if (deltaPct !== null) {
+              deltaPct = Math.max(-999.99, Math.min(999.99, Math.round(deltaPct * 100) / 100));
+            }
 
             deltas.push({
               review_session_id: reviewSessionId,
