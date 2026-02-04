@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Sparkles, ShieldX, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ShieldX, AlertTriangle, Info, StickyNote } from 'lucide-react';
 import type { EnrichedJudgement } from '../../lib/types/review';
 
 interface JudgementCardProps {
@@ -101,6 +101,8 @@ function getConfidenceBadge(level: string): { className: string; label: string }
 export function JudgementCard({ item }: JudgementCardProps) {
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [showNotes, setShowNotes] = useState(false);
 
   const severity = getSeverityConfig(item.rule_severity);
   const confidence = getConfidenceBadge(item.confidence_level);
@@ -233,9 +235,55 @@ export function JudgementCard({ item }: JudgementCardProps) {
           </div>
         )}
 
-        {/* AI Explanation */}
-        <div className="pt-2 border-t border-gray-100">
-          {aiExplanation ? (
+        {/* Notes & AI row */}
+        <div className="pt-2 border-t border-gray-100 space-y-3">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowNotes(!showNotes)}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <StickyNote className="h-3.5 w-3.5" />
+              {notes ? 'Edit notes' : 'Add notes'}
+              {notes && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+            </button>
+
+            {aiExplanation ? (
+              <button
+                onClick={() => setAiExplanation(null)}
+                className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Hide AI explanation
+              </button>
+            ) : (
+              <button
+                onClick={fetchAiExplanation}
+                disabled={aiLoading}
+                className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {aiLoading ? 'Generating...' : 'Explain with AI'}
+              </button>
+            )}
+          </div>
+
+          {/* Notes textarea */}
+          {showNotes && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">
+                Reviewer Notes
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Document actions taken, findings, or follow-up items..."
+                className="w-full text-sm text-gray-800 bg-white border border-gray-200 rounded-md px-3 py-2 min-h-[72px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+              />
+            </div>
+          )}
+
+          {/* AI Explanation */}
+          {aiExplanation && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <Sparkles className="h-3.5 w-3.5 text-blue-600" />
@@ -243,15 +291,6 @@ export function JudgementCard({ item }: JudgementCardProps) {
               </div>
               <p className="text-sm text-blue-900 leading-relaxed">{aiExplanation}</p>
             </div>
-          ) : (
-            <button
-              onClick={fetchAiExplanation}
-              disabled={aiLoading}
-              className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {aiLoading ? 'Generating explanation...' : 'Explain with AI'}
-            </button>
           )}
         </div>
 
