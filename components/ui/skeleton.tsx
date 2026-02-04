@@ -60,13 +60,13 @@ export function SkeletonChangeCard() {
 
 export function SkeletonReviewPage() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-12">
       {/* Header Skeleton */}
       <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-5xl mx-auto px-4 py-6">
           <div className="flex justify-between items-start">
             <div className="space-y-2">
-              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-7 w-64" />
               <Skeleton className="h-4 w-48" />
               <Skeleton className="h-3 w-56" />
             </div>
@@ -79,20 +79,41 @@ export function SkeletonReviewPage() {
       </div>
 
       {/* Content Skeleton */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <SkeletonSummaryCards />
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+        {/* Verdict Banner Skeleton */}
+        <Skeleton className="h-20 w-full rounded-lg" />
 
-        {/* Section Title */}
-        <div className="flex items-center gap-3 mb-4">
-          <Skeleton className="h-7 w-40" />
-          <Skeleton className="h-4 w-32" />
-        </div>
+        {/* Section Skeletons */}
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="bg-white rounded-lg border p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-5 w-5 rounded" />
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-5 w-8 rounded-full" />
+            </div>
+            <div className="space-y-3">
+              <SkeletonChangeCard />
+              <SkeletonChangeCard />
+            </div>
+          </div>
+        ))}
 
-        {/* Change Cards */}
-        <div className="space-y-3">
-          <SkeletonChangeCard />
-          <SkeletonChangeCard />
-          <SkeletonChangeCard />
+        {/* Finalize Checklist Skeleton */}
+        <div className="bg-white rounded-lg border-2 border-gray-200 p-6 space-y-4">
+          <Skeleton className="h-6 w-48" />
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex items-start gap-3 p-3 rounded-lg border">
+              <Skeleton className="h-5 w-5 mt-0.5 rounded" />
+              <div className="space-y-1 flex-1">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-64" />
+              </div>
+            </div>
+          ))}
+          <div className="flex justify-between pt-4 border-t">
+            <Skeleton className="h-10 w-32 rounded-md" />
+            <Skeleton className="h-10 w-48 rounded-md" />
+          </div>
         </div>
       </div>
     </div>

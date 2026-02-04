@@ -7,6 +7,7 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'blocker',
     confidence: 1.0,
+    confidenceLevel: 'VERY_HIGH',
     condition: (ctx) => {
       const hours = ctx.current.total_hours_worked;
       const gross = ctx.current.gross_pay;
@@ -16,6 +17,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
     userAction: 'Add hours or confirm salaried',
     columnsUsed: ['TotalHoursWorked', 'GrossPay'],
     minTier: 'pro',
+    flagReason: 'Employee has zero hours reported but is receiving pay.',
+    riskStatement: 'Zero hours with pay may indicate missing timekeeping data or incorrect salaried classification.',
+    commonCauses: [
+      'Timesheet not submitted before payroll cutoff',
+      'Salaried employee incorrectly classified as hourly',
+      'Hours field not mapped from source system',
+      'Leave taken but hours not recorded',
+    ],
+    reviewSteps: [
+      'Determine if the employee is salaried or hourly',
+      'If hourly, obtain and enter the correct hours',
+      'If salaried, confirm hours are not required',
+      'Verify timesheet submission status',
+    ],
   },
   {
     id: 'TOTAL_HOURS_ZERO_ACTIVE',
@@ -23,6 +38,7 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'info',
     confidence: 0.8,
+    confidenceLevel: 'MODERATE',
     condition: (ctx) => {
       const hours = ctx.current.total_hours_worked;
       const status = ctx.current.employment_status;
@@ -32,6 +48,18 @@ export const hoursComponentsRules: RuleDefinition[] = [
     userAction: 'No action if on unpaid leave.',
     columnsUsed: ['TotalHoursWorked', 'Employment_Status'],
     minTier: 'pro',
+    flagReason: 'An active employee has zero total hours in the current period.',
+    riskStatement: 'May indicate missed timekeeping or unpaid leave not properly flagged.',
+    commonCauses: [
+      'Employee on unpaid leave',
+      'Timesheet not yet submitted',
+      'Salaried employee with no hours tracking',
+    ],
+    reviewSteps: [
+      'Check if the employee is on leave',
+      'Verify timesheet submission status',
+      'No action needed if this is expected',
+    ],
   },
   {
     id: 'NEGATIVE_HOURS',
@@ -39,6 +67,7 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'blocker',
     confidence: 0.99,
+    confidenceLevel: 'VERY_HIGH',
     condition: (ctx) => {
       const reg = ctx.current.regular_hours;
       const ot = ctx.current.overtime_hours;
@@ -49,6 +78,19 @@ export const hoursComponentsRules: RuleDefinition[] = [
     userAction: 'Correct time data',
     columnsUsed: ['RegularHours', 'OvertimeHours', 'OtherPaidHours'],
     minTier: 'pro',
+    flagReason: 'One or more hours fields contain negative values.',
+    riskStatement: 'Negative hours are not valid in payroll and indicate data entry or system errors.',
+    commonCauses: [
+      'Retroactive time adjustment entered incorrectly',
+      'System error during time import',
+      'Manual correction with wrong sign',
+    ],
+    reviewSteps: [
+      'Identify which hours field is negative',
+      'Determine the intended adjustment',
+      'Correct the value to a non-negative number',
+      'Re-upload the corrected file',
+    ],
   },
   {
     id: 'HOURS_EXCEED_MAX',
@@ -56,14 +98,29 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'blocker',
     confidence: 0.96,
+    confidenceLevel: 'VERY_HIGH',
     condition: (ctx) => {
       const hours = ctx.current.total_hours_worked;
-      return hours != null && hours > 168; // 24 * 7 = 168 hours in a week
+      return hours != null && hours > 168;
     },
     explanation: 'Hours exceed weekly maximum',
     userAction: 'Correct time entry',
     columnsUsed: ['TotalHoursWorked'],
     minTier: 'pro',
+    flagReason: 'Total hours exceed 168 (the maximum possible hours in a 7-day week).',
+    riskStatement: 'Hours above the physical weekly maximum indicate data entry errors that will cause overpayments.',
+    commonCauses: [
+      'Hours entered for wrong pay period length',
+      'Decimal point error (e.g., 800 instead of 80)',
+      'Multiple weeks of hours summed into one field',
+      'System import error',
+    ],
+    reviewSteps: [
+      'Verify the pay period length (weekly, bi-weekly, etc.)',
+      'Check for data entry or decimal errors',
+      'Correct the hours to the actual amount worked',
+      'Re-upload the corrected file',
+    ],
   },
   {
     id: 'HOURS_SUM_MISMATCH',
@@ -71,6 +128,7 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'blocker',
     confidence: 0.96,
+    confidenceLevel: 'VERY_HIGH',
     condition: (ctx) => {
       const total = ctx.current.total_hours_worked;
       const reg = ctx.current.regular_hours ?? 0;
@@ -84,6 +142,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
     userAction: 'Reconcile hour components.',
     columnsUsed: ['TotalHoursWorked', 'RegularHours', 'OvertimeHours', 'OtherPaidHours'],
     minTier: 'pro',
+    flagReason: 'Total hours do not equal the sum of regular, overtime, and other hours.',
+    riskStatement: 'Hours component mismatch causes incorrect pay calculations and audit failures.',
+    commonCauses: [
+      'Missing hours category not included',
+      'Rounding differences between source systems',
+      'Manual total entered without updating components',
+      'PTO or holiday hours not categorized',
+    ],
+    reviewSteps: [
+      'Compare total hours against the sum of components',
+      'Identify the missing or incorrect component',
+      'Correct the values so they reconcile',
+      'Re-upload the corrected file',
+    ],
   },
   {
     id: 'MATERIAL_HOURS_INCREASE',
@@ -91,6 +163,7 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'review',
     confidence: 0.94,
+    confidenceLevel: 'VERY_HIGH',
     condition: (ctx) => {
       if (ctx.metric !== 'total_hours_worked' || !ctx.baseline) return false;
       const bHours = ctx.baseline.total_hours_worked;
@@ -101,6 +174,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
     userAction: 'Confirm overtime',
     columnsUsed: ['TotalHoursWorked'],
     minTier: 'pro',
+    flagReason: 'Total hours worked increased by 100% or more compared to the previous period.',
+    riskStatement: 'A doubling of hours may indicate overtime errors, duplicate entries, or data issues.',
+    commonCauses: [
+      'Significant overtime approved for this period',
+      'Part-time employee moved to full-time',
+      'Prior period had reduced hours (leave, holiday)',
+      'Data entry error or duplicate time entries',
+    ],
+    reviewSteps: [
+      'Verify overtime was actually worked and approved',
+      'Check if prior period had reduced hours for a valid reason',
+      'Confirm there are no duplicate time entries',
+      'Validate the hours against timekeeping records',
+    ],
   },
   {
     id: 'MATERIAL_HOURS_DECREASE',
@@ -108,6 +195,7 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'review',
     confidence: 0.92,
+    confidenceLevel: 'HIGH',
     condition: (ctx) => {
       if (ctx.metric !== 'total_hours_worked' || !ctx.baseline) return false;
       const bHours = ctx.baseline.total_hours_worked;
@@ -118,6 +206,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
     userAction: 'Confirm schedule',
     columnsUsed: ['TotalHoursWorked'],
     minTier: 'pro',
+    flagReason: 'Total hours dropped by 50% or more compared to the previous period.',
+    riskStatement: 'A large hours decrease may mean missing timesheets or unreported leave.',
+    commonCauses: [
+      'Employee took leave or vacation',
+      'Schedule reduced (full-time to part-time)',
+      'Timesheet not submitted in time',
+      'Data truncation or import error',
+    ],
+    reviewSteps: [
+      'Verify the employee schedule for this period',
+      'Check for approved leave or time off',
+      'Confirm timesheet was fully submitted',
+      'Validate against timekeeping system records',
+    ],
   },
   {
     id: 'OVERTIME_WITHOUT_REGULAR',
@@ -125,6 +227,7 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'review',
     confidence: 0.93,
+    confidenceLevel: 'HIGH',
     condition: (ctx) => {
       const ot = ctx.current.overtime_hours;
       const reg = ctx.current.regular_hours;
@@ -134,6 +237,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
     userAction: 'Verify OT entry',
     columnsUsed: ['RegularHours', 'OvertimeHours'],
     minTier: 'pro',
+    flagReason: 'Employee has overtime hours but no regular hours recorded.',
+    riskStatement: 'Overtime without regular hours is unusual and often indicates a data classification error.',
+    commonCauses: [
+      'Regular hours classified as overtime',
+      'Hours field mapping error during import',
+      'Employee only worked callback/on-call hours',
+      'Time categorization rules misconfigured',
+    ],
+    reviewSteps: [
+      'Review the employee time records',
+      'Verify hours are categorized correctly',
+      'Check if regular hours should be populated',
+      'Correct the classification if needed',
+    ],
   },
   {
     id: 'PAID_HOURS_EXCEED_TOTAL',
@@ -141,6 +258,7 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'blocker',
     confidence: 0.98,
+    confidenceLevel: 'VERY_HIGH',
     condition: (ctx) => {
       const total = ctx.current.total_hours_worked;
       const reg = ctx.current.regular_hours ?? 0;
@@ -153,6 +271,19 @@ export const hoursComponentsRules: RuleDefinition[] = [
     userAction: 'Fix breakdown',
     columnsUsed: ['RegularHours', 'OvertimeHours', 'OtherPaidHours', 'TotalHoursWorked'],
     minTier: 'pro',
+    flagReason: 'The sum of paid hours components exceeds total hours worked.',
+    riskStatement: 'Overstated paid hours lead to overpayments and incorrect labor cost allocation.',
+    commonCauses: [
+      'Double-counted hours across categories',
+      'PTO hours added on top of worked hours',
+      'Total hours field not updated after corrections',
+    ],
+    reviewSteps: [
+      'Compare the sum of hour components against the total',
+      'Identify the double-counted category',
+      'Correct the totals to match',
+      'Re-upload the corrected file',
+    ],
   },
   {
     id: 'PTO_SPIKE',
@@ -160,6 +291,7 @@ export const hoursComponentsRules: RuleDefinition[] = [
     category: 'Hours Components',
     severity: 'info',
     confidence: 0.85,
+    confidenceLevel: 'MODERATE',
     condition: (ctx) => {
       if (!ctx.baseline) return false;
       const bOther = ctx.baseline.other_paid_hours;
@@ -170,5 +302,16 @@ export const hoursComponentsRules: RuleDefinition[] = [
     userAction: 'FYI only',
     columnsUsed: ['OtherPaidHours'],
     minTier: 'pro',
+    flagReason: 'Other paid hours (PTO/leave) doubled or more from the previous period.',
+    riskStatement: 'Large PTO spikes are often expected but worth noting for budget and coverage planning.',
+    commonCauses: [
+      'Year-end PTO usage before expiration',
+      'Extended vacation or personal leave',
+      'Company holiday week',
+    ],
+    reviewSteps: [
+      'Verify the PTO usage is approved',
+      'No action needed if this is expected',
+    ],
   },
 ];

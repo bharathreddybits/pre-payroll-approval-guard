@@ -3,6 +3,9 @@ import { Tier } from '../tierGating';
 /** Severity levels for judgement rules */
 export type Severity = 'blocker' | 'review' | 'info';
 
+/** Confidence level label for display */
+export type ConfidenceLevel = 'VERY_HIGH' | 'HIGH' | 'MODERATE';
+
 /**
  * Context passed to each rule's condition function.
  * Contains the full employee record data for both baseline and current,
@@ -43,6 +46,8 @@ export interface RuleDefinition {
   severity: Severity;
   /** Default confidence score (0-1) */
   confidence: number;
+  /** Display-friendly confidence label */
+  confidenceLevel: ConfidenceLevel;
   /** Condition function — returns true if the rule fires */
   condition: (ctx: RuleContext) => boolean;
   /** AI explanation template */
@@ -53,6 +58,14 @@ export interface RuleDefinition {
   columnsUsed: string[];
   /** Minimum tier required for this rule to be active */
   minTier: Tier;
+  /** Why this rule was triggered — static flag reason */
+  flagReason: string;
+  /** Why this is risky — impact/risk statement */
+  riskStatement: string;
+  /** Common root causes (static, rule-owned) */
+  commonCauses: string[];
+  /** Ordered review steps */
+  reviewSteps: string[];
 }
 
 /**

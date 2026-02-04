@@ -1,37 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceSupabase } from '../../../lib/supabase';
+import { getRuleMetadata } from '../../../lib/rules/ruleRegistry';
+import { getUxSection } from '../../../lib/rules/uxSectionMapping';
+import type { EnrichedJudgement, ReviewPageData, ReviewSections, VerdictStatus } from '../../../lib/types/review';
 
-/**
- * GET /api/review/[reviewSessionId]
- * Fetch all data needed for the review page
- *
- * Response:
- *   {
- *     session: {
- *       review_session_id: string,
- *       organization_name: string,
- *       status: string,
- *       baseline_period: string,
- *       current_period: string,
- *       pay_date: string,
- *       run_type: string
- *     },
- *     summary: {
- *       total_changes: number,
- *       material_changes: number,
- *       blockers_count: number,
- *       approval_status: string
- *     },
- *     blockers: Array<Delta & Judgement>,
- *     material_changes: {
- *       net_pay: Array<Delta & Judgement>,
- *       gross_pay: Array<Delta & Judgement>,
- *       total_deductions: Array<Delta & Judgement>,
- *       component: Array<Delta & Judgement>
- *     },
- *     non_material_changes: Array<Delta & Judgement>
- *   }
- */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -73,30 +45,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Review session not found' });
     }
 
-    // Parse pagination parameters from query
+    // Parse pagination parameters
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 1000;
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
 
-    // Validate pagination parameters
     if (limit < 1 || limit > 1000) {
-      return res.status(400).json({
-        error: 'Invalid limit parameter',
-        details: 'Limit must be between 1 and 1000'
-      });
+      return res.status(400).json({ error: 'Invalid limit parameter', details: 'Limit must be between 1 and 1000' });
     }
     if (offset < 0) {
-      return res.status(400).json({
-        error: 'Invalid offset parameter',
-        details: 'Offset must be >= 0'
-      });
+      return res.status(400).json({ error: 'Invalid offset parameter', details: 'Offset must be >= 0' });
     }
 
-    // 2. Get deltas with their judgements and employee info (with pagination)
+    // 2. Get deltas with their judgements (with pagination)
     const { data: deltas, error: deltasError, count } = await supabase
       .from('payroll_delta')
       .select(`
         *,
         material_judgement (
+          judgement_id,
           is_material,
           is_blocker,
           confidence_score,
@@ -113,20 +79,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to fetch comparison data' });
     }
 
-    // 3. Get summary stats from the view
-    const { data: summaryData, error: summaryError } = await supabase
-      .from('latest_review_sessions')
-      .select('*')
-      .eq('review_session_id', reviewSessionId)
-      .single();
-
-    if (summaryError) {
-      console.error('Failed to fetch summary:', summaryError);
-      // Continue without summary data
-    }
-
-    // 4. Get approval status
-    const { data: approval, error: approvalError } = await supabase
+    // 3. Get approval status
+    const { data: approval } = await supabase
       .from('approval')
       .select('*')
       .eq('review_session_id', reviewSessionId)
@@ -139,53 +93,98 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const baseline = datasets.find((d: any) => d.dataset_type === 'baseline');
     const current = datasets.find((d: any) => d.dataset_type === 'current');
 
-    // Categorize deltas — now supports multiple judgements per delta
+    // 4. Enrich judgements with rule metadata and categorize into UX sections
+    const sections: ReviewSections = {
+      blockers: [],
+      high_risk: [],
+      compliance: [],
+      volatility: [],
+      systemic: [],
+      noise: [],
+    };
+
     const allDeltas = deltas || [];
 
-    // Helper: determine highest severity across all judgements for a delta
-    const hasBlocker = (d: any) =>
-      d.material_judgement?.some((j: any) => j.is_blocker) || false;
-    const hasMaterial = (d: any) =>
-      d.material_judgement?.some((j: any) => j.is_material) || false;
+    for (const delta of allDeltas) {
+      const judgements = delta.material_judgement || [];
 
-    // Pick the highest-severity judgement for display priority
-    const pickPrimary = (judgements: any[]) => {
-      if (!judgements || judgements.length === 0) return null;
-      const blocker = judgements.find((j: any) => j.is_blocker);
-      if (blocker) return blocker;
-      const material = judgements.find((j: any) => j.is_material);
-      if (material) return material;
-      return judgements[0];
-    };
+      // Skip deltas with no judgements (non-flagged changes)
+      if (judgements.length === 0) continue;
 
-    const blockers = allDeltas.filter(hasBlocker);
-    const materialChanges = allDeltas.filter(
-      (d: any) => hasMaterial(d) && !hasBlocker(d),
+      for (const j of judgements) {
+        const ruleMeta = getRuleMetadata(j.rule_id);
+        const uxSection = getUxSection(j.rule_id, j.is_blocker);
+
+        const enriched: EnrichedJudgement = {
+          // From judgement
+          judgement_id: j.judgement_id,
+          delta_id: delta.delta_id,
+          is_material: j.is_material,
+          is_blocker: j.is_blocker,
+          confidence_score: j.confidence_score,
+          reasoning: j.reasoning,
+          rule_id: j.rule_id,
+
+          // From delta
+          employee_id: delta.employee_id,
+          metric: delta.metric,
+          component_name: delta.component_name || null,
+          baseline_value: delta.baseline_value,
+          current_value: delta.current_value,
+          delta_absolute: delta.delta_absolute,
+          delta_percentage: delta.delta_percentage,
+          change_type: delta.change_type,
+
+          // From rule registry (with fallbacks)
+          rule_name: ruleMeta?.name ?? j.rule_id,
+          rule_category: ruleMeta?.category ?? 'unknown',
+          rule_severity: ruleMeta?.severity ?? (j.is_blocker ? 'blocker' : 'review'),
+          user_action: ruleMeta?.userAction ?? 'Review this change and take appropriate action.',
+          columns_used: ruleMeta?.columnsUsed ?? [],
+          confidence_level: ruleMeta?.confidenceLevel ?? 'MODERATE',
+          flag_reason: ruleMeta?.flagReason ?? 'This item was flagged for review.',
+          risk_statement: ruleMeta?.riskStatement ?? 'Review this item to ensure accuracy.',
+          common_causes: ruleMeta?.commonCauses ?? [],
+          review_steps: ruleMeta?.reviewSteps ?? [],
+
+          // UX section
+          ux_section: uxSection,
+        };
+
+        sections[uxSection].push(enriched);
+      }
+    }
+
+    // 5. Sort within sections
+    // Blockers & high_risk: by confidence desc
+    sections.blockers.sort((a, b) => b.confidence_score - a.confidence_score);
+    sections.high_risk.sort((a, b) => b.confidence_score - a.confidence_score);
+    // Compliance: by confidence desc
+    sections.compliance.sort((a, b) => b.confidence_score - a.confidence_score);
+    // Volatility: by absolute delta_percentage desc
+    sections.volatility.sort((a, b) =>
+      Math.abs(b.delta_percentage ?? 0) - Math.abs(a.delta_percentage ?? 0)
     );
-    const nonMaterialChanges = allDeltas.filter(
-      (d: any) => !hasMaterial(d),
-    );
+    // Systemic & noise: by employee_id
+    sections.systemic.sort((a, b) => a.employee_id.localeCompare(b.employee_id));
+    sections.noise.sort((a, b) => a.employee_id.localeCompare(b.employee_id));
 
-    // Group material changes by metric (expanded to all metrics)
-    const groupByMetric = (changes: any[]) => {
-      return changes.reduce((acc: any, change: any) => {
-        const metric = change.metric;
-        if (!acc[metric]) {
-          acc[metric] = [];
-        }
-        acc[metric].push({
-          ...change,
-          material_judgement: pickPrimary(change.material_judgement),
-          all_judgements: change.material_judgement || [],
-        });
-        return acc;
-      }, {});
-    };
+    // 6. Compute verdict
+    const blockersCount = sections.blockers.length;
+    const reviewsCount = sections.high_risk.length + sections.compliance.length + sections.volatility.length + sections.systemic.length;
+    const infoCount = sections.noise.length;
+    const totalFlagged = blockersCount + reviewsCount + infoCount;
 
-    const materialChangesByMetric = groupByMetric(materialChanges);
+    let verdictStatus: VerdictStatus = 'ready_to_approve';
+    if (blockersCount > 0) {
+      verdictStatus = 'blocked';
+    } else if (reviewsCount > 0) {
+      verdictStatus = 'review_required';
+    }
 
-    // Format response
-    const response = {
+    const approvalStatus = approval?.approval_status || 'pending';
+
+    const response: ReviewPageData = {
       session: {
         review_session_id: session.review_session_id,
         organization_name: (session.organization as any)?.organization_name || 'Unknown',
@@ -200,12 +199,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         run_type: current?.run_type || 'regular',
         created_at: session.created_at,
       },
-      summary: {
-        total_changes: summaryData?.total_changes || count || allDeltas.length,
-        material_changes: summaryData?.material_changes || (materialChanges.length + blockers.length),
-        blockers_count: summaryData?.blockers || blockers.length,
-        approval_status: approval?.approval_status || 'pending',
+      verdict: {
+        status: verdictStatus,
+        blockers_count: blockersCount,
+        reviews_count: reviewsCount,
+        info_count: infoCount,
+        total_flagged: totalFlagged,
+        approval_status: approvalStatus,
       },
+      sections,
       pagination: {
         limit,
         offset,
@@ -213,17 +215,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         has_more: count ? (offset + limit < count) : false,
         next_offset: count && (offset + limit < count) ? offset + limit : null,
       },
-      blockers: blockers.map((d: any) => ({
-        ...d,
-        material_judgement: pickPrimary(d.material_judgement),
-        all_judgements: d.material_judgement || [],
-      })),
-      material_changes: materialChangesByMetric,
-      non_material_changes: nonMaterialChanges.map((d: any) => ({
-        ...d,
-        material_judgement: pickPrimary(d.material_judgement),
-        all_judgements: d.material_judgement || [],
-      })),
     };
 
     return res.status(200).json(response);
