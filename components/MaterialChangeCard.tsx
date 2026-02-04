@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { Sparkles } from 'lucide-react';
 
 interface MaterialChangeCardProps {
   change: {
@@ -23,9 +22,6 @@ interface MaterialChangeCardProps {
 }
 
 export function MaterialChangeCard({ change }: MaterialChangeCardProps) {
-  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-
   const formatCurrency = (value: number | null) => {
     if (value === null) return 'N/A';
     return new Intl.NumberFormat('en-US', {
@@ -56,36 +52,6 @@ export function MaterialChangeCard({ change }: MaterialChangeCardProps) {
     if (changeType === 'new_employee') return 'text-blue-600';
     if (changeType === 'removed_employee') return 'text-purple-600';
     return 'text-gray-600';
-  };
-
-  const fetchAiExplanation = async () => {
-    if (aiExplanation) return;
-    setAiLoading(true);
-    try {
-      const res = await fetch('/api/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employee_id: change.employee_id,
-          metric: change.metric,
-          component_name: change.component_name,
-          baseline_value: change.baseline_value,
-          current_value: change.current_value,
-          delta_absolute: change.delta_absolute,
-          delta_percentage: change.delta_percentage,
-          change_type: change.change_type,
-          rule_id: change.material_judgement?.rule_id,
-          reasoning: change.material_judgement?.reasoning,
-          is_blocker: false,
-        }),
-      });
-      const data = await res.json();
-      setAiExplanation(data.explanation || 'Unable to generate explanation.');
-    } catch {
-      setAiExplanation('Failed to load explanation. Please try again.');
-    } finally {
-      setAiLoading(false);
-    }
   };
 
   const confidenceScore = change.material_judgement?.confidence_score || 0;
@@ -149,27 +115,6 @@ export function MaterialChangeCard({ change }: MaterialChangeCardProps) {
           </AccordionItem>
         </Accordion>
 
-        {/* AI Explanation */}
-        <div className="mt-3 border-t pt-3">
-          {aiExplanation ? (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                <span className="text-xs font-semibold text-blue-700">AI Explanation</span>
-              </div>
-              <p className="text-sm text-blue-900 leading-relaxed">{aiExplanation}</p>
-            </div>
-          ) : (
-            <button
-              onClick={fetchAiExplanation}
-              disabled={aiLoading}
-              className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {aiLoading ? 'Generating explanation...' : 'Explain with AI'}
-            </button>
-          )}
-        </div>
       </CardContent>
     </Card>
   );

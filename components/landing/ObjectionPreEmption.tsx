@@ -7,8 +7,8 @@ const objections = [
     response: 'PayrollShield encodes what senior reviewers check mentally \u2014 but consistently, every run. No steps missed. No rules forgotten.',
   },
   {
-    objection: '"AI in payroll is risky"',
-    response: 'No decisions are automated. Every rule is deterministic, explainable, and auditable. You can literally inspect the rule table.',
+    objection: '"How do I know the rules are correct?"',
+    response: 'Every detection rule is deterministic, fully inspectable, and includes its reasoning, risk statement, and review steps. No black boxes.',
   },
   {
     objection: '"False positives slow us down"',

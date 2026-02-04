@@ -26,7 +26,7 @@ const capabilities = [
   {
     icon: ClipboardCheck,
     title: 'Review & Approval Workflow',
-    description: 'A single review screen shows blockers, material changes, and AI explanations. Approve, reject, or add notes — all in one place. Blocker resolution is enforced before approval is allowed.',
+    description: 'A single review screen shows blockers, material changes, and expert-written review guidance. Approve, reject, or add notes — all in one place. Blocker resolution is enforced before approval is allowed.',
     accent: 'from-brand-red to-orange-400',
   },
   {

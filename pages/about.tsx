@@ -13,7 +13,7 @@ const principles = [
   {
     icon: ShieldCheck,
     title: 'Trust Through Transparency',
-    description: 'We show our work. Every change detection rule, confidence score, and AI explanation is visible and auditable. No black boxes.',
+    description: 'We show our work. Every change detection rule, confidence score, and risk assessment is visible and auditable. No black boxes.',
   },
   {
     icon: Eye,
@@ -66,7 +66,7 @@ export default function AboutPage() {
                 PayrollShield is a pre-payroll approval guard. It sits between your payroll export and your &ldquo;approve&rdquo; button.
               </p>
               <p>
-                When you upload your payroll files, PayrollShield compares every line — net pay, gross pay, deductions, individual components — and identifies what changed. Changes are classified by materiality and risk. Blockers (like negative net pay) are flagged immediately. AI-generated explanations tell you why each change was flagged, in plain language.
+                When you upload your payroll files, PayrollShield compares every line — net pay, gross pay, deductions, individual components — and identifies what changed. Changes are classified by materiality and risk. Blockers (like negative net pay) are flagged immediately. Each flagged change includes expert-written context: why it was flagged, what usually causes it, and what to check first.
               </p>
               <p>
                 You review everything on a single screen, make a decision (approve or reject with notes), and the complete audit trail is captured automatically.

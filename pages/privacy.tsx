@@ -40,7 +40,7 @@ export default function PrivacyPage() {
               <ul className="list-disc list-inside text-slate-600 space-y-1.5">
                 <li>Provide, operate, and maintain the PayrollShield Service</li>
                 <li>Perform payroll change detection and generate materiality assessments</li>
-                <li>Generate AI-powered explanations of flagged changes</li>
+                <li>Provide contextual review guidance for flagged changes using expert-written rule metadata</li>
                 <li>Maintain audit trails of review sessions and approval decisions</li>
                 <li>Send transactional communications (account verification, security alerts)</li>
                 <li>Improve the Service through aggregated, anonymized usage analytics</li>
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
               </p>
               <ul className="list-disc list-inside text-slate-600 space-y-1.5">
                 <li><strong>Infrastructure providers</strong> that host and operate the Service (subject to data processing agreements)</li>
-                <li><strong>AI service providers</strong> for generating explanations (payroll data sent to AI services is not used for model training)</li>
+                <li><strong>AI service providers</strong> for CSV column mapping during file import (only column headers are sent; not used for model training)</li>
                 <li><strong>Law enforcement</strong> when required by applicable law, court order, or government regulation</li>
               </ul>
             </section>

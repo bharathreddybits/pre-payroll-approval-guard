@@ -29,7 +29,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-xl font-bold text-slate-900 mb-3">2. Service Description</h2>
               <p className="text-slate-600 leading-relaxed">
-                PayrollShield is a software-as-a-service platform that enables payroll teams to compare payroll runs, detect material changes, classify risk, generate AI-powered explanations, and maintain audit trails of review decisions. The Service is provided on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo; basis.
+                PayrollShield is a software-as-a-service platform that enables payroll teams to compare payroll runs, detect material changes, classify risk using deterministic rules, and maintain audit trails of review decisions. The Service is provided on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo; basis.
               </p>
             </section>
 

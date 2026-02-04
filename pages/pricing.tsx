@@ -20,7 +20,7 @@ const plans = [
       '15 core detection rules',
       'Template CSV format',
       'Change detection & blocker alerts',
-      'AI-powered explanations',
+      'Expert-written review guidance',
       'Full audit trail',
       'Email support',
     ],
