@@ -25,6 +25,7 @@ interface FinalizeChecklistProps {
 
 export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistProps>(
   function FinalizeChecklist({ reviewSessionId, verdict, onApprove, onReject }, ref) {
+    const [blockersAcknowledged, setBlockersAcknowledged] = useState(false);
     const [materialReviewed, setMaterialReviewed] = useState(false);
     const [noBackdatedImpact, setNoBackdatedImpact] = useState(false);
     const [rejectNotes, setRejectNotes] = useState('');
@@ -33,11 +34,11 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
     const [showRejectDialog, setShowRejectDialog] = useState(false);
 
     const hasBlockers = verdict.blockers_count > 0;
-    const blockersResolved = !hasBlockers;
+    const blockersResolved = hasBlockers ? blockersAcknowledged : true;
     const materialCount = verdict.reviews_count;
 
     const allChecked = blockersResolved && materialReviewed && noBackdatedImpact;
-    const canApprove = allChecked && !hasBlockers;
+    const canApprove = allChecked;
 
     // Already approved or rejected
     if (verdict.approval_status === 'approved' || verdict.approval_status === 'rejected') {
@@ -100,20 +101,29 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Checkbox 1: Blockers resolved */}
-            <label className={`flex items-start gap-3 p-3 rounded-lg border ${hasBlockers ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+            <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${
+              blockersResolved
+                ? 'bg-green-50 border-green-200'
+                : hasBlockers
+                  ? 'bg-red-50 border-red-200 hover:bg-red-100'
+                  : 'bg-green-50 border-green-200'
+            }`}>
               <input
                 type="checkbox"
                 checked={blockersResolved}
-                disabled
+                disabled={!hasBlockers}
+                onChange={(e) => setBlockersAcknowledged(e.target.checked)}
                 className="mt-0.5 w-5 h-5"
               />
               <div>
-                <span className={`text-sm font-medium ${hasBlockers ? 'text-red-800' : 'text-green-800'}`}>
-                  All blockers resolved
+                <span className={`text-sm font-medium ${blockersResolved ? 'text-green-800' : 'text-red-800'}`}>
+                  All blockers reviewed & resolved
                 </span>
-                <p className={`text-xs ${hasBlockers ? 'text-red-600' : 'text-green-600'}`}>
+                <p className={`text-xs ${blockersResolved ? 'text-green-600' : 'text-red-600'}`}>
                   {hasBlockers
-                    ? `${verdict.blockers_count} blocker${verdict.blockers_count !== 1 ? 's' : ''} remaining`
+                    ? blockersAcknowledged
+                      ? `${verdict.blockers_count} blocker${verdict.blockers_count !== 1 ? 's' : ''} acknowledged as resolved`
+                      : `${verdict.blockers_count} blocker${verdict.blockers_count !== 1 ? 's' : ''} require your review`
                     : 'No blockers detected'}
                 </p>
               </div>
@@ -205,7 +215,7 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
               </Button>
             </div>
 
-            {!canApprove && !hasBlockers && (
+            {!canApprove && (
               <p className="text-xs text-gray-400 text-center">
                 Check all boxes above to enable finalization
               </p>
