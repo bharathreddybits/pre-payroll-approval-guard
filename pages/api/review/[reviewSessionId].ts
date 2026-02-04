@@ -67,7 +67,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           is_blocker,
           confidence_score,
           reasoning,
-          rule_id
+          rule_id,
+          reviewer_notes
         )
       `, { count: 'exact' })
       .eq('review_session_id', reviewSessionId)
@@ -134,6 +135,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           delta_absolute: delta.delta_absolute,
           delta_percentage: delta.delta_percentage,
           change_type: delta.change_type,
+
+          // Reviewer notes from DB
+          reviewer_notes: j.reviewer_notes || '',
 
           // From rule registry (with fallbacks)
           rule_name: ruleMeta?.name ?? j.rule_id,

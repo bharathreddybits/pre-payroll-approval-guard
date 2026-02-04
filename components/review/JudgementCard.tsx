@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Sparkles, ShieldX, AlertTriangle, Info, StickyNote } from 'lucide-react';
@@ -101,8 +101,38 @@ function getConfidenceBadge(level: string): { className: string; label: string }
 export function JudgementCard({ item }: JudgementCardProps) {
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [showNotes, setShowNotes] = useState(false);
+  const [notes, setNotes] = useState(item.reviewer_notes || '');
+  const [showNotes, setShowNotes] = useState(!!item.reviewer_notes);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveNotes = useCallback(async (value: string) => {
+    setSaveStatus('saving');
+    try {
+      const res = await fetch('/api/judgement-notes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ judgement_id: item.judgement_id, notes: value }),
+      });
+      if (!res.ok) throw new Error('Save failed');
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch {
+      setSaveStatus('error');
+    }
+  }, [item.judgement_id]);
+
+  const handleNotesChange = (value: string) => {
+    setNotes(value);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => saveNotes(value), 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
 
   const severity = getSeverityConfig(item.rule_severity);
   const confidence = getConfidenceBadge(item.confidence_level);
@@ -270,12 +300,19 @@ export function JudgementCard({ item }: JudgementCardProps) {
           {/* Notes textarea */}
           {showNotes && (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">
-                Reviewer Notes
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Reviewer Notes
+                </label>
+                <span className="text-[10px] text-gray-400">
+                  {saveStatus === 'saving' && 'Saving...'}
+                  {saveStatus === 'saved' && 'Saved'}
+                  {saveStatus === 'error' && 'Failed to save'}
+                </span>
+              </div>
               <textarea
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e) => handleNotesChange(e.target.value)}
                 placeholder="Document actions taken, findings, or follow-up items..."
                 className="w-full text-sm text-gray-800 bg-white border border-gray-200 rounded-md px-3 py-2 min-h-[72px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
               />

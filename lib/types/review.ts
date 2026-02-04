@@ -11,6 +11,8 @@ export interface EnrichedJudgement {
   reasoning: string;
   rule_id: string;
 
+  reviewer_notes: string;
+
   // From DB (payroll_delta)
   employee_id: string;
   metric: string;
