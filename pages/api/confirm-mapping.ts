@@ -183,13 +183,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await transformAndUpdate(baselineRecords, baselineLookup);
     await transformAndUpdate(currentRecords, currentLookup);
 
-    // 6. Update session status from pending_mapping to in_progress
+    // 6. Trigger processing
+    const webhookUrl = process.env.N8N_PROCESS_WEBHOOK_URL;
+
+    if (webhookUrl) {
+      // Async: trigger n8n webhook, respond immediately
+      await supabase
+        .from('review_session')
+        .update({ status: 'processing' })
+        .eq('review_session_id', reviewSessionId);
+
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_session_id: reviewSessionId }),
+      }).catch(err => console.error('[ConfirmMapping] n8n webhook trigger failed:', err));
+
+      return res.status(200).json({
+        success: true,
+        processing_started: true,
+        review_session_id: reviewSessionId,
+      });
+    }
+
+    // Fallback: inline processing (local dev without n8n)
     await supabase
       .from('review_session')
       .update({ status: 'in_progress' })
       .eq('review_session_id', reviewSessionId);
 
-    // 7. Trigger full processing (deltas + judgements)
     let processingResult;
     try {
       processingResult = await processReview(reviewSessionId);

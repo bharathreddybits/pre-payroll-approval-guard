@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useDropzone } from 'react-dropzone';
@@ -38,6 +38,16 @@ export default function UploadPage() {
     error: null,
     warnings: [],
   });
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const baselineDropzone = useDropzone({
     accept: {
@@ -142,7 +152,48 @@ export default function UploadPage() {
         return;
       }
 
-      // Starter tier: processing already completed, go to review
+      // Check if processing is async (n8n webhook)
+      if (uploadResult.processing_started) {
+        setState((prev) => ({ ...prev, uploading: false, processing: true }));
+        toast.loading('Analyzing payroll changes...', { id: 'upload' });
+
+        // Poll review API every 3 seconds until processing completes
+        pollRef.current = setInterval(async () => {
+          try {
+            const pollRes = await fetch(`/api/review/${reviewSessionId}`);
+            if (pollRes.ok) {
+              const data = await pollRes.json();
+              if (data.session?.status === 'completed' || data.verdict) {
+                if (pollRef.current) clearInterval(pollRef.current);
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                toast.success('Analysis complete!', {
+                  id: 'upload',
+                  description: 'Redirecting to review page...',
+                });
+                setState((prev) => ({ ...prev, processing: false }));
+                router.push(`/review/${reviewSessionId}`);
+              }
+            }
+          } catch {
+            // Ignore polling errors, will retry
+          }
+        }, 3000);
+
+        // Timeout after 5 minutes
+        timeoutRef.current = setTimeout(() => {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setState((prev) => ({
+            ...prev,
+            processing: false,
+            error: 'Processing timed out. Please refresh and check your review sessions.',
+          }));
+          toast.error('Processing timed out', { id: 'upload' });
+        }, 300000);
+
+        return;
+      }
+
+      // Inline processing completed, go to review
       toast.success('Processing complete!', {
         id: 'upload',
         description: 'Redirecting to review page...',

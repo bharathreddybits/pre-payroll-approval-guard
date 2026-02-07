@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { toast } from 'sonner';
@@ -124,6 +124,16 @@ export default function MappingPage() {
     method: '',
   });
 
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     if (!reviewSessionId) return;
 
@@ -205,6 +215,47 @@ export default function MappingPage() {
         throw new Error(errData.error || 'Failed to confirm mapping');
       }
 
+      const result = await res.json();
+
+      // Async processing (n8n webhook)
+      if (result.processing_started) {
+        toast.loading('Analyzing payroll changes...', { id: 'confirm' });
+
+        pollRef.current = setInterval(async () => {
+          try {
+            const pollRes = await fetch(`/api/review/${reviewSessionId}`);
+            if (pollRes.ok) {
+              const data = await pollRes.json();
+              if (data.session?.status === 'completed' || data.verdict) {
+                if (pollRef.current) clearInterval(pollRef.current);
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                toast.success('Analysis complete!', {
+                  id: 'confirm',
+                  description: 'Redirecting to review page...',
+                });
+                setState((prev) => ({ ...prev, submitting: false }));
+                router.push(`/review/${reviewSessionId}`);
+              }
+            }
+          } catch {
+            // Ignore polling errors, will retry
+          }
+        }, 3000);
+
+        timeoutRef.current = setTimeout(() => {
+          if (pollRef.current) clearInterval(pollRef.current);
+          toast.error('Processing timed out', { id: 'confirm' });
+          setState((prev) => ({
+            ...prev,
+            submitting: false,
+            error: 'Processing timed out. Please refresh and check your review sessions.',
+          }));
+        }, 300000);
+
+        return;
+      }
+
+      // Inline processing completed
       toast.success('Processing complete!', {
         id: 'confirm',
         description: 'Redirecting to review page...',
