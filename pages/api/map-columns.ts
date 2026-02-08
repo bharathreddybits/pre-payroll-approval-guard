@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceSupabase } from '../../lib/supabase';
 import { mapColumns } from '../../lib/columnMapper';
+import { checkAiMapping } from '../../lib/billing';
 
 /**
  * POST /api/map-columns
@@ -36,15 +37,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const supabase = getServiceSupabase();
 
-    // Verify the review session exists
+    // Verify the review session exists and get organization
     const { data: session, error: sessionError } = await supabase
       .from('review_session')
-      .select('review_session_id, status')
+      .select('review_session_id, status, organization_id')
       .eq('review_session_id', reviewSessionId)
       .single();
 
     if (sessionError || !session) {
       return res.status(404).json({ error: 'Review session not found' });
+    }
+
+    // Check if AI mapping is available for this organization's tier
+    const aiMappingCheck = await checkAiMapping(session.organization_id);
+    if (!aiMappingCheck.allowed) {
+      return res.status(403).json({
+        error: 'Feature not available',
+        message: aiMappingCheck.reason,
+        upgrade_url: '/pricing',
+      });
     }
 
     // If headers not provided, extract from stored raw_row metadata in employee records

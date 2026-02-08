@@ -17,7 +17,7 @@ const plans = [
     features: [
       'Up to 100 employees per payroll',
       'Unlimited review sessions',
-      '15 core detection rules',
+      '16 core detection rules',
       'Template CSV format',
       'Change detection & blocker alerts',
       'Expert-written review guidance',
@@ -27,7 +27,7 @@ const plans = [
   },
   {
     name: 'Pro',
-    description: 'Full coverage with AI mapping and 60+ rules for payroll teams.',
+    description: 'Full coverage with AI mapping and 50+ rules for payroll teams.',
     monthlyPrice: 749,
     annualPrice: 599,
     priceLabel: null,
@@ -37,7 +37,7 @@ const plans = [
     features: [
       'Everything in Starter',
       'Unlimited employees',
-      '60+ advanced detection rules',
+      '54 advanced detection rules',
       'Flexible CSV import (any format)',
       'AI-powered column mapping',
       'Multi-organization support',
@@ -61,7 +61,7 @@ const faqs = [
   },
   {
     q: 'What is the difference between Starter and Pro?',
-    a: 'Starter supports up to 100 employees with 15 core detection rules and template CSV format. Pro adds unlimited employees, 60+ advanced rules, flexible CSV import with AI-powered column mapping, and multi-organization support.',
+    a: 'Starter supports up to 100 employees with 16 core detection rules and template CSV format. Pro adds unlimited employees, 54 advanced rules, flexible CSV import with AI-powered column mapping, and multi-organization support.',
   },
   {
     q: 'How does annual billing work?',

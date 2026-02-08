@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceSupabase } from '../../lib/supabase';
 import { CANONICAL_FIELD_MAP } from '../../lib/canonicalSchema';
 import { processReview } from '../../lib/processReview';
+import { checkFlexibleImport } from '../../lib/billing';
 
 interface ConfirmedMapping {
   uploadedColumn: string;
@@ -37,6 +38,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const supabase = getServiceSupabase();
+
+    // 0. Get review session and check tier
+    const { data: session, error: sessionError } = await supabase
+      .from('review_session')
+      .select('organization_id')
+      .eq('review_session_id', reviewSessionId)
+      .single();
+
+    if (sessionError || !session) {
+      return res.status(404).json({ error: 'Review session not found' });
+    }
+
+    // Check if flexible import (which requires column mapping) is available
+    const flexibleImportCheck = await checkFlexibleImport(session.organization_id);
+    if (!flexibleImportCheck.allowed) {
+      return res.status(403).json({
+        error: 'Feature not available',
+        message: flexibleImportCheck.reason,
+        upgrade_url: '/pricing',
+      });
+    }
 
     // 1. Get datasets for this session
     const { data: datasets, error: dsError } = await supabase

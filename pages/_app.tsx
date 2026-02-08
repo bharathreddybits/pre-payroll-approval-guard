@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '../contexts/AuthContext';
+import { Userback } from '../components/Userback';
 import '../styles/globals.css';
 
 function PrePayrollApprovalGuard({ Component, pageProps }: AppProps) {
@@ -19,6 +20,7 @@ function PrePayrollApprovalGuard({ Component, pageProps }: AppProps) {
         richColors
         closeButton
       />
+      <Userback />
     </AuthProvider>
   );
 }

@@ -1,38 +1,21 @@
-import { getServiceSupabase } from './supabase';
-
-export type Tier = 'starter' | 'pro';
-
-export type Feature =
-  | 'flexible_import'
-  | 'ai_mapping'
-  | 'full_rules';
-
-const FEATURE_TIERS: Record<Feature, Tier[]> = {
-  flexible_import: ['pro'],
-  ai_mapping: ['pro'],
-  full_rules: ['pro'],
-};
-
 /**
- * Look up the subscription tier for an organization.
- * Defaults to 'starter' if no tier record exists.
+ * Tier Gating Module (Legacy)
+ *
+ * This module re-exports from the new billing module for backwards compatibility.
+ * New code should import directly from '@/lib/billing'.
+ *
+ * @deprecated Use `import { ... } from '@/lib/billing'` instead
  */
-export async function getOrganizationTier(organizationId: string): Promise<Tier> {
-  const supabase = getServiceSupabase();
-  const { data } = await supabase
-    .from('organization_tier')
-    .select('tier')
-    .eq('organization_id', organizationId)
-    .single();
 
-  const tier = data?.tier;
-  if (tier === 'pro') return 'pro';
-  return 'starter';
-}
+// Re-export types and functions from billing module
+export type { Tier, TierLimits } from './billing/types';
 
-/**
- * Check whether a feature is available for a given tier.
- */
-export function isFeatureAvailable(tier: Tier, feature: Feature): boolean {
-  return FEATURE_TIERS[feature].includes(tier);
-}
+export {
+  getOrganizationTier,
+  isFeatureAvailable,
+  TIER_LIMITS,
+  getTierLimits,
+} from './billing';
+
+// Legacy Feature type for backwards compatibility
+export type Feature = 'flexible_import' | 'ai_mapping' | 'full_rules';

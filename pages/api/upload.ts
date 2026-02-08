@@ -4,7 +4,12 @@ import fs from 'fs';
 import Papa from 'papaparse';
 import { getServiceSupabase } from '../../lib/supabase';
 import { processReview } from '../../lib/processReview';
-import { getOrganizationTier, isFeatureAvailable } from '../../lib/tierGating';
+import {
+  getOrganizationTier,
+  checkEmployeeLimit,
+  TIER_LIMITS,
+  isFeatureAvailable,
+} from '../../lib/billing';
 import { CANONICAL_FIELDS } from '../../lib/canonicalSchema';
 
 // Disable body parser to handle multipart/form-data
@@ -182,6 +187,21 @@ async function resolveOrganization(
     return { orgId: existingOrg.organization_id };
   }
 
+  // TODO: Multi-org enforcement
+  // When user authentication is integrated, check here if:
+  // 1. User already has an organization (via user_organization_mapping)
+  // 2. If yes, check if their tier allows multi-org (Pro only)
+  // 3. If Starter tier with existing org, return error with upgrade_url
+  // Example:
+  // const userOrgs = await supabase.from('user_organization_mapping')
+  //   .select('organization_id').eq('user_id', auth.uid());
+  // if (userOrgs.data?.length > 0) {
+  //   const tier = await getOrganizationTier(userOrgs.data[0].organization_id);
+  //   if (tier === 'starter') {
+  //     return { orgId: '', error: 'Multi-organization requires Pro plan' };
+  //   }
+  // }
+
   const { data: newOrg, error: orgError } = await supabase
     .from('organization')
     .insert({ organization_name: orgName })
@@ -257,6 +277,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const currentValidation = await validateFn(currentFile.filepath);
       if (!currentValidation.valid) {
         return res.status(400).json({ error: 'Current CSV validation failed', details: currentValidation.errors });
+      }
+
+      // ── Check employee limit (Starter: 100, Pro: unlimited) ─────────────
+      const maxEmployeeCount = Math.max(
+        baselineValidation.row_count,
+        currentValidation.row_count
+      );
+      const employeeLimitCheck = await checkEmployeeLimit(finalOrganizationId, maxEmployeeCount);
+
+      if (!employeeLimitCheck.allowed) {
+        cleanupFiles(baselineFile.filepath, currentFile.filepath);
+        return res.status(403).json({
+          error: 'Employee limit exceeded',
+          message: employeeLimitCheck.reason,
+          current_count: maxEmployeeCount,
+          limit: TIER_LIMITS.starter.maxEmployees,
+          tier: orgTier,
+          upgrade_url: '/pricing',
+        });
       }
 
       // ── Create review session ────────────────────────────────────────────
