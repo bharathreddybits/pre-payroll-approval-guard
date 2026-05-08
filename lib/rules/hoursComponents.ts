@@ -31,6 +31,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'If salaried, confirm hours are not required',
       'Verify timesheet submission status',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'Employee has zero hours reported but is receiving pay',
+    whyThisMatters: 'Zero hours with pay may indicate missing timekeeping data or incorrect salaried classification that could mask timesheet gaps.',
+    reviewerAction: 'Determine if employee is salaried or hourly, obtain correct hours if hourly, confirm salaried status if applicable, verify timesheet submission.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'TOTAL_HOURS_ZERO_ACTIVE',
@@ -60,6 +74,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'Verify timesheet submission status',
       'No action needed if this is expected',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'Active employee has zero total hours in current period',
+    whyThisMatters: 'May indicate missed timekeeping or unpaid leave not properly flagged, which could result in missing payroll records.',
+    reviewerAction: 'Check if employee is on leave, verify timesheet submission status. No action needed if on unpaid leave and properly documented.',
+    uiHints: {
+      defaultExpanded: false,
+      requiresAcknowledgement: false,
+      highlightLevel: 'GRAY',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'NEGATIVE_HOURS',
@@ -91,6 +119,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'Correct the value to a non-negative number',
       'Re-upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'One or more hours fields contain negative values',
+    whyThisMatters: 'Negative hours are not valid in payroll and indicate data entry or system errors that distort time records.',
+    reviewerAction: 'Identify which hours field is negative, determine the intended adjustment, correct to non-negative, and re-upload before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'HOURS_EXCEED_MAX',
@@ -121,6 +163,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'Correct the hours to the actual amount worked',
       'Re-upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'Total hours exceed 168 (maximum possible in a 7-day week)',
+    whyThisMatters: 'Hours above physical weekly maximum indicate data entry errors that will cause overpayments and incorrect labor cost allocation.',
+    reviewerAction: 'Verify pay period length, check for data entry or decimal errors, correct hours to actual amount worked, and re-upload before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'HOURS_SUM_MISMATCH',
@@ -156,6 +212,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'Correct the values so they reconcile',
       'Re-upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'Total hours do not equal the sum of regular, overtime, and other hours',
+    whyThisMatters: 'Hours component mismatch causes incorrect pay calculations, audit failures, and compliance violations.',
+    reviewerAction: 'Compare total hours against sum of components, identify missing or incorrect component, correct values to reconcile, and re-upload.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'MATERIAL_HOURS_INCREASE',
@@ -188,6 +258,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'Confirm there are no duplicate time entries',
       'Validate the hours against timekeeping records',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'Total hours worked increased by 100% or more',
+    whyThisMatters: 'A doubling of hours may indicate overtime errors, duplicate entries, or data issues that require verification against time records.',
+    reviewerAction: 'Verify overtime was actually worked and approved, check if prior period had reduced hours, confirm no duplicate entries, validate against timekeeping.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'MATERIAL_HOURS_DECREASE',
@@ -220,6 +304,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'Confirm timesheet was fully submitted',
       'Validate against timekeeping system records',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'Total hours dropped by 50% or more',
+    whyThisMatters: 'A large hours decrease may mean missing timesheets or unreported leave that could result in underpayment.',
+    reviewerAction: 'Verify employee schedule for this period, check for approved leave, confirm timesheet was fully submitted, validate against timekeeping system.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'OVERTIME_WITHOUT_REGULAR',
@@ -251,6 +349,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'Check if regular hours should be populated',
       'Correct the classification if needed',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'Employee has overtime hours but no regular hours recorded',
+    whyThisMatters: 'Overtime without regular hours is unusual and often indicates a data classification error that affects pay calculations.',
+    reviewerAction: 'Review employee time records, verify hours are categorized correctly, check if regular hours should be populated, correct classification if needed.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'PAID_HOURS_EXCEED_TOTAL',
@@ -284,6 +396,20 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'Correct the totals to match',
       'Re-upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'The sum of paid hours components exceeds total hours worked',
+    whyThisMatters: 'Overstated paid hours lead to overpayments, incorrect labor cost allocation, and compliance violations.',
+    reviewerAction: 'Compare sum of hour components against total, identify double-counted category, correct totals to match, and re-upload before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'PTO_SPIKE',
@@ -313,5 +439,19 @@ export const hoursComponentsRules: RuleDefinition[] = [
       'Verify the PTO usage is approved',
       'No action needed if this is expected',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Hours Components Rules',
+    triggeredCondition: 'Other paid hours (PTO/leave) doubled or more from previous period',
+    whyThisMatters: 'Large PTO spikes are often expected but worth noting for budget and coverage planning purposes.',
+    reviewerAction: 'Verify the PTO usage is approved. No action needed if this is expected for year-end or scheduled leave.',
+    uiHints: {
+      defaultExpanded: false,
+      requiresAcknowledgement: false,
+      highlightLevel: 'GRAY',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
 ];

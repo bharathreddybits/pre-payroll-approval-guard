@@ -30,6 +30,20 @@ export const fundamentalPayRules: RuleDefinition[] = [
       'Verify earnings components sum correctly',
       'Correct the values and re-upload',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Fundamental Pay Components Rules',
+    triggeredCondition: 'Current gross pay is negative',
+    whyThisMatters: 'Negative gross pay indicates a fundamental calculation error that will cascade through taxes, deductions, and net pay, resulting in incorrect employee compensation and compliance violations.',
+    reviewerAction: 'Review the earnings breakdown, identify any retroactive adjustments, verify earnings components sum correctly, and correct the values before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'NET_PAY_NEGATIVE',
@@ -60,6 +74,20 @@ export const fundamentalPayRules: RuleDefinition[] = [
       'Check manual earnings and deduction entries',
       'Confirm deduction caps and priorities',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Net Pay Integrity',
+    triggeredCondition: 'Current net pay is negative',
+    whyThisMatters: 'Employees cannot receive negative net pay. This almost always indicates a deduction or recovery error that will cause employee complaints and compliance violations.',
+    reviewerAction: 'Review garnishment limits and recent adjustments, verify no deductions exceed allowable caps, and correct before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'NET_PAY_UNUSUALLY_LOW',
@@ -91,6 +119,20 @@ export const fundamentalPayRules: RuleDefinition[] = [
       'Verify tax withholding amounts',
       'Look for duplicate or excessive deductions',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Net Pay Integrity',
+    triggeredCondition: 'Net pay is less than 40% of gross pay',
+    whyThisMatters: 'Very low net-to-gross ratios often indicate excessive deductions or incorrect tax withholding that will likely trigger employee complaints.',
+    reviewerAction: 'Review all deductions, check for new benefit elections or W-4 changes, and verify no duplicate or excessive deductions were applied.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'GROSS_LESS_THAN_NET',
@@ -122,6 +164,20 @@ export const fundamentalPayRules: RuleDefinition[] = [
       'Ensure reimbursements are properly classified',
       'Correct the calculation and re-upload',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Fundamental Pay Components Rules',
+    triggeredCondition: 'Net pay exceeds gross pay',
+    whyThisMatters: 'Net pay should never exceed gross pay after taxes and deductions. This indicates a fundamental calculation error or data entry mistake.',
+    reviewerAction: 'Verify gross and net pay values are in correct columns, check for negative tax values, and correct before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'NET_PAY_SPIKE_50PCT',
@@ -152,6 +208,20 @@ export const fundamentalPayRules: RuleDefinition[] = [
       'Verify deduction changes',
       'Confirm any bonus or supplemental payments',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Fundamental Pay Components Rules',
+    triggeredCondition: 'Net pay increased by 50% or more',
+    whyThisMatters: 'Large net pay increases may indicate underwithholding, duplicate payments, or unauthorized earnings that could result in tax penalties or audit issues.',
+    reviewerAction: 'Compare earnings between periods, verify tax withholding changes, and confirm any bonus or supplemental payments are authorized.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'NET_PAY_DROP_20PCT',
@@ -182,6 +252,20 @@ export const fundamentalPayRules: RuleDefinition[] = [
       'Verify tax withholding changes',
       'Confirm with the employee if needed',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Fundamental Pay Components Rules',
+    triggeredCondition: 'Net pay decreased by 20% or more',
+    whyThisMatters: 'Significant net pay drops often trigger employee complaints and may indicate calculation errors or missing notifications to employees.',
+    reviewerAction: 'Identify the source of the decrease (earnings, taxes, or deductions), verify tax withholding and benefit election changes, then confirm employee was notified if needed.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'GROSS_NOT_EQUAL_EARNINGS_SUM',
@@ -219,6 +303,20 @@ export const fundamentalPayRules: RuleDefinition[] = [
       'Verify all earning codes are mapped to a component',
       'Correct the values so they reconcile',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Fundamental Pay Components Rules',
+    triggeredCondition: 'Gross pay does not equal the sum of earnings components',
+    whyThisMatters: 'Earnings-to-gross mismatches indicate missing or duplicated earnings that will cascade into incorrect tax and deduction calculations, resulting in compliance violations.',
+    reviewerAction: 'Compare gross pay to the sum of all earnings components, identify the discrepancy, verify all earning codes are mapped, and correct the values before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'GROSS_PAY_SPIKE_50PCT',
@@ -249,6 +347,20 @@ export const fundamentalPayRules: RuleDefinition[] = [
       'Verify any bonuses or supplemental pay',
       'Confirm the increase is authorized',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Fundamental Pay Components Rules',
+    triggeredCondition: 'Gross pay increased by 50% or more',
+    whyThisMatters: 'Large gross pay spikes may indicate duplicate payments, unauthorized rate changes, or data errors that could result in overpayments requiring recovery.',
+    reviewerAction: 'Review the earnings breakdown, compare hours and rates between periods, verify any bonuses or supplemental pay, and confirm the increase is authorized.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'GROSS_PAY_DROP_30PCT',
@@ -279,5 +391,19 @@ export const fundamentalPayRules: RuleDefinition[] = [
       'Confirm leave status',
       'Ensure all earnings are included in the file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Fundamental Pay Components Rules',
+    triggeredCondition: 'Gross pay decreased by 30% or more',
+    whyThisMatters: 'Significant gross pay reductions are uncommon and may indicate missing earnings or hours that could result in underpayment and employee complaints.',
+    reviewerAction: 'Verify hours worked for this period, check for rate changes or unpaid leave, and ensure all earnings are included in the file before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
 ];

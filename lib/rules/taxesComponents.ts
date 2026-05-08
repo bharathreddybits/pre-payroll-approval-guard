@@ -33,6 +33,20 @@ export const taxesComponentsRules: RuleDefinition[] = [
       'Correct the value to a non-negative number',
       'Re-upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Taxes Components Rules',
+    triggeredCondition: 'One or more tax withholding fields contain negative values',
+    whyThisMatters: 'Negative tax values are invalid and will cause incorrect tax filings, reporting errors, and potential IRS penalties.',
+    reviewerAction: 'Identify which tax field is negative, determine the intended adjustment, correct the value to a non-negative number, and re-upload before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'MISSING_FEDERAL_TAX',
@@ -64,6 +78,20 @@ export const taxesComponentsRules: RuleDefinition[] = [
       'Confirm the tax setup in your payroll system',
       'If exempt, document the reason; otherwise fix the withholding',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Taxes Components Rules',
+    triggeredCondition: 'No federal income tax withheld for employee with gross pay over $500',
+    whyThisMatters: 'Missing federal tax withholding may result in IRS penalties for both employer and employee, plus year-end tax liabilities.',
+    reviewerAction: 'Check the employee W-4 filing status, verify if legitimately exempt, and if not exempt, fix the withholding setup before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'MISSING_FICA_TAXES',
@@ -96,6 +124,20 @@ export const taxesComponentsRules: RuleDefinition[] = [
       'Ensure both SS and Medicare fields are populated',
       'Document any valid exemptions',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Taxes Components Rules',
+    triggeredCondition: 'Social Security or Medicare tax missing for employee with significant gross pay',
+    whyThisMatters: 'FICA taxes are mandatory for most employees. Missing FICA creates IRS compliance risk and reporting errors that can result in penalties.',
+    reviewerAction: 'Verify if the employee qualifies for FICA exemption, check the tax configuration, ensure both SS and Medicare fields are populated, and document any valid exemptions.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'TAX_SPIKE_40PCT',
@@ -127,6 +169,20 @@ export const taxesComponentsRules: RuleDefinition[] = [
       'Confirm the tax calculation method used',
       'Review for supplemental pay tax treatment',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Taxes Components Rules',
+    triggeredCondition: 'Tax withholding increased by 40% or more',
+    whyThisMatters: 'Large tax increases may indicate W-4 changes, supplemental pay tax treatment, or calculation errors that could result in over-withholding complaints.',
+    reviewerAction: 'Check for W-4 or withholding changes, verify if earnings increased significantly, and confirm the tax calculation method used.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'TAX_DROP_30PCT',
@@ -158,6 +214,20 @@ export const taxesComponentsRules: RuleDefinition[] = [
       'Review pre-tax deduction changes',
       'Confirm the tax calculation is correct',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Taxes Components Rules',
+    triggeredCondition: 'Tax withholding decreased by 30% or more',
+    whyThisMatters: 'Significant tax decreases may result in under-withholding and year-end tax liabilities for employees, leading to complaints and potential penalties.',
+    reviewerAction: 'Check for W-4 or withholding changes, verify if earnings decreased, review pre-tax deduction changes, and confirm the tax calculation is correct.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'STATE_TAX_MISSING',
@@ -189,6 +259,20 @@ export const taxesComponentsRules: RuleDefinition[] = [
       'If applicable, set up state tax withholding',
       'Document if the employee is in a no-income-tax state',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Taxes Components Rules',
+    triggeredCondition: 'No state income tax withheld for employee with significant gross pay',
+    whyThisMatters: 'Missing state tax may indicate incorrect work state setup or could be valid if employee works in a no-income-tax state.',
+    reviewerAction: 'Verify the employee work state, check if the state has income tax, and either set up state tax withholding or document if in a no-income-tax state.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'LOCAL_TAX_INCONSISTENCY',
@@ -221,5 +305,19 @@ export const taxesComponentsRules: RuleDefinition[] = [
       'Verify which employees should have local tax withheld',
       'This is informational and does not block approval',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Taxes Components Rules',
+    triggeredCondition: 'Less than 30% of employees have local tax withholding',
+    whyThisMatters: 'Inconsistent local tax setup may cause compliance issues in jurisdictions that require it, though this could be normal if employees are in different locations.',
+    reviewerAction: 'Review local tax jurisdiction assignments for consistency. This is informational and does not block approval.',
+    uiHints: {
+      defaultExpanded: false,
+      requiresAcknowledgement: false,
+      highlightLevel: 'GRAY',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
 ];

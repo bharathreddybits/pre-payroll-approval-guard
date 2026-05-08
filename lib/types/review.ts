@@ -1,5 +1,18 @@
 import type { UxSection } from '../rules/uxSectionMapping';
 
+/** UI hints for judgement card rendering */
+export interface JudgementUiHints {
+  defaultExpanded: boolean;
+  requiresAcknowledgement: boolean;
+  highlightLevel: 'RED' | 'AMBER' | 'GRAY';
+}
+
+/** System capability disclaimers */
+export interface SystemLimits {
+  doesNotJudgeAuthorization: boolean;
+  doesNotJudgeLegalCompliance: boolean;
+}
+
 /** A single enriched judgement item, ready for UI rendering */
 export interface EnrichedJudgement {
   // From DB (material_judgement)
@@ -23,7 +36,7 @@ export interface EnrichedJudgement {
   delta_percentage: number | null;
   change_type: string;
 
-  // Enriched from rules registry
+  // Enriched from rules registry (existing fields)
   rule_name: string;
   rule_category: string;
   rule_severity: string;
@@ -34,6 +47,14 @@ export interface EnrichedJudgement {
   risk_statement: string;
   common_causes: string[];
   review_steps: string[];
+
+  // Enriched from rules registry (NEW fields for 4-Line Golden Template)
+  judgment_category?: string; // E.g., "Net Pay Integrity", "Taxes Components Rules"
+  triggered_condition?: string; // Human-readable condition (e.g., "Current net pay is negative")
+  why_this_matters?: string; // Clear risk explanation (replaces risk_statement eventually)
+  reviewer_action?: string; // Single, actionable next step (replaces review_steps)
+  ui_hints?: JudgementUiHints; // Display hints for card rendering
+  system_limits?: SystemLimits; // Disclaimers about what system doesn't judge
 
   // UX section assignment
   ux_section: UxSection;

@@ -31,6 +31,20 @@ export const deductionsComponentsRules: RuleDefinition[] = [
       'Verify deduction caps are properly configured',
       'Remove or reduce duplicate or excessive deductions',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Deductions Components Rules',
+    triggeredCondition: 'Total deductions exceed gross pay',
+    whyThisMatters: 'Deductions exceeding gross pay cause negative net pay, which is invalid, blocks payroll processing, and results in compliance violations.',
+    reviewerAction: 'Review all deductions, check garnishment limits against disposable earnings, verify deduction caps are configured, and remove or reduce excessive deductions before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'NEW_DEDUCTION_INTRODUCED',
@@ -64,6 +78,20 @@ export const deductionsComponentsRules: RuleDefinition[] = [
       'Confirm the amount is correct',
       'Check the effective date',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Deductions Components Rules',
+    triggeredCondition: 'A deduction type appeared that was not in the previous period',
+    whyThisMatters: 'Unauthorized or unexpected deductions can cause employee complaints, disputes, and compliance issues if not properly documented.',
+    reviewerAction: 'Identify the new deduction type, verify authorization (employee enrollment or court order), confirm the amount and effective date are correct.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'DEDUCTION_DROPPED',
@@ -97,6 +125,20 @@ export const deductionsComponentsRules: RuleDefinition[] = [
       'If a garnishment, confirm it has been legally satisfied',
       'Restore the deduction if removed in error',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Deductions Components Rules',
+    triggeredCondition: 'A deduction from the previous period is missing',
+    whyThisMatters: 'Dropped deductions may indicate canceled benefits, missed garnishments, or system configuration errors that could cause compliance violations.',
+    reviewerAction: 'Identify the missing deduction, verify if removal is intentional, confirm garnishments are legally satisfied, and restore if removed in error.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'DEDUCTION_SPIKE_50PCT',
@@ -127,6 +169,20 @@ export const deductionsComponentsRules: RuleDefinition[] = [
       'Verify the increase is authorized',
       'Check for duplicate deductions',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Deductions Components Rules',
+    triggeredCondition: 'Total deductions increased by 50% or more',
+    whyThisMatters: 'Sudden deduction increases often trigger employee complaints and may indicate configuration errors, benefit changes, or duplicate deductions.',
+    reviewerAction: 'Compare deduction details between periods, identify which deduction increased, verify authorization, and check for duplicate deductions.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'NEGATIVE_DEDUCTION',
@@ -156,6 +212,20 @@ export const deductionsComponentsRules: RuleDefinition[] = [
       'If this is a refund, process it as an earning instead',
       'Correct the sign and re-upload',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Deductions Components Rules',
+    triggeredCondition: 'Total deductions is negative',
+    whyThisMatters: 'Negative deductions inflate net pay and create incorrect tax and benefit records, causing compliance violations.',
+    reviewerAction: 'Verify the deduction amount is correct, process refunds as earnings instead of negative deductions, and correct the sign before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'TOTAL_DEDUCTIONS_SUM_MISMATCH',
@@ -191,6 +261,20 @@ export const deductionsComponentsRules: RuleDefinition[] = [
       'Verify all deduction codes are included',
       'Correct the values so they reconcile',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Deductions Components Rules',
+    triggeredCondition: 'Total deductions does not match the sum of individual deduction components',
+    whyThisMatters: 'Deduction mismatches indicate missing or extra deductions that will affect net pay accuracy and employee compensation records.',
+    reviewerAction: 'Compare total deductions to the sum of components, identify the discrepancy, verify all deduction codes are included, and correct values to reconcile.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: '401K_OVER_IRS_LIMIT',
@@ -226,5 +310,19 @@ export const deductionsComponentsRules: RuleDefinition[] = [
       'Compare against the IRS annual limit ($23,500 for 2025)',
       'Correct the contribution amount',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Deductions Components Rules',
+    triggeredCondition: '401(k) contribution exceeds $10,000 for a single pay period',
+    whyThisMatters: 'Excessive 401(k) contributions violate IRS limits and create compliance obligations and correction requirements with the plan administrator.',
+    reviewerAction: 'Verify 401(k) contribution amount is correct, check if percentage vs. dollar amount is properly configured, and correct before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
 ];

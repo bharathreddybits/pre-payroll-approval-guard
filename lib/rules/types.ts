@@ -66,6 +66,27 @@ export interface RuleDefinition {
   commonCauses: string[];
   /** Ordered review steps */
   reviewSteps: string[];
+
+  // NEW fields for 4-Line Golden Template UX
+  /** Judgment category (e.g., "Net Pay Integrity", "Taxes Components Rules") */
+  judgmentCategory?: string;
+  /** Human-readable condition that triggered this rule */
+  triggeredCondition?: string;
+  /** Clear explanation of why this matters (replaces riskStatement eventually) */
+  whyThisMatters?: string;
+  /** Single, clear action to take (replaces reviewSteps) */
+  reviewerAction?: string;
+  /** UI display hints */
+  uiHints?: {
+    defaultExpanded: boolean;
+    requiresAcknowledgement: boolean;
+    highlightLevel: 'RED' | 'AMBER' | 'GRAY';
+  };
+  /** System capability disclaimers */
+  systemLimits?: {
+    doesNotJudgeAuthorization: boolean;
+    doesNotJudgeLegalCompliance: boolean;
+  };
 }
 
 /**

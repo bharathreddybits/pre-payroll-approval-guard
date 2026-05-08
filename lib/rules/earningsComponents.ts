@@ -33,6 +33,20 @@ export const earningsComponentsRules: RuleDefinition[] = [
       'Confirm any authorized salary changes',
       'Review for partial period adjustments',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Earnings Components Rules',
+    triggeredCondition: 'Base earnings decreased by 20% or more',
+    whyThisMatters: 'Significant base pay reductions may indicate missing hours, rate changes, or data errors that could result in underpayment.',
+    reviewerAction: 'Verify the employee pay rate is correct, check if hours worked decreased, confirm any authorized salary changes, and review partial period adjustments.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'BASE_EARNINGS_SPIKE_50PCT',
@@ -66,6 +80,20 @@ export const earningsComponentsRules: RuleDefinition[] = [
       'Compare hours worked between periods',
       'Confirm with HR if this is a valid compensation change',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Earnings Components Rules',
+    triggeredCondition: 'Base earnings increased by 50% or more',
+    whyThisMatters: 'Large base pay increases may indicate unauthorized rate changes, data entry errors, or unvetted compensation decisions.',
+    reviewerAction: 'Verify the pay rate change is authorized, check for retroactive adjustments, compare hours between periods, and confirm with HR if valid.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'OVERTIME_PAY_WITHOUT_OT_HOURS',
@@ -97,6 +125,20 @@ export const earningsComponentsRules: RuleDefinition[] = [
       'Ensure hours and pay fields are properly mapped',
       'Correct the hours or reclassify the pay',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Earnings Components Rules',
+    triggeredCondition: 'Overtime pay recorded without corresponding overtime hours',
+    whyThisMatters: 'Overtime pay without corresponding hours is a common audit finding and may violate FLSA requirements and wage-hour regulations.',
+    reviewerAction: 'Verify if overtime hours should be recorded, check the source system for correct OT hours, ensure fields are properly mapped, and correct before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'BONUS_PAID_UNEXPECTEDLY',
@@ -129,6 +171,20 @@ export const earningsComponentsRules: RuleDefinition[] = [
       'Check that it was not already paid in a prior period',
       'Validate the bonus amount',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Earnings Components Rules',
+    triggeredCondition: 'Bonus payment appeared that was not in the previous period',
+    whyThisMatters: 'Unverified bonus payments may be unauthorized, duplicated, or entered in error, resulting in overpayment or compliance violations.',
+    reviewerAction: 'Verify the bonus is authorized and documented, confirm the correct employee received it, check it was not already paid, and validate the amount.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'OTHER_EARNINGS_HIGH',
@@ -162,6 +218,20 @@ export const earningsComponentsRules: RuleDefinition[] = [
       'Check for duplicate entries',
       'Confirm proper coding of the earnings',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Earnings Components Rules',
+    triggeredCondition: 'Other earnings significantly higher than previous period or exceed $1,000',
+    whyThisMatters: 'Unusual other earnings may indicate miscoded payments, duplicate entries, or unauthorized additions resulting in overpayment.',
+    reviewerAction: 'Identify the earning codes making up other earnings, verify each is authorized, check for duplicate entries, and confirm proper coding.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'EARNINGS_NEGATIVE',
@@ -195,6 +265,20 @@ export const earningsComponentsRules: RuleDefinition[] = [
       'Correct the value or reclassify the entry',
       'Re-upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Earnings Components Rules',
+    triggeredCondition: 'One or more earnings fields contain negative values',
+    whyThisMatters: 'Negative earnings are invalid in standard payroll and indicate data entry or system errors that will distort compensation records.',
+    reviewerAction: 'Identify which earnings field is negative, determine if should be a deduction instead, correct the value or reclassify, and re-upload.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'EARNINGS_WITHOUT_EMPLOYEE',
@@ -227,5 +311,19 @@ export const earningsComponentsRules: RuleDefinition[] = [
       'Assign the correct employee ID',
       'Re-upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Earnings Components Rules',
+    triggeredCondition: 'Earnings exist for a record without an employee ID',
+    whyThisMatters: 'Unassigned earnings cannot be paid, taxed, or reported correctly, resulting in unmatched payroll records and compliance issues.',
+    reviewerAction: 'Identify the record with missing employee ID, assign the correct employee ID, and re-upload the corrected file before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
 ];

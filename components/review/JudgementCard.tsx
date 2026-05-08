@@ -160,54 +160,75 @@ export function JudgementCard({ item }: JudgementCardProps) {
         </div>
       </div>
 
-      <CardContent className="pt-4 pb-4 space-y-4">
-        {/* Snapshot Table */}
-        {hasSnapshot && (
-          <div className="rounded-md border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">Metric</th>
-                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">Previous</th>
-                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">Current</th>
-                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="px-3 py-2 font-medium text-gray-900">{metricLabel}</td>
-                  <td className="px-3 py-2 text-right text-gray-600 font-mono text-xs">
-                    {formatValue(item.baseline_value, item.metric)}
-                  </td>
-                  <td className="px-3 py-2 text-right text-gray-900 font-mono text-xs font-semibold">
-                    {formatValue(item.current_value, item.metric)}
-                  </td>
-                  <td className={`px-3 py-2 text-right font-mono text-xs font-semibold ${getDeltaColor(item.delta_percentage)}`}>
-                    {formatDelta(item.delta_percentage)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+      <CardContent className="pt-4 pb-4 space-y-3">
+        {/* Line 1: What Changed */}
+        <div>
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+            1. What Changed
+          </h4>
+          <div className="text-sm text-gray-900">
+            {hasSnapshot ? (
+              <div className="space-y-1">
+                <div className="font-semibold">
+                  {metricLabel}{' '}
+                  {item.delta_percentage !== null && (
+                    <span className={`${getDeltaColor(item.delta_percentage)}`}>
+                      {item.delta_percentage > 0 ? 'increased' : 'decreased'} by {Math.abs(item.delta_percentage).toFixed(1)}%
+                    </span>
+                  )}
+                  {item.delta_absolute !== null && (
+                    <span className={`${getDeltaColor(item.delta_percentage)}`}>
+                      {' '}({item.delta_absolute > 0 ? '+' : ''}{formatValue(item.delta_absolute, item.metric)})
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-600 font-mono">
+                  Previous: {formatValue(item.baseline_value, item.metric)} → Current: {formatValue(item.current_value, item.metric)}
+                </div>
+              </div>
+            ) : (
+              <span className="font-semibold">{item.rule_name}</span>
+            )}
           </div>
-        )}
-
-        {/* System Assessment */}
-        <div>
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">System Assessment</h4>
-          <p className="text-sm text-gray-800 font-medium">{item.flag_reason}</p>
         </div>
 
-        {/* Why we flagged this */}
+        {/* Line 2: Why You're Seeing This */}
         <div>
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Why we flagged this</h4>
-          <p className="text-sm text-gray-700">{item.risk_statement}</p>
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+            2. Why You're Seeing This
+          </h4>
+          <p className="text-sm text-gray-800">
+            {item.triggered_condition || item.flag_reason}
+          </p>
         </div>
 
-        {/* What usually causes this */}
+        {/* Line 3: Why This Is Risky */}
+        <div>
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+            3. Why This Is Risky
+          </h4>
+          <p className="text-sm text-gray-800">
+            {item.why_this_matters || item.risk_statement}
+          </p>
+        </div>
+
+        {/* Line 4: What To Do */}
+        <div>
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+            4. What To Do
+          </h4>
+          <p className="text-sm text-gray-800 font-medium">
+            {item.reviewer_action || (item.review_steps.length > 0 ? item.review_steps.join('; ') : item.user_action)}
+          </p>
+        </div>
+
+        {/* Common Causes (expandable) */}
         {item.common_causes.length > 0 && (
-          <div>
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">What usually causes this</h4>
-            <ul className="text-sm text-gray-700 space-y-0.5">
+          <details className="text-xs text-gray-600">
+            <summary className="cursor-pointer font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700">
+              What usually causes this
+            </summary>
+            <ul className="mt-2 text-sm text-gray-700 space-y-0.5 pl-4">
               {item.common_causes.map((cause, i) => (
                 <li key={i} className="flex items-start gap-2">
                   <span className="text-gray-400 mt-0.5 shrink-0">&bull;</span>
@@ -215,22 +236,7 @@ export function JudgementCard({ item }: JudgementCardProps) {
                 </li>
               ))}
             </ul>
-          </div>
-        )}
-
-        {/* What to check first */}
-        {item.review_steps.length > 0 && (
-          <div>
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">What to check first</h4>
-            <ol className="text-sm text-gray-700 space-y-0.5">
-              {item.review_steps.map((step, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="text-gray-400 font-mono text-xs mt-0.5 shrink-0 w-4 text-right">{i + 1}.</span>
-                  <span>{step}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
+          </details>
         )}
 
         {/* Notes row */}

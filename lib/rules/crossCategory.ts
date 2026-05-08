@@ -43,6 +43,20 @@ export const crossCategoryRules: RuleDefinition[] = [
       'Verify all tax and deduction fields are populated',
       'Correct the values and re-upload',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Cross-Category Rules',
+    triggeredCondition: 'Fundamental payroll equation (Gross - Taxes - Deductions = Net) does not balance',
+    whyThisMatters: 'A broken pay equation means at least one component is incorrect, affecting employee pay, tax filings, and financial reporting accuracy.',
+    reviewerAction: 'Calculate gross minus all taxes and deductions, compare to net pay, identify discrepancy, verify all fields are populated, and correct before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'MISSING_BASELINE_ROW',
@@ -78,6 +92,20 @@ export const crossCategoryRules: RuleDefinition[] = [
       'Check benefit enrollment is complete',
       'If not a new hire, investigate why they were missing from baseline',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Cross-Category Rules',
+    triggeredCondition: 'Employee exists in current run but not in previous baseline',
+    whyThisMatters: 'New employees should be verified to ensure proper onboarding, tax setup, and benefit enrollment are complete before approval.',
+    reviewerAction: 'Confirm this is a valid new hire or transfer, verify tax setup and W-4, check benefit enrollment, investigate if missing from baseline unexpectedly.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'EMPLOYEE_MISSING_IN_CURRENT',
@@ -113,5 +141,19 @@ export const crossCategoryRules: RuleDefinition[] = [
       'If on leave, ensure proper leave tracking',
       'If excluded accidentally, add them back and re-upload',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Cross-Category Rules',
+    triggeredCondition: 'Employee present in previous run is missing from current run',
+    whyThisMatters: 'Missing employees may have been terminated, placed on leave, or accidentally excluded from the export, which requires status verification.',
+    reviewerAction: 'Verify employee status in HR system, confirm final pay if terminated, ensure leave tracking if on leave, re-upload if excluded accidentally.',
+    uiHints: {
+      defaultExpanded: false,
+      requiresAcknowledgement: false,
+      highlightLevel: 'GRAY',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
 ];

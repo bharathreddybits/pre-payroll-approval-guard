@@ -151,6 +151,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           common_causes: ruleMeta?.commonCauses ?? [],
           review_steps: ruleMeta?.reviewSteps ?? [],
 
+          // NEW: 4-Line Golden Template fields (with fallbacks)
+          judgment_category: ruleMeta?.judgmentCategory,
+          triggered_condition: ruleMeta?.triggeredCondition,
+          why_this_matters: ruleMeta?.whyThisMatters,
+          reviewer_action: ruleMeta?.reviewerAction,
+          ui_hints: ruleMeta?.uiHints,
+          system_limits: ruleMeta?.systemLimits,
+
           // UX section
           ux_section: uxSection,
         };

@@ -27,6 +27,20 @@ export function getRuleMetadata(ruleId: string): {
   riskStatement: string;
   commonCauses: string[];
   reviewSteps: string[];
+  // New fields for 4-Line Golden Template
+  judgmentCategory?: string;
+  triggeredCondition?: string;
+  whyThisMatters?: string;
+  reviewerAction?: string;
+  uiHints?: {
+    defaultExpanded: boolean;
+    requiresAcknowledgement: boolean;
+    highlightLevel: 'RED' | 'AMBER' | 'GRAY';
+  };
+  systemLimits?: {
+    doesNotJudgeAuthorization: boolean;
+    doesNotJudgeLegalCompliance: boolean;
+  };
 } | null {
   const rule = RULE_MAP.get(ruleId);
   if (!rule) return null;
@@ -43,5 +57,12 @@ export function getRuleMetadata(ruleId: string): {
     riskStatement: rule.riskStatement,
     commonCauses: rule.commonCauses,
     reviewSteps: rule.reviewSteps,
+    // Include new fields if present
+    judgmentCategory: rule.judgmentCategory,
+    triggeredCondition: rule.triggeredCondition,
+    whyThisMatters: rule.whyThisMatters,
+    reviewerAction: rule.reviewerAction,
+    uiHints: rule.uiHints,
+    systemLimits: rule.systemLimits,
   };
 }

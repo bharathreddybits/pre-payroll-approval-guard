@@ -31,6 +31,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Confirm whether this is a valid final paycheck',
       'If overpayment, initiate reversal process',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Inactive, terminated, or leave-of-absence employee is receiving pay',
+    whyThisMatters: 'Paying inactive employees results in overpayments, tax filing errors, and compliance violations.',
+    reviewerAction: 'Verify employee status in HRIS, check if termination was processed before cutoff, confirm if valid final pay, initiate reversal if overpayment.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'MISSING_EMPLOYEE_ID',
@@ -61,6 +75,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Re-export the file with the employee ID column populated',
       'Upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Payroll record exists without an employee identifier',
+    whyThisMatters: 'Records without employee IDs cannot be matched, audited, or reported correctly, blocking all downstream processing.',
+    reviewerAction: 'Check source CSV for missing employee ID values, verify all have IDs in payroll system, re-export with ID column populated, and upload corrected file.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'EMPLOYMENT_STATUS_CHANGE',
@@ -93,6 +121,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Check benefit and deduction adjustments',
       'Ensure proper tax treatment for the new status',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Employment status changed between previous and current payroll run',
+    whyThisMatters: 'Status changes affect benefit eligibility, tax withholding, final pay calculations, and compliance reporting.',
+    reviewerAction: 'Confirm status change matches HR records, verify final pay if terminated, check benefit and deduction adjustments, ensure proper tax treatment.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'DUPLICATE_EMPLOYEE_ROWS',
@@ -125,6 +167,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'If both rows are valid, consolidate into one record',
       'Re-upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Same employee ID appears more than once in current payroll file',
+    whyThisMatters: 'Duplicate rows cause double payments, incorrect tax withholding totals, and reporting errors.',
+    reviewerAction: 'Search for duplicated employee ID, determine correct row and remove duplicate, consolidate if both valid, and re-upload corrected file.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'PAY_FREQUENCY_CHANGED',
@@ -157,6 +213,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Check that deduction amounts reflect the new schedule',
       'Validate tax withholding adjustments',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Pay frequency changed between payroll runs',
+    whyThisMatters: 'Pay frequency changes affect salary proration, benefit deduction timing, and tax withholding calculations.',
+    reviewerAction: 'Confirm frequency change is authorized, verify salary proration is correct, check deduction amounts reflect new schedule, validate tax adjustments.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'MISSING_PAY_FREQUENCY',
@@ -185,6 +255,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Verify the correct frequency (weekly, bi-weekly, semi-monthly, monthly)',
       'Re-export with the field populated',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Pay frequency is not set for this employee',
+    whyThisMatters: 'Missing pay frequency prevents accurate proration, deduction timing, and annual tax calculations.',
+    reviewerAction: 'Add the pay frequency to the employee record, verify correct frequency (weekly/bi-weekly/semi-monthly/monthly), and re-export with field populated.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'PAY_GROUP_CHANGED',
@@ -215,6 +299,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Verify payment routing and timing are correct',
       'Check for downstream impacts on benefits or reporting',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Employee pay group changed between payroll runs',
+    whyThisMatters: 'Pay group changes can affect payment timing, bank routing, and benefit eligibility.',
+    reviewerAction: 'Confirm pay group reassignment is intentional, verify payment routing and timing, check for downstream impacts on benefits or reporting.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'PAY_PERIOD_START_AFTER_END',
@@ -245,6 +343,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Correct the date order or format',
       'Re-upload the corrected file',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Pay period start date is after the end date',
+    whyThisMatters: 'Invalid pay period dates cause incorrect proration, tax calculations, and regulatory reporting.',
+    reviewerAction: 'Review pay period dates in source file, correct the date order or format, and re-upload the corrected file before approval.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'PAY_PERIOD_MISMATCH',
@@ -272,6 +384,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Separate different pay periods into distinct files if needed',
       'Correct any date errors and re-upload',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Different employees in same payroll run have different pay period dates',
+    whyThisMatters: 'Mismatched pay periods indicate mixed payroll runs or data corruption that will cause compliance violations.',
+    reviewerAction: 'Check if all employees should have same pay period, separate different periods into distinct files if needed, correct date errors and re-upload.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: true,
+      highlightLevel: 'RED',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'PAY_DATE_IN_PAST',
@@ -302,6 +428,20 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Confirm if this is an intentional early payment',
       'Correct the date if it is an error',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Pay date is before the pay period end date',
+    whyThisMatters: 'Early pay dates may indicate calendar errors affecting tax deposit timing and compliance.',
+    reviewerAction: 'Verify pay date against payroll calendar, confirm if intentional early payment, correct the date if it is an error.',
+    uiHints: {
+      defaultExpanded: true,
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
   {
     id: 'DEPARTMENT_MISSING',
@@ -329,5 +469,19 @@ export const employeeIdentityRules: RuleDefinition[] = [
       'Assign a department in your HR system if applicable',
       'This is informational and does not block approval',
     ],
+    // NEW: 4-Line Golden Template fields
+    judgmentCategory: 'Employee Identity & Context Rules',
+    triggeredCondition: 'Department field is blank for this employee',
+    whyThisMatters: 'Missing department data limits reporting and cost-center allocation accuracy.',
+    reviewerAction: 'Assign a department in HR system if applicable. This is informational and does not block approval.',
+    uiHints: {
+      defaultExpanded: false,
+      requiresAcknowledgement: false,
+      highlightLevel: 'GRAY',
+    },
+    systemLimits: {
+      doesNotJudgeAuthorization: true,
+      doesNotJudgeLegalCompliance: true,
+    },
   },
 ];
