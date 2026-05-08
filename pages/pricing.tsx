@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { MarketingNav, Footer } from '../components/landing';
 import { Check } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 const plans = [
   {
@@ -73,8 +77,107 @@ const faqs = [
   },
 ];
 
+interface Organization {
+  organization_id: string;
+  organization_name: string;
+}
+
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const { user } = useAuth();
+  const router = useRouter();
+
+  // Fetch user's organizations if logged in
+  useEffect(() => {
+    async function fetchOrganizations() {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('user_organization_mapping')
+          .select(`
+            organization_id,
+            organization:organization_id (
+              organization_id,
+              organization_name
+            )
+          `)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        if (data) {
+          const orgs = data.map((item: any) => ({
+            organization_id: item.organization.organization_id,
+            organization_name: item.organization.organization_name,
+          }));
+          setOrganizations(orgs);
+        }
+      } catch (error) {
+        console.error('Failed to fetch organizations:', error);
+      }
+    }
+
+    fetchOrganizations();
+  }, [user]);
+
+  const handleSubscribe = async (planName: string) => {
+    // If not logged in, redirect to signup
+    if (!user) {
+      router.push('/signup');
+      return;
+    }
+
+    // Get the first organization (for now - in future could add org selector)
+    const org = organizations[0];
+    if (!org) {
+      toast.error('No organization found', {
+        description: 'Please contact support to set up your organization.',
+      });
+      return;
+    }
+
+    // Determine plan ID based on plan name and billing cycle
+    let planId: string;
+    if (planName === 'Starter') {
+      planId = annual ? 'starter_annual' : 'starter_monthly';
+    } else {
+      planId = annual ? 'pro_annual' : 'pro_monthly';
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/checkout/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId,
+          organizationId: org.organization_id,
+          organizationName: org.organization_name,
+          userEmail: user.email,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create checkout');
+      }
+
+      const { checkoutUrl } = await response.json();
+
+      // Redirect to LemonSqueezy checkout
+      window.location.href = checkoutUrl;
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      toast.error('Failed to start checkout', {
+        description: error.message || 'Please try again or contact support.',
+      });
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -160,16 +263,17 @@ export default function PricingPage() {
                       ))}
                     </ul>
 
-                    <Link
-                      href={plan.ctaHref}
-                      className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors ${
+                    <button
+                      onClick={() => handleSubscribe(plan.name)}
+                      disabled={loading}
+                      className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                         plan.highlight
                           ? 'bg-white text-brand-blue hover:bg-blue-50'
                           : 'bg-slate-900 text-white hover:bg-slate-800'
                       }`}
                     >
-                      {plan.cta}
-                    </Link>
+                      {loading ? 'Loading...' : plan.cta}
+                    </button>
                   </div>
                 );
               })}
