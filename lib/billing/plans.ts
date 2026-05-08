@@ -41,7 +41,7 @@ export const PLANS: Record<string, PricingPlan> = {
     name: 'Starter Monthly',
     interval: 'month',
     price: 24900, // $249.00 in cents
-    lemonSqueezyVariantId: undefined, // TODO: Add after LS setup
+    lemonSqueezyVariantId: '1624079',
   },
   starter_annual: {
     id: 'starter_annual',
@@ -49,7 +49,7 @@ export const PLANS: Record<string, PricingPlan> = {
     name: 'Starter Annual',
     interval: 'year',
     price: 238800, // $199/mo * 12 = $2,388 in cents
-    lemonSqueezyVariantId: undefined,
+    lemonSqueezyVariantId: '1624164',
   },
   pro_monthly: {
     id: 'pro_monthly',
@@ -57,7 +57,7 @@ export const PLANS: Record<string, PricingPlan> = {
     name: 'Pro Monthly',
     interval: 'month',
     price: 74900, // $749.00 in cents
-    lemonSqueezyVariantId: undefined,
+    lemonSqueezyVariantId: '1624168',
   },
   pro_annual: {
     id: 'pro_annual',
@@ -65,7 +65,7 @@ export const PLANS: Record<string, PricingPlan> = {
     name: 'Pro Annual',
     interval: 'year',
     price: 718800, // $599/mo * 12 = $7,188 in cents
-    lemonSqueezyVariantId: undefined,
+    lemonSqueezyVariantId: '1624171',
   },
 };
 
@@ -75,14 +75,13 @@ export const PLANS: Record<string, PricingPlan> = {
 
 /**
  * Maps LemonSqueezy variant_id to internal plan ID.
- * Fill this after creating products in LemonSqueezy dashboard.
+ * Configured for Store ID: 288054 (payrollshield.lemonsqueezy.com)
  */
 export const LEMONSQUEEZY_VARIANT_TO_PLAN: Record<string, string> = {
-  // Example:
-  // 'ls_variant_starter_monthly': 'starter_monthly',
-  // 'ls_variant_starter_annual': 'starter_annual',
-  // 'ls_variant_pro_monthly': 'pro_monthly',
-  // 'ls_variant_pro_annual': 'pro_annual',
+  '1624079': 'starter_monthly',
+  '1624164': 'starter_annual',
+  '1624168': 'pro_monthly',
+  '1624171': 'pro_annual',
 };
 
 // ---------------------------------------------------------------------------
