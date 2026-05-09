@@ -18,9 +18,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper function to ensure user has an organization
+  const ensureUserHasOrganization = async (user: User) => {
+    try {
+      // Check if user already has an organization
+      const { data: mapping } = await supabase
+        .from('user_organization_mapping')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!mapping) {
+        // User doesn't have an organization - create one
+        const orgName = (user.email?.split('@')[0] || 'User') + "'s Organization";
+
+        const { data: newOrg, error: orgError } = await supabase
+          .from('organization')
+          .insert({ organization_name: orgName })
+          .select()
+          .single();
+
+        if (!orgError && newOrg) {
+          // Link user to organization
+          await supabase
+            .from('user_organization_mapping')
+            .insert({
+              user_id: user.id,
+              organization_id: newOrg.organization_id,
+              role: 'admin'
+            });
+        }
+      }
+    } catch (error) {
+      // Silently fail - don't block auth flow
+      console.error('Error ensuring user has organization:', error);
+    }
+  };
+
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        await ensureUserHasOrganization(session.user);
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -28,7 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
+        if (session) {
+          await ensureUserHasOrganization(session.user);
+        }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);

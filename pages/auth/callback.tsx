@@ -44,6 +44,35 @@ export default function AuthCallback() {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session) {
+          // Check if user has an organization, create one if not
+          const { data: mapping } = await supabase
+            .from('user_organization_mapping')
+            .select('organization_id')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (!mapping) {
+            // User doesn't have an organization - create one
+            const orgName = (session.user.email?.split('@')[0] || 'User') + "'s Organization";
+
+            const { data: newOrg, error: orgError } = await supabase
+              .from('organization')
+              .insert({ organization_name: orgName })
+              .select()
+              .single();
+
+            if (!orgError && newOrg) {
+              // Link user to organization
+              await supabase
+                .from('user_organization_mapping')
+                .insert({
+                  user_id: session.user.id,
+                  organization_id: newOrg.organization_id,
+                  role: 'admin'
+                });
+            }
+          }
+
           setMessage('Email confirmed! Redirecting...');
           setTimeout(() => router.push('/dashboard'), 1500);
         } else if (type === 'signup' || type === 'email_confirmation') {
