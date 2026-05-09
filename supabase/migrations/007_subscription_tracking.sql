@@ -32,7 +32,7 @@ CREATE POLICY "Users can view their organization's subscription"
   USING (
     organization_id IN (
       SELECT organization_id
-      FROM public.organization_user
+      FROM public.user_organization_mapping
       WHERE user_id = auth.uid()
     )
   );
