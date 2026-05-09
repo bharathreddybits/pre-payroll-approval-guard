@@ -7,6 +7,8 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Header } from '../components/Header';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { SubscriptionGuard } from '../components/SubscriptionGuard';
+import { TrialBanner } from '../components/TrialBanner';
 
 interface UploadState {
   baselineFile: File | null;
@@ -264,14 +266,16 @@ export default function UploadPage() {
 
   return (
     <ProtectedRoute>
-      <Head>
-        <title>Upload Payroll Data - PayrollShield</title>
-        <meta name="description" content="Upload baseline and current payroll CSV files for comparison" />
-      </Head>
+      <SubscriptionGuard>
+        <Head>
+          <title>Upload Payroll Data - PayrollShield</title>
+          <meta name="description" content="Upload baseline and current payroll CSV files for comparison" />
+        </Head>
 
-      <Header />
+        <Header />
+        <TrialBanner />
 
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
+        <div className="min-h-screen bg-gray-50 py-12 px-4">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -495,6 +499,7 @@ export default function UploadPage() {
           )}
         </div>
       </div>
+      </SubscriptionGuard>
     </ProtectedRoute>
   );
 }

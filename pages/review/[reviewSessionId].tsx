@@ -4,6 +4,8 @@ import Head from 'next/head';
 import { toast } from 'sonner';
 import { Header } from '../../components/Header';
 import { ProtectedRoute } from '../../components/ProtectedRoute';
+import { SubscriptionGuard } from '../../components/SubscriptionGuard';
+import { TrialBanner } from '../../components/TrialBanner';
 import { SkeletonReviewPage } from '../../components/ui/skeleton';
 import { VerdictBanner, ReviewSection, FinalizeChecklist } from '../../components/review';
 import type { ReviewPageData } from '../../lib/types/review';
@@ -160,14 +162,16 @@ export default function ReviewPage() {
 
   return (
     <ProtectedRoute>
-      <Head>
-        <title>Review Payroll - {session.organization_name}</title>
-        <meta name="description" content="Review and approve payroll changes" />
-      </Head>
+      <SubscriptionGuard>
+        <Head>
+          <title>Review Payroll - {session.organization_name}</title>
+          <meta name="description" content="Review and approve payroll changes" />
+        </Head>
 
-      <Header />
+        <Header />
+        <TrialBanner />
 
-      <div className="min-h-screen bg-gray-50 pb-12">
+        <div className="min-h-screen bg-gray-50 pb-12">
         {/* Page Header */}
         <div className="bg-white border-b shadow-sm">
           <div className="max-w-5xl mx-auto px-4 py-6">
@@ -225,6 +229,7 @@ export default function ReviewPage() {
           />
         </div>
       </div>
+      </SubscriptionGuard>
     </ProtectedRoute>
   );
 }
