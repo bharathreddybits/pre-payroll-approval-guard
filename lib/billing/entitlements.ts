@@ -38,12 +38,30 @@ export async function getOrganizationTier(organizationId: string): Promise<Tier>
  * Get complete entitlements for an organization including limits and trial status.
  */
 export async function getEntitlements(organizationId: string): Promise<Entitlement> {
+  const supabase = getServiceSupabase();
   const tier = await getOrganizationTier(organizationId);
   const limits = getTierLimits(tier);
 
-  // TODO: Check subscription table for trial status when billing is integrated
-  const isTrialing = false;
-  const validUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
+  // Check subscription table for trial status
+  const { data: subscription } = await supabase
+    .from('subscription')
+    .select('*')
+    .eq('organization_id', organizationId)
+    .single();
+
+  let isTrialing = false;
+  let validUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // Default: 1 year from now
+
+  if (subscription) {
+    isTrialing = subscription.status === 'trialing';
+
+    // Use trial_end_date if trialing, otherwise use current_period_end
+    if (isTrialing && subscription.trial_end_date) {
+      validUntil = new Date(subscription.trial_end_date);
+    } else if (subscription.current_period_end) {
+      validUntil = new Date(subscription.current_period_end);
+    }
+  }
 
   return {
     organizationId,
@@ -51,6 +69,104 @@ export async function getEntitlements(organizationId: string): Promise<Entitleme
     limits,
     validUntil,
     isTrialing,
+  };
+}
+
+/**
+ * Check if an organization has an active subscription or valid trial.
+ * Returns detailed status information.
+ */
+export async function checkSubscriptionAccess(organizationId: string): Promise<{
+  hasAccess: boolean;
+  status: 'active' | 'trialing' | 'expired' | 'none';
+  daysRemaining?: number;
+  trialEnded?: boolean;
+  needsSubscription?: boolean;
+}> {
+  const supabase = getServiceSupabase();
+
+  const { data: subscription } = await supabase
+    .from('subscription')
+    .select('*')
+    .eq('organization_id', organizationId)
+    .single();
+
+  // No subscription exists
+  if (!subscription) {
+    return {
+      hasAccess: false,
+      status: 'none',
+      needsSubscription: true,
+    };
+  }
+
+  const now = new Date();
+  const status = subscription.status;
+
+  // Active subscription - has access
+  if (status === 'active') {
+    const periodEnd = new Date(subscription.current_period_end);
+    const daysRemaining = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+      hasAccess: true,
+      status: 'active',
+      daysRemaining: daysRemaining > 0 ? daysRemaining : 0,
+    };
+  }
+
+  // Trialing subscription - check if trial expired
+  if (status === 'trialing') {
+    const trialEnd = subscription.trial_end_date ? new Date(subscription.trial_end_date) : null;
+
+    if (!trialEnd) {
+      // No trial end date set - shouldn't happen, but allow access
+      return { hasAccess: true, status: 'trialing' };
+    }
+
+    const isExpired = trialEnd <= now;
+    const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (isExpired) {
+      return {
+        hasAccess: false,
+        status: 'expired',
+        trialEnded: true,
+        needsSubscription: true,
+        daysRemaining: 0,
+      };
+    }
+
+    return {
+      hasAccess: true,
+      status: 'trialing',
+      daysRemaining: daysRemaining > 0 ? daysRemaining : 0,
+    };
+  }
+
+  // Expired or cancelled - no access
+  if (status === 'expired' || status === 'cancelled') {
+    return {
+      hasAccess: false,
+      status: 'expired',
+      needsSubscription: true,
+    };
+  }
+
+  // Past due - allow access but flag
+  if (status === 'past_due') {
+    return {
+      hasAccess: true, // Allow access during grace period
+      status: 'active',
+      daysRemaining: 0,
+    };
+  }
+
+  // Default: no access
+  return {
+    hasAccess: false,
+    status: 'expired',
+    needsSubscription: true,
   };
 }
 

@@ -10,6 +10,7 @@ import { ReviewSessionsTable } from '../components/ReviewSessionsTable';
 import { Skeleton } from '../components/ui/skeleton';
 import { Button } from '../components/ui/button';
 import { WelcomeModal, OnboardingChecklist } from '../components/onboarding';
+import { TrialBanner } from '../components/TrialBanner';
 
 interface DashboardData {
   stats: {
@@ -115,6 +116,8 @@ export default function DashboardPage() {
       </Head>
 
       <Header />
+
+      <TrialBanner />
 
       <main className="min-h-screen bg-slate-50">
         {/* Page Header */}
