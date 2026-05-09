@@ -60,6 +60,12 @@ const faqs = [
     a: 'Yes. Both Starter and Pro include a 7-day free trial with full access to all features. No credit card required to start.',
   },
   {
+    q: 'What is your refund policy?',
+    a: 'We offer a 7-day money-back guarantee on all subscription plans. If you\'re not satisfied for any reason, request a full refund within 7 days of your initial purchase. After 7 days, refunds are not available, but you can cancel anytime and retain access until the end of your billing period.',
+    link: '/refund-policy',
+    linkText: 'View full refund policy',
+  },
+  {
     q: 'Can I switch plans later?',
     a: 'Yes. You can upgrade or downgrade at any time. When upgrading, you get immediate access to the new features. When downgrading, the change takes effect at the start of your next billing cycle.',
   },
@@ -197,8 +203,11 @@ export default function PricingPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 mb-6">
               Simple, transparent pricing
             </h1>
-            <p className="text-lg text-slate-500 max-w-2xl mx-auto mb-8">
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto mb-4">
               One avoided payroll mistake pays for years of PayrollShield. Try any plan free for 7 days.
+            </p>
+            <p className="text-sm text-green-600 font-medium max-w-2xl mx-auto mb-8">
+              7-day money-back guarantee • Cancel anytime • No questions asked
             </p>
 
             {/* Toggle */}
@@ -263,17 +272,22 @@ export default function PricingPage() {
                       ))}
                     </ul>
 
-                    <button
-                      onClick={() => handleSubscribe(plan.name)}
-                      disabled={loading}
-                      className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        plan.highlight
-                          ? 'bg-white text-brand-blue hover:bg-blue-50'
-                          : 'bg-slate-900 text-white hover:bg-slate-800'
-                      }`}
-                    >
-                      {loading ? 'Loading...' : plan.cta}
-                    </button>
+                    <div>
+                      <button
+                        onClick={() => handleSubscribe(plan.name)}
+                        disabled={loading}
+                        className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          plan.highlight
+                            ? 'bg-white text-brand-blue hover:bg-blue-50'
+                            : 'bg-slate-900 text-white hover:bg-slate-800'
+                        }`}
+                      >
+                        {loading ? 'Loading...' : plan.cta}
+                      </button>
+                      <p className={`text-xs text-center mt-3 ${plan.highlight ? 'text-blue-200' : 'text-slate-500'}`}>
+                        7-day money-back guarantee
+                      </p>
+                    </div>
                   </div>
                 );
               })}
@@ -290,6 +304,11 @@ export default function PricingPage() {
                 <div key={faq.q} className="bg-white rounded-xl p-6 border border-slate-200">
                   <h3 className="font-semibold text-slate-900 mb-2">{faq.q}</h3>
                   <p className="text-slate-500 text-sm leading-relaxed">{faq.a}</p>
+                  {(faq as any).link && (
+                    <Link href={(faq as any).link} className="inline-block mt-3 text-sm font-medium text-brand-blue hover:underline">
+                      {(faq as any).linkText} →
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>
