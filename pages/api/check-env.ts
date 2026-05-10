@@ -1,13 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+// GET /api/check-env
+// Returns the status of all required environment variables.
+// Useful for verifying a new deployment is configured correctly.
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const diffUrl = process.env.N8N_DIFF_WEBHOOK_URL;
-  const judgementUrl = process.env.N8N_JUDGEMENT_WEBHOOK_URL;
-
   res.status(200).json({
-    n8n_diff_webhook: diffUrl ? 'Set ✅' : 'Not set ❌',
-    n8n_judgement_webhook: judgementUrl ? 'Set ✅' : 'Not set ❌',
-    diff_url_value: diffUrl || 'undefined',
-    judgement_url_value: judgementUrl || 'undefined'
+    supabase_url:          process.env.NEXT_PUBLIC_SUPABASE_URL     ? 'Set ✅' : 'Not set ❌',
+    supabase_anon_key:     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set ✅' : 'Not set ❌',
+    supabase_service_key:  process.env.SUPABASE_SERVICE_ROLE_KEY     ? 'Set ✅' : 'Not set ❌',
+    openai_api_key:        process.env.OPENAI_API_KEY                ? 'Set ✅' : 'Not set ❌',
+    lemonsqueezy_api_key:  process.env.LEMONSQUEEZY_API_KEY          ? 'Set ✅' : 'Not set ❌',
+    lemonsqueezy_webhook:  process.env.LEMONSQUEEZY_WEBHOOK_SECRET   ? 'Set ✅' : 'Not set ❌',
+    app_url:               process.env.NEXT_PUBLIC_APP_URL           ? 'Set ✅' : 'Not set ❌',
   });
 }

@@ -49,29 +49,6 @@ Judgements provide human-readable reasoning for why a change matters, helping re
 └─────────────┘  Updates review_session status
 ```
 
-### Future Implementation (n8n-Based)
-
-```
-┌─────────────┐
-│ 1. Upload   │  User uploads CSVs
-│   CSVs      │
-└──────┬──────┘
-       │
-       v
-┌─────────────┐
-│ 2. n8n      │  Automatic workflow:
-│  Workflow   │  - Validates CSVs
-│  Triggers   │  - Stores datasets
-└──────┬──────┘  - Calculates deltas
-       │          - Applies judgements
-       v          - Notifies user
-┌─────────────┐
-│ 3. Review   │  User reviews auto-processed changes
-│   UI        │
-└─────────────┘
-```
-
-**Status:** n8n integration is a post-MVP enhancement, not yet implemented.
 
 ## Where Judgements are Stored
 
@@ -573,9 +550,8 @@ python tools/diff_calculator.py <review_session_id>
 
 - **What:** Judgements classify payroll changes as material/blocker or non-material
 - **Where:** Stored in `material_judgement` table in Supabase
-- **How:** Python script applies 12 deterministic rules to deltas
+- **How:** TypeScript rule engine in `lib/payroll/rulesEngine.ts` applies 40+ deterministic rules
+- **Rules:** Defined in `lib/rules/` — one file per category, easy to read and modify
 - **Review:** Via `/review/[id]` UI page or `/api/review/[id]` endpoint
-- **Current Implementation:** Manual Python execution (not n8n)
-- **Future:** n8n automation planned for post-MVP
 
-For questions or modifications, see [DETERMINISTIC_RULES.md](./DETERMINISTIC_RULES.md) or review the source code at [tools/judgement_engine.py](../tools/judgement_engine.py).
+For questions or modifications, see [DETERMINISTIC_RULES.md](./DETERMINISTIC_RULES.md) or the rule files in `lib/rules/`.

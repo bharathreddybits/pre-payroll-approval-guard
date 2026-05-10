@@ -9,9 +9,9 @@ Accept CSV file uploads containing payroll data, validate the format, and store 
 - **Snapshot Date**: The payroll period this snapshot represents
 
 ## Required Tools
-- `tools/validate_csv.py` - Python script for CSV validation
+- `pages/api/upload.ts` - handles upload, validation, and triggers processing
+- `lib/payroll/processor.ts` - orchestrates diff → rules → persistence
 - Supabase client - Database operations
-- n8n workflow - `n8n_workflows/payroll_upload_pipeline.json`
 
 ## Process
 
@@ -98,7 +98,7 @@ WHERE id = [snapshot_id];
 ### Database Connection Failure
 - Supabase unavailable or timeout
 - **Action**: Return 503 Service Unavailable
-- **Retry**: Implement exponential backoff in n8n workflow
+- **Retry**: User can retry upload from the UI; processing is idempotent
 
 ### Partial Upload Failure
 - Some rows fail to insert
@@ -108,7 +108,7 @@ WHERE id = [snapshot_id];
 ### Large File Handling
 - CSV > 10,000 rows
 - **Action**: Process in batches of 1,000 rows
-- **Progress**: Use n8n to emit progress updates via webhook
+- **Progress**: Processing is synchronous; Vercel function timeout is 60s (Pro) or 10s (free tier)
 
 ## Cost Considerations
 - Supabase: Free tier supports 500MB database

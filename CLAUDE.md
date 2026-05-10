@@ -16,23 +16,23 @@ You're working inside the **WAT framework** (Workflows, Agents, Tools) to build 
 - Example: To implement the "one-screen review" MVP, read `workflows/payroll_review_ui.md`, generate Next.js code via Claude Code, then deploy to Vercel via GitHub.
 
 **Layer 3: Tools (The Execution)**
-- Scripts and configs in `tools/` (e.g., Python for data processing, n8n JSON workflows).
-- Handle API calls (Supabase, OpenAI), data transformations (payroll diffs), file operations (CSV uploads), and deployments.
+- TypeScript processing pipeline in `lib/payroll/` (diff calculation, rule engine, DB persistence).
+- 40+ deterministic judgement rules in `lib/rules/` — one category per file, easy to read and modify.
+- API integrations (Supabase, OpenAI, LemonSqueezy), CSV parsing, and deployment scripts.
 - Credentials and API keys are stored in `.env` (e.g., SUPABASE_URL, OPENAI_API_KEY)—NEVER commit secrets to GitHub.
-- These are consistent, testable, and fast—optimized for low-cost hosting on Hostinger VPS.
 
-**Why this matters for our SaaS**: Building a payroll app involves accuracy (e.g., detecting blockers like negative net pay). If each AI step is 90% accurate, success drops fast. Offload execution to tools (e.g., n8n for deterministic diffs) to stay reliable. Focus on high-WTP features like approval audits while avoiding scope creep.
+**Why this matters for our SaaS**: Building a payroll app involves accuracy (e.g., detecting blockers like negative net pay). If each AI step is 90% accurate, success drops fast. Keep rules deterministic (same input → same output always), and use AI only for generating human-readable explanations — never for deciding rule outcomes.
 
 ## How to Operate in This Project
 
 **1. Look for existing tools first**
-Before building anything new, check `tools/` and the stack (n8n nodes, Supabase functions). Only create new scripts when nothing exists (e.g., a custom n8n node for judgement evaluation).
+Before building anything new, check `lib/payroll/`, `lib/rules/`, and existing API routes. Only create new files when nothing exists for the task.
 
 **2. Learn and adapt when things fail**
 When you hit an error (e.g., Claude Code Git Bash issue):
 - Read the full error message and trace.
 - Fix the script/tool and retest (if it uses paid APIs like OpenAI, check costs first—aim for <$15/mo).
-- Document what you learned in the workflow (e.g., rate limits on Supabase, n8n execution quirks).
+- Document what you learned in the workflow (e.g., rate limits on Supabase, Vercel timeout behavior).
 - Example: Supabase query times out—refactor to use Edge Functions, verify, then update the workflow.
 
 **3. Keep workflows current**
@@ -40,13 +40,12 @@ Workflows evolve as you learn (e.g., add Vercel deployment steps). Update them f
 
 **4. Integrate the Tech Stack**
 - **VSCode + Claude Code**: Use for code generation and debugging (e.g., "Generate Next.js dashboard page").
-- **Hostinger + n8n**: Self-host n8n on VPS for workflows (e.g., CSV ingest → Supabase write → judgement emission).
-- **Supabase**: For DB (snapshots, diffs, judgements), auth, and storage—enforce RLS for payroll data security.
-- **GitHub**: Version control; auto-deploy to Vercel on push.
-- **Vercel**: Host Next.js frontend; handle API routes for approvals.
-- **LemonSqueezy**: For Billing.
-- **OpenAI**: For AI Explanations in the product. GPT-4o-mini calls in n8n workflows at 500 runs/mo with short prompts is cheap at ~$0.01-0.03 per explanation.
-- **Other Potential Add-ons**:	PostHog analytics.
+- **Vercel**: Hosts the Next.js app and all API routes; auto-deploys on git push.
+- **Supabase**: PostgreSQL DB (snapshots, diffs, judgements), Auth, RLS—enforce RLS for payroll data security.
+- **GitHub**: Version control; triggers Vercel auto-deploy on push.
+- **LemonSqueezy**: Billing — subscription management, webhooks, checkout.
+- **OpenAI**: GPT-4o-mini for human-readable explanations on the review page. ~$0.01-0.03 per review. Rules are deterministic — AI never decides outcomes.
+- **Other Potential Add-ons**: PostHog analytics.
 
 **5. Payroll-Specific Guidelines**
 - Prioritize MVP: One-screen UI with verdicts, blockers, and approvals (from original docs).
@@ -61,11 +60,12 @@ Workflows evolve as you learn (e.g., add Vercel deployment steps). Update them f
 - Design schemas for auditability and diffs
 - Assume multi-tenant B2B from day one
 
-### n8n
-- Treat workflows as production code
-- Favor deterministic nodes and explicit branching
-- Avoid long, fragile chains
-- Design for retries, partial failure, and idempotency
+### Processing Pipeline (lib/payroll/)
+- `processor.ts` is the single entry point — call this from API routes
+- `diff.ts` is pure math — no DB calls, no side effects, easy to test
+- `rulesEngine.ts` is deterministic — same input always produces same output
+- `persistence.ts` owns all DB writes — never write to payroll tables elsewhere
+- To add a rule: add it to the relevant file in `lib/rules/` — no other changes needed
 
 ### Frontend / Vercel
 - Frontend is primarily:
@@ -83,10 +83,10 @@ Workflows evolve as you learn (e.g., add Vercel deployment steps). Update them f
 ## The Self-Improvement Loop
 
 Every failure strengthens the app:
-1. Identify what broke (e.g., n8n workflow error on diff computation).
-2. Fix the tool (e.g., update Python script).
-3. Verify the fix works (test locally in VSCode).
-4. Update the workflow with the new approach.
+1. Identify what broke (e.g., a rule producing false positives, a delta calculation edge case).
+2. Fix it in the relevant TypeScript file — `lib/payroll/` or `lib/rules/`.
+3. Verify the fix works (test locally with `npm run dev`).
+4. Update the workflow SOP with the new approach.
 5. Move on with a more robust SaaS.
 
 This loop ensures iterative progress toward $500+/mo WTP.
@@ -98,16 +98,20 @@ This loop ensures iterative progress toward $500+/mo WTP.
 - **Intermediates**: Temporary files that can be regenerated (e.g., test CSVs).
 
 **Directory layout:**
-- .tmp/ # Temporary files (scraped data, test payloads). Regenerated as needed. 
-- tools/ # Python scripts and n8n JSON exports for execution (e.g., diff_calculator.py) 
-- workflows/ # Markdown SOPs (e.g., payroll_comparison.md) 
-- pages/ # Next.js pages (e.g., dashboard/review.tsx) 
-- components/ # React components (e.g., ChangeBlocker.tsx) 
-- n8n_workflows/ # Exported n8n JSON files for version control 
-- .env # API keys (gitignored) 
-- supabase/ # Schemas and migrations (e.g., tables.sql) 
-- README.md # Project overview 
-- CLAUDE.md # This file (agent instructions)
+- lib/payroll/     # Processing pipeline: processor, diff, rulesEngine, persistence
+- lib/rules/       # Deterministic judgement rules (one file per category)
+- pages/           # Next.js pages (e.g., dashboard, upload, review)
+- pages/api/       # API routes (upload, approve, review, webhooks)
+- components/      # React components
+- supabase/        # DB schemas and migrations
+- scripts/         # Operational scripts (LemonSqueezy setup, Vercel env, etc.)
+- scripts/dev/     # Dev-only scripts (test-trial-expiration, etc.)
+- workflows/       # Markdown SOPs
+- docs/            # Project documentation
+- __archive/       # Archived dev artifacts (not production code)
+- .env             # API keys (gitignored)
+- CLAUDE.md        # This file (agent instructions)
+- README.md        # Project overview
 
 ## Mindset
 

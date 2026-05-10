@@ -154,7 +154,7 @@ export default function UploadPage() {
         return;
       }
 
-      // Check if processing is async (n8n webhook)
+      // processing_started is only true when an external async processor is configured (legacy path)
       if (uploadResult.processing_started) {
         setState((prev) => ({ ...prev, uploading: false, processing: true }));
         toast.loading('Analyzing payroll changes...', { id: 'upload' });

@@ -17,8 +17,9 @@ The Pre-Payroll Approval Guard helps organizations prevent payroll errors by com
 
 - **Frontend**: Next.js 14 with TypeScript, deployed on Vercel
 - **Backend**: Supabase (PostgreSQL database, authentication, storage)
-- **Workflow Automation**: n8n (self-hosted on Hostinger VPS)
-- **AI**: Claude via Anthropic API for intelligent change evaluation
+- **Processing**: Native TypeScript pipeline in `lib/payroll/` — no external services
+- **AI**: OpenAI GPT-4o-mini for human-readable explanations (rules are deterministic)
+- **Billing**: LemonSqueezy for subscription management
 - **Version Control**: GitHub with auto-deployment to Vercel
 
 ## Architecture: WAT Framework
@@ -38,29 +39,32 @@ Claude orchestrates workflows by:
 - Making intelligent decisions
 
 ### Tools (Layer 3)
-Deterministic execution in `tools/` directory:
-- Python scripts for data processing
-- n8n JSON workflow exports
-- API integrations (Supabase, OpenAI)
-- CSV file operations
+Deterministic execution in the codebase:
+- TypeScript processing pipeline in `lib/payroll/`
+- 40+ deterministic judgement rules in `lib/rules/`
+- API integrations (Supabase, OpenAI, LemonSqueezy)
+- CSV parsing via papaparse + formidable
 
 ## Directory Structure
 
 ```
 .
-├── .tmp/                  # Temporary files (regenerated as needed)
-├── tools/                 # Python scripts and n8n exports
-├── workflows/             # Markdown workflow SOPs
-├── pages/                 # Next.js pages
+├── pages/                 # Next.js pages and API routes
 ├── components/            # React components
-├── n8n_workflows/         # Exported n8n JSON files
-├── supabase/             # Database schemas and migrations
-│   └── migrations/       # SQL migration files
-├── .env                  # Environment variables (not committed)
-├── .gitignore            # Git ignore patterns
-├── package.json          # Node.js dependencies
-├── CLAUDE.md            # Agent instructions
-└── README.md            # This file
+├── lib/
+│   ├── payroll/           # Processing pipeline (diff, rules engine, persistence, processor)
+│   ├── rules/             # 40+ deterministic judgement rules, one category per file
+│   ├── billing/           # Subscription tier logic
+│   └── types/             # Shared TypeScript types
+├── supabase/
+│   └── migrations/        # SQL migration files
+├── scripts/               # Setup and operational scripts
+├── workflows/             # Markdown workflow SOPs
+├── docs/                  # Project documentation
+├── __archive/             # Archived dev artifacts
+├── .env                   # Environment variables (not committed)
+├── CLAUDE.md              # Agent instructions
+└── README.md              # This file
 ```
 
 ## Getting Started
@@ -68,8 +72,7 @@ Deterministic execution in `tools/` directory:
 ### Prerequisites
 - Node.js 18+ and npm
 - Supabase account and project
-- n8n instance (self-hosted or cloud)
-- Anthropic API key
+- OpenAI API key (for AI explanations on the review page)
 
 ### Installation
 
@@ -113,15 +116,10 @@ npm run dev
 - Processing completes in ~5-7 seconds for typical payroll datasets
 
 **Technical Details:**
-- Processing logic: `lib/processReview.ts`
-- 12 deterministic rules for material change classification
-- Automatic blocker detection
+- Processing entry point: `lib/payroll/processor.ts`
+- Delta calculation: `lib/payroll/diff.ts`
+- 40+ deterministic rules in `lib/rules/` — one category per file
 - Results stored in Supabase for audit trail
-
-**Legacy n8n Workflows (Deprecated):**
-- n8n workflows in `n8n_workflows/` are deprecated
-- Python scripts in `tools/*.py.deprecated` are no longer used
-- Current implementation uses TypeScript for better reliability and performance
 
 ## Development Guidelines
 
@@ -139,8 +137,7 @@ npm run dev
 ### Cost Optimization
 - Target: <$60/mo total operational costs
 - Use free tiers where possible
-- Monitor API usage (Anthropic, Supabase)
-- Optimize n8n workflow execution
+- Monitor API usage (OpenAI, Supabase, LemonSqueezy)
 
 ## Deployment
 
@@ -153,11 +150,6 @@ npm run dev
 - Migrations are applied automatically
 - Enable RLS policies for security
 - Configure backup schedule
-
-### n8n (Workflows)
-- Deploy to Hostinger VPS
-- Set up systemd service for auto-start
-- Configure webhooks for external triggers
 
 ## MVP Features
 
@@ -172,8 +164,8 @@ npm run dev
 
 - Supabase: Free tier (up to 500MB database, 2GB bandwidth)
 - Vercel: Free tier (hobby plan)
-- Hostinger VPS: ~$4-10/mo
-- Anthropic API: Pay-as-you-go (target <$15/mo)
+- OpenAI: Pay-as-you-go (target <$15/mo at ~$0.01-0.03 per review)
+- LemonSqueezy: No monthly fee (revenue share only)
 
 **Total Target**: <$60/mo
 

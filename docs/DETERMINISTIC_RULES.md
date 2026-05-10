@@ -2,19 +2,15 @@
 
 ## Overview
 
-This document describes all deterministic rules used to classify payroll changes as material or blocker changes. These rules are **currently implemented in Python** at [tools/judgement_engine.py](../tools/judgement_engine.py), not in n8n workflows.
+This document describes all deterministic rules used to classify payroll changes as material or blocker changes. Rules are implemented in TypeScript in `lib/rules/`.
 
 ## Rule Architecture
 
 **Current Implementation:**
-- Location: `tools/judgement_engine.py`
-- Language: Python
-- Execution: Called manually via CLI: `python tools/judgement_engine.py <review_session_id>`
+- Location: `lib/rules/` — one file per category (fundamentalPay, taxesComponents, deductionsComponents, etc.)
+- Language: TypeScript
+- Execution: Runs automatically inline after CSV upload via `lib/payroll/rulesEngine.ts`
 - Database: Writes judgements to `material_judgement` table in Supabase
-
-**Future Enhancement:**
-- n8n integration planned but not yet implemented
-- Will automate rule execution after CSV upload
 
 ## Rule Categories
 
@@ -326,15 +322,9 @@ Each rule produces a judgement with:
 - **Storage:** Writes to `material_judgement` table in Supabase
 - **Workflow:**
   1. Upload CSVs via `/api/upload`
-  2. Run `python tools/diff_calculator.py <review_session_id>`
-  3. Run `python tools/judgement_engine.py <review_session_id>`
-  4. View results via `/api/review/<review_session_id>`
-
-### Future Enhancement
-- **Plan:** Integrate with n8n workflows for automation
-- **Workflow:** Upload → Automatic Diff Calculation → Automatic Judgement → Review
-- **Benefits:** No manual script execution, real-time processing
-- **Timeline:** Post-MVP enhancement
+  2. Upload CSVs via the UI or `/api/upload`
+  3. Processing runs automatically inline: diff → rules → judgements saved to DB
+  4. View results via `/review/<review_session_id>` or `/api/review/<review_session_id>`
 
 ## How to Review Rules
 
@@ -414,10 +404,10 @@ curl http://localhost:3005/api/review/<review_session_id> | jq '.materialChanges
 
 ## Summary
 
-- **Total Rules:** 12 rules (2 blockers, 7 material, 1 non-material, 2 defaults)
-- **Implementation:** Python at `tools/judgement_engine.py`
-- **Future:** n8n integration planned
-- **Modification:** Edit Python file, test, document
-- **Review:** Via code, database queries, or API endpoints
+- **Total Rules:** 40+ rules across 7 categories
+- **Implementation:** TypeScript in `lib/rules/` — one file per category
+- **Execution:** Automatic via `lib/payroll/rulesEngine.ts` on every upload
+- **Modification:** Edit the relevant rule file in `lib/rules/`, deploy
+- **Review:** Via `/review/[id]` UI or `/api/review/[id]` endpoint
 
 For judgement workflow and how these rules are applied, see [JUDGEMENTS.md](./JUDGEMENTS.md).

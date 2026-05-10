@@ -217,7 +217,7 @@ export default function MappingPage() {
 
       const result = await res.json();
 
-      // Async processing (n8n webhook)
+      // processing_started is only true when an external async processor is configured (legacy path)
       if (result.processing_started) {
         toast.loading('Analyzing payroll changes...', { id: 'confirm' });
 

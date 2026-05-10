@@ -433,7 +433,7 @@ SELECT trial_days_remaining('<some-subscription-id>');
 - Contact support offer
 
 **Implementation:**
-- Use n8n workflow or Supabase Edge Functions
+- Use a Supabase Edge Function or a scheduled cron job
 - Trigger based on trial_end_date
 - Track email opens/clicks
 
