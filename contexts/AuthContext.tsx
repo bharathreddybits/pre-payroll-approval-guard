@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to ensure user has an organization
+  // Helper function to ensure user has an organization and an active trial
   const ensureUserHasOrganization = async (user: User) => {
     try {
       // Check if user already has an organization
@@ -29,7 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (!mapping) {
-        // User doesn't have an organization - create one
+        // Fallback: DB trigger (migration 008) should have created the org on signup.
+        // If it didn't, create it here.
         const orgName = (user.email?.split('@')[0] || 'User') + "'s Organization";
 
         const { data: newOrg, error: orgError } = await supabase
@@ -39,7 +40,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
 
         if (!orgError && newOrg) {
-          // Link user to organization
           await supabase
             .from('user_organization_mapping')
             .insert({
@@ -47,21 +47,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               organization_id: newOrg.organization_id,
               role: 'admin'
             });
-
-          // Initialize 7-day trial subscription for the new org
-          try {
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-            const accessToken = currentSession?.access_token;
-            if (accessToken) {
-              await fetch('/api/init-account', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${accessToken}` },
-              });
-            }
-          } catch {
-            // Non-fatal: trial can be initialized on next login or support can backfill
-          }
         }
+      }
+
+      // Always attempt trial initialization — idempotent, returns early if
+      // subscription already exists. Covers both new users (DB trigger created
+      // the org but not the subscription) and existing users with no subscription.
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const accessToken = currentSession?.access_token;
+        if (accessToken) {
+          fetch('/api/init-account', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+        }
+      } catch {
+        // Non-fatal: trial will be initialized on next login
       }
     } catch (error) {
       // Silently fail - don't block auth flow
