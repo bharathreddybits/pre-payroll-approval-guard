@@ -158,10 +158,13 @@ export function useSubscriptionStatus() {
 
       } catch (error) {
         console.error('Error checking subscription:', error);
+        // Fail closed: a subscription check error should not silently grant access.
+        // The user can refresh; if Supabase is genuinely down, this is the safest default.
         setSubscriptionStatus({
-          hasAccess: true, // Allow access on error (fail open)
-          status: 'loading',
+          hasAccess: false,
+          status: 'none',
           loading: false,
+          needsSubscription: true,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
