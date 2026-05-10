@@ -24,7 +24,6 @@
 | **react-dropzone** | 14 | Drag-and-drop CSV upload UI |
 | **formidable** | 3 | Multipart form parsing in API routes |
 | **papaparse** | 5 | CSV parsing (baseline vs current payroll files) |
-| **form-data** | 4 | Constructing multipart requests to n8n |
 
 ---
 

@@ -5,10 +5,9 @@ This directory contains deterministic execution scripts and configurations (Laye
 ## Purpose
 
 Tools handle:
-- API calls (Supabase, Anthropic)
 - Data transformations (CSV parsing, payroll diffs)
 - File operations (uploads, validation)
-- External integrations (n8n workflows)
+- Validation and anonymization utilities
 
 ## Contents
 
@@ -19,7 +18,6 @@ Tools handle:
 
 ### Configuration Files
 - `requirements.txt` - Python dependencies
-- `n8n_config.json` - n8n connection settings
 
 ## Usage
 
@@ -31,11 +29,6 @@ pip install -r requirements.txt
 # Run a tool
 python tools/validate_csv.py --input data.csv
 ```
-
-### From n8n
-- Tools can be called from n8n workflows
-- Use HTTP Request node to invoke scripts
-- Pass parameters via query string or POST body
 
 ### From Next.js
 - API routes can spawn tool processes
@@ -54,8 +47,6 @@ python tools/validate_csv.py --input data.csv
 
 Tools may require:
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
-- `ANTHROPIC_API_KEY`
-- `N8N_WEBHOOK_URL`
 
 Load from `.env` file or environment.
 
@@ -63,8 +54,6 @@ Load from `.env` file or environment.
 
 Monitor API usage:
 - Supabase: Database queries and storage
-- Anthropic: Token usage for judgements
-- n8n: Workflow execution time
 
 Target: <$15/mo for AI operations
 

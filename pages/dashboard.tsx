@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { toast } from 'sonner';
 import { Upload } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -78,6 +79,7 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +87,18 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Show success toast when redirected back from LemonSqueezy checkout
+  useEffect(() => {
+    if (router.query.checkout === 'success') {
+      toast.success('Subscription activated!', {
+        description: 'Welcome to PayrollShield. Your plan is now active.',
+        duration: 6000,
+      });
+      // Remove the query param from the URL without a page reload
+      router.replace('/dashboard', undefined, { shallow: true });
+    }
+  }, [router.query.checkout]);
 
   const fetchDashboardData = async () => {
     setLoading(true);

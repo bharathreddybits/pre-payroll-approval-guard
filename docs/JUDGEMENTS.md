@@ -527,17 +527,15 @@ python tools/diff_calculator.py <review_session_id>
 | **Integration** | Called from Node.js test scripts |
 | **Automation** | None (fully manual) |
 
-### Future (Post-MVP)
+### Current (Production)
 
 | Aspect | Implementation |
 |--------|----------------|
-| **Rule Engine** | Python script (same) OR n8n workflow nodes |
-| **Execution** | Automatic after CSV upload |
-| **Workflow** | Upload → auto diff → auto judgement → review |
-| **Integration** | n8n workflows trigger Python scripts |
-| **Automation** | Full automation via n8n |
-
-**Note:** n8n integration was originally planned but is not yet implemented. Current MVP uses direct Python execution.
+| **Rule Engine** | TypeScript — `lib/payroll/rulesEngine.ts` + `lib/rules/` |
+| **Execution** | Automatic — runs inline after CSV upload |
+| **Workflow** | Upload → diff → judgement → review (all in one request) |
+| **Integration** | Directly called from `/api/upload` and `/api/confirm-mapping` |
+| **Automation** | Fully automated — no external services required |
 
 ## Related Documentation
 

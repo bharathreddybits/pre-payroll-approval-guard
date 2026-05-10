@@ -56,29 +56,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Safety valve: if auth takes >10s for any reason, unblock the UI
+    const timeout = setTimeout(() => setLoading(false), 10000);
+
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) {
-        await ensureUserHasOrganization(session.user);
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      clearTimeout(timeout);
+      // Fire-and-forget: org setup must not block auth loading
+      if (session) ensureUserHasOrganization(session.user);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session) {
-          await ensureUserHasOrganization(session.user);
-        }
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        clearTimeout(timeout);
+        // Fire-and-forget: org setup must not block auth loading
+        if (session) ensureUserHasOrganization(session.user);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
