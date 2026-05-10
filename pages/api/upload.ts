@@ -489,40 +489,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      // ── Starter tier: process review ─────────────────────────────────────
+      // ── Starter tier: run processing inline ──────────────────────────────
       // Files are in Supabase now — clean up temp files before processing
       cleanupFiles(baselineFile.filepath, currentFile.filepath);
 
-      const webhookUrl = process.env.N8N_PROCESS_WEBHOOK_URL;
-
-      if (webhookUrl) {
-        // Async: trigger n8n webhook, respond immediately
-        await supabase
-          .from('review_session')
-          .update({ status: 'processing' })
-          .eq('review_session_id', reviewSessionId);
-
-        fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ review_session_id: reviewSessionId }),
-        }).catch(err => console.error('[Upload] n8n webhook trigger failed:', err));
-
-        return res.status(200).json({
-          success: true,
-          needsMapping: false,
-          review_session_id: reviewSessionId,
-          baseline_row_count: baselineRows.length,
-          current_row_count: currentRows.length,
-          processing_started: true,
-          warnings: [
-            ...(baselineValidation.warnings || []),
-            ...(currentValidation.warnings || []),
-          ],
-        });
-      }
-
-      // Fallback: inline processing (local dev without n8n)
       let processingResult = null;
       let processingSuccess = false;
 

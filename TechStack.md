@@ -39,8 +39,7 @@
 | Technology | Purpose |
 |-----------|---------|
 | **Next.js API Routes** | Serverless functions: `/api/upload`, `/api/approve`, `/api/review/[id]`, `/api/template` |
-| **node-fetch** | HTTP calls from API routes to n8n webhook |
-| **openai SDK** | 6.17 — OpenAI API calls (used in n8n or directly for AI explanations) |
+| **openai SDK** | 6.17 — OpenAI API calls for generating human-readable explanations on the review page |
 
 ---
 
@@ -65,13 +64,16 @@
 
 ---
 
-## Automation Engine
-| Technology | Purpose |
-|-----------|---------|
-| **n8n** (self-hosted) | Core processing pipeline: receives CSV data via webhook → calculates diffs → applies 73 judgement rules → emits results back to Supabase |
-| **Hostinger VPS** | Hosts the n8n instance |
+## Processing Pipeline (native TypeScript)
+| File | Purpose |
+|------|---------|
+| **lib/payroll/processor.ts** | Orchestrator — calls the steps below in sequence |
+| **lib/payroll/diff.ts** | Calculates field-by-field deltas between baseline and current employee records |
+| **lib/payroll/rulesEngine.ts** | Applies all judgement rules to the calculated deltas (deterministic, no AI) |
+| **lib/payroll/persistence.ts** | Saves deltas and judgements to Supabase, updates session status |
+| **lib/rules/** | 40+ individual rule definitions, one category per file |
 
-The n8n workflow handles all the heavy lifting — diff calculation, rule evaluation, AI explanation generation — keeping the Next.js API routes thin.
+All processing runs inline in the Next.js API route on Vercel — no external services needed.
 
 ---
 
@@ -86,16 +88,15 @@ The n8n workflow handles all the heavy lifting — diff calculation, rule evalua
 ## AI
 | Technology | Purpose |
 |-----------|---------|
-| **OpenAI GPT-4o-mini** | Generates human-readable explanations for flagged payroll changes, called via n8n workflows |
+| **OpenAI GPT-4o-mini** | Generates human-readable explanations for flagged payroll changes, called directly from the review API route. Rules are deterministic — AI only explains, never decides. |
 
 ---
 
 ## Hosting & Deployment
 | Technology | Purpose |
 |-----------|---------|
-| **Vercel** | Hosts the Next.js app; auto-deploys on git push to `master` |
+| **Vercel** | Hosts the Next.js app and all API routes; auto-deploys on git push to `master` |
 | **GitHub** | Version control and CI trigger |
-| **Hostinger VPS** | Self-hosts n8n (keeps automation cost low vs cloud n8n) |
 
 ---
 
@@ -110,17 +111,9 @@ The n8n workflow handles all the heavy lifting — diff calculation, rule evalua
 
 ---
 
-## Architecture Pattern — WAT Framework
+## Architecture Principle
 
-```
-Workflows (Markdown SOPs in workflows/)
-    ↓
-Agent (Claude Code — orchestration & reasoning)
-    ↓
-Tools (n8n nodes, Supabase, scripts)
-```
-
-The deliberate separation keeps probabilistic AI (reasoning) away from deterministic execution (payroll diffs, DB writes), which is important for a financial accuracy use case.
+Probabilistic AI (reasoning) is kept separate from deterministic execution (payroll diffs, DB writes). Rules always produce the same output for the same input — AI only generates the human-readable explanation shown to the reviewer.
 
 ---
 
@@ -128,13 +121,19 @@ The deliberate separation keeps probabilistic AI (reasoning) away from determini
 
 ```
 User uploads 2 CSVs
-  → Next.js /api/upload (formidable parses, Supabase stores)
-  → n8n webhook triggered
-    → diff calculated deterministically
-    → 73 judgement rules applied
-    → GPT-4o-mini generates explanations
-    → results written to Supabase
-  → Next.js polls /api/review/[id]
-  → Review page renders verdict + flagged items
-  → User approves/rejects → /api/approve → Supabase audit record
+  → /api/upload
+      → formidable parses files
+      → employee records saved to Supabase
+      → lib/payroll/processor.ts runs inline:
+          → diff.ts calculates field-by-field deltas
+          → rulesEngine.ts applies all judgement rules (deterministic)
+          → persistence.ts saves deltas + judgements to DB
+      → redirect to /review/[id]
+  → /api/review/[id]
+      → loads deltas + judgements from DB
+      → enriches with rule metadata (name, severity, explanation)
+      → OpenAI generates human-readable summaries (if API key set)
+      → review page renders verdict + flagged items
+  → User approves/rejects
+      → /api/approve writes audit record to Supabase
 ```
