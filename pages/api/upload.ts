@@ -187,32 +187,13 @@ async function resolveOrganization(
     return { orgId: existingOrg.organization_id };
   }
 
-  // TODO: Multi-org enforcement
-  // When user authentication is integrated, check here if:
-  // 1. User already has an organization (via user_organization_mapping)
-  // 2. If yes, check if their tier allows multi-org (Pro only)
-  // 3. If Starter tier with existing org, return error with upgrade_url
-  // Example:
-  // const userOrgs = await supabase.from('user_organization_mapping')
-  //   .select('organization_id').eq('user_id', auth.uid());
-  // if (userOrgs.data?.length > 0) {
-  //   const tier = await getOrganizationTier(userOrgs.data[0].organization_id);
-  //   if (tier === 'starter') {
-  //     return { orgId: '', error: 'Multi-organization requires Pro plan' };
-  //   }
-  // }
-
-  const { data: newOrg, error: orgError } = await supabase
-    .from('organization')
-    .insert({ organization_name: orgName })
-    .select('organization_id')
-    .single();
-
-  if (orgError || !newOrg) {
-    return { orgId: '', error: orgError?.message || 'Failed to create organization' };
-  }
-
-  return { orgId: newOrg.organization_id };
+  // Organization not found — do not auto-create.
+  // Organizations are created once during account setup (AuthContext.ensureUserHasOrganization).
+  // If you need your organization ID, find it in Settings or contact support.
+  return {
+    orgId: '',
+    error: `Organization "${orgName}" not found. Please use your organization UUID from the dashboard, or contact support.`,
+  };
 }
 
 // ---------------------------------------------------------------------------

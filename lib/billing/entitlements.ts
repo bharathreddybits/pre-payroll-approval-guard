@@ -188,9 +188,10 @@ export async function checkEmployeeLimit(
     return { allowed: true };
   }
 
+  const tierLabel = tier === 'pro' ? 'Pro' : 'Starter';
   return {
     allowed: false,
-    reason: `Starter plan supports up to ${limits.maxEmployees} employees. You have ${employeeCount}.`,
+    reason: `${tierLabel} plan supports up to ${limits.maxEmployees} employees. You have ${employeeCount}.`,
     upgradeRequired: true,
     currentValue: employeeCount,
     limit: limits.maxEmployees,

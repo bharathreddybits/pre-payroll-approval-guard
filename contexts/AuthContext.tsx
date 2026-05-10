@@ -47,6 +47,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               organization_id: newOrg.organization_id,
               role: 'admin'
             });
+
+          // Initialize 7-day trial subscription for the new org
+          try {
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            const accessToken = currentSession?.access_token;
+            if (accessToken) {
+              await fetch('/api/init-account', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+            }
+          } catch {
+            // Non-fatal: trial can be initialized on next login or support can backfill
+          }
         }
       }
     } catch (error) {

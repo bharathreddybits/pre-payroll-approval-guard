@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Header } from '../../components/Header';
 import { ProtectedRoute } from '../../components/ProtectedRoute';
+import { SubscriptionGuard } from '../../components/SubscriptionGuard';
 import { CANONICAL_FIELDS } from '../../lib/canonicalSchema';
 
 interface ColumnMapping {
@@ -282,6 +283,7 @@ export default function MappingPage() {
         <meta name="description" content="Review and confirm column mappings for your payroll data" />
       </Head>
 
+      <SubscriptionGuard loadingBehavior="pass">
       <Header />
 
       <div className="min-h-screen bg-gray-50 py-12 px-4">
@@ -353,6 +355,7 @@ export default function MappingPage() {
           )}
         </div>
       </div>
+      </SubscriptionGuard>
     </ProtectedRoute>
   );
 }
