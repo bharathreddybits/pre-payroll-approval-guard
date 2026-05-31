@@ -37,7 +37,7 @@ export function MarketingNav() {
             <img
               src="/logo.png"
               alt="PayrollShield"
-              style={{ height: '72px', width: 'auto' }}
+              className="block h-8 md:h-10 w-auto"
             />
           </Link>
 

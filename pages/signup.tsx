@@ -77,8 +77,7 @@ export default function SignupPage() {
             <img
               src="/logo.png"
               alt="PayrollShield"
-              className="mx-auto"
-              style={{ height: '120px', width: 'auto' }}
+              className="mx-auto block h-12 w-auto"
             />
           </Link>
           <p className="text-gray-600">

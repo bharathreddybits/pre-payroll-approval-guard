@@ -31,7 +31,7 @@ export function Header({ isUploadLocked = false }: HeaderProps) {
             <img
               src="/logo.png"
               alt="PayrollShield"
-              style={{ height: '40px', width: 'auto', display: 'block' }}
+              className="block h-8 w-auto"
             />
           </Link>
 
