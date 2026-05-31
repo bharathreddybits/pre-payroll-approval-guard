@@ -248,14 +248,15 @@ function verifySignature(
 ): boolean {
   try {
     const crypto = require('crypto');
+    // Dodo secrets are prefixed with "whsec_"; strip it before base64-decoding
+    const secretBase64 = secret.startsWith('whsec_') ? secret.slice(6) : secret;
+    const secretBytes = Buffer.from(secretBase64, 'base64');
     const toSign = `${webhookId}.${timestamp}.${body}`;
-    const hmac = crypto.createHmac('sha256', Buffer.from(secret, 'base64'));
-    const digest = hmac.update(toSign).digest('base64');
+    const digest = crypto.createHmac('sha256', secretBytes).update(toSign).digest('base64');
     const expected = `v1,${digest}`;
 
-    // Header may contain multiple comma-separated signatures
-    const signatures = signatureHeader.split(' ');
-    return signatures.some((sig) => sig === expected);
+    // Header may contain multiple space-separated signatures (during secret rotation)
+    return signatureHeader.split(' ').some((sig) => sig === expected);
   } catch {
     return false;
   }
