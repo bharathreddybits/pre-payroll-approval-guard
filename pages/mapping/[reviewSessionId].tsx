@@ -22,8 +22,12 @@ interface MappingState {
   error: string | null;
   baselineMappings: ColumnMapping[];
   currentMappings: ColumnMapping[];
+  originalBaselineMappings: ColumnMapping[];
+  originalCurrentMappings: ColumnMapping[];
   method: string;
 }
+
+const REQUIRED_CANONICAL_FIELDS = ['employee_id', 'gross_pay', 'net_pay', 'total_deductions'];
 
 const canonicalOptions = CANONICAL_FIELDS
   .filter(f => f.dataType !== 'array')
@@ -45,11 +49,15 @@ function confidenceLabel(confidence: number): string {
 function MappingTable({
   title,
   mappings,
+  originalSuggestions,
   onUpdate,
+  onReset,
 }: {
   title: string;
   mappings: ColumnMapping[];
+  originalSuggestions: ColumnMapping[];
   onUpdate: (index: number, canonicalField: string | null) => void;
+  onReset: (index: number) => void;
 }) {
   return (
     <Card>
@@ -68,42 +76,70 @@ function MappingTable({
               </tr>
             </thead>
             <tbody>
-              {mappings.map((m, i) => (
-                <tr
-                  key={i}
-                  className={`border-b border-gray-100 ${
-                    m.confidence < 0.7 && m.confidence > 0 ? 'bg-amber-50/50' : ''
-                  } ${!m.canonicalField ? 'bg-gray-50/50' : ''}`}
-                >
-                  <td className="py-2 px-3 font-mono text-xs">{m.uploadedColumn}</td>
-                  <td className="py-2 px-3">
-                    <select
-                      value={m.canonicalField || ''}
-                      onChange={(e) => onUpdate(i, e.target.value || null)}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">-- Skip (unmapped) --</option>
-                      {canonicalOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label} ({opt.category})
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="py-2 px-3">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${confidenceColor(
-                        m.confidence,
-                      )}`}
-                    >
-                      {confidenceLabel(m.confidence)} ({(m.confidence * 100).toFixed(0)}%)
-                    </span>
-                  </td>
-                  <td className="py-2 px-3 text-xs text-gray-500 max-w-[200px] truncate">
-                    {m.reasoning}
-                  </td>
-                </tr>
-              ))}
+              {mappings.map((m, i) => {
+                const isRequired = m.canonicalField
+                  ? REQUIRED_CANONICAL_FIELDS.includes(m.canonicalField)
+                  : false;
+                const originalField = originalSuggestions[i]?.canonicalField ?? null;
+                const hasChanged = m.canonicalField !== originalField;
+                return (
+                  <tr
+                    key={i}
+                    className={`border-b border-gray-100 ${
+                      m.confidence < 0.7 && m.confidence > 0 ? 'bg-amber-50/50' : ''
+                    } ${!m.canonicalField ? 'bg-gray-50/50' : ''}`}
+                  >
+                    <td className="py-2 px-3 font-mono text-xs">{m.uploadedColumn}</td>
+                    <td className="py-2 px-3">
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            {isRequired && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 leading-none">
+                                Required
+                              </span>
+                            )}
+                          </div>
+                          <select
+                            value={m.canonicalField || ''}
+                            onChange={(e) => onUpdate(i, e.target.value || null)}
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="">-- Skip (unmapped) --</option>
+                            {canonicalOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label} ({opt.category})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        {hasChanged && (
+                          <button
+                            type="button"
+                            title="Reset to AI suggestion"
+                            onClick={() => onReset(i)}
+                            className="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors text-base leading-none p-1 rounded hover:bg-blue-50"
+                          >
+                            ↺
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-2 px-3">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${confidenceColor(
+                          m.confidence,
+                        )}`}
+                      >
+                        {confidenceLabel(m.confidence)} ({(m.confidence * 100).toFixed(0)}%)
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 text-xs text-gray-500 max-w-[200px] truncate">
+                      {m.reasoning}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -122,6 +158,8 @@ export default function MappingPage() {
     error: null,
     baselineMappings: [],
     currentMappings: [],
+    originalBaselineMappings: [],
+    originalCurrentMappings: [],
     method: '',
   });
 
@@ -155,11 +193,15 @@ export default function MappingPage() {
         }
 
         const data = await res.json();
+        const baselineMappings: ColumnMapping[] = data.baseline?.mappings || [];
+        const currentMappings: ColumnMapping[] = data.current?.mappings || [];
         setState((prev) => ({
           ...prev,
           loading: false,
-          baselineMappings: data.baseline?.mappings || [],
-          currentMappings: data.current?.mappings || [],
+          baselineMappings,
+          currentMappings,
+          originalBaselineMappings: baselineMappings.map((m) => ({ ...m })),
+          originalCurrentMappings: currentMappings.map((m) => ({ ...m })),
           method: data.baseline?.method || 'mock',
         }));
       } catch (err: any) {
@@ -186,6 +228,28 @@ export default function MappingPage() {
     setState((prev) => {
       const updated = [...prev.currentMappings];
       updated[index] = { ...updated[index], canonicalField, confidence: canonicalField ? 1.0 : 0 };
+      return { ...prev, currentMappings: updated };
+    });
+  };
+
+  const handleResetBaseline = (index: number) => {
+    setState((prev) => {
+      const updated = [...prev.baselineMappings];
+      const original = prev.originalBaselineMappings[index];
+      if (original) {
+        updated[index] = { ...original };
+      }
+      return { ...prev, baselineMappings: updated };
+    });
+  };
+
+  const handleResetCurrent = (index: number) => {
+    setState((prev) => {
+      const updated = [...prev.currentMappings];
+      const original = prev.originalCurrentMappings[index];
+      if (original) {
+        updated[index] = { ...original };
+      }
       return { ...prev, currentMappings: updated };
     });
   };
@@ -329,12 +393,16 @@ export default function MappingPage() {
                 <MappingTable
                   title="Baseline Dataset Columns"
                   mappings={state.baselineMappings}
+                  originalSuggestions={state.originalBaselineMappings}
                   onUpdate={handleUpdateBaseline}
+                  onReset={handleResetBaseline}
                 />
                 <MappingTable
                   title="Current Dataset Columns"
                   mappings={state.currentMappings}
+                  originalSuggestions={state.originalCurrentMappings}
                   onUpdate={handleUpdateCurrent}
+                  onReset={handleResetCurrent}
                 />
               </div>
 

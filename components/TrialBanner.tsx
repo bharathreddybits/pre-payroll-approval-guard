@@ -1,11 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { AlertTriangle, Clock, X } from 'lucide-react';
 import { useSubscriptionStatus } from '../hooks/useSubscriptionStatus';
 
 export function TrialBanner() {
   const subscriptionStatus = useSubscriptionStatus();
   const [dismissed, setDismissed] = React.useState(false);
+  const router = useRouter();
 
   // Don't show if dismissed
   if (dismissed) return null;
@@ -29,12 +31,12 @@ export function TrialBanner() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Link
-                href="/pricing"
+              <button
+                onClick={() => router.push('/pricing')}
                 className="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
               >
-                View Plans
-              </Link>
+                Upgrade Now &rarr;
+              </button>
               <button
                 onClick={() => setDismissed(true)}
                 className="text-white/80 hover:text-white"
@@ -66,7 +68,7 @@ export function TrialBanner() {
             <div className="flex items-center flex-1">
               <Clock className="h-5 w-5 mr-3 flex-shrink-0" />
               <p className="font-medium text-sm">
-                Your free trial ends in <strong>{daysText}</strong>. Subscribe now to keep your access.
+                <strong>{daysText} remaining in your trial.</strong> Subscribe now to keep your access.
               </p>
             </div>
             <div className="flex items-center gap-4">

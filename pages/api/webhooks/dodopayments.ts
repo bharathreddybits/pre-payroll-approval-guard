@@ -122,6 +122,17 @@ async function handleSubscriptionActive(data: any) {
 
   const nextBilling = data.next_billing_date ? new Date(data.next_billing_date) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+  // Don't downgrade an existing active pro subscription
+  const { data: existing } = await supabase
+    .from('subscription')
+    .select('tier, status')
+    .eq('organization_id', organizationId)
+    .single();
+  if (existing?.tier === 'pro' && existing?.status === 'active' && tier === 'starter') {
+    console.warn(`[subscription.active] Refusing to downgrade org=${organizationId} from pro to starter — missing product_id in webhook`);
+    return;
+  }
+
   // Upsert subscription — idempotent on dodo_subscription_id
   const { error } = await supabase.from('subscription').upsert(
     {

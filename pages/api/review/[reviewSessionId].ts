@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../../lib/supabase';
 import { getRuleMetadata } from '../../../lib/rules/ruleRegistry';
 import { getUxSection } from '../../../lib/rules/uxSectionMapping';
@@ -15,8 +16,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'reviewSessionId is required' });
   }
 
+  // Auth: require Bearer token and verify org membership
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Authorization required' });
+
+  const anonClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+
   try {
     const supabase = getServiceSupabase();
+
+    // Look up user's organization
+    const { data: mapping } = await supabase
+      .from('user_organization_mapping')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single();
+    if (!mapping) return res.status(403).json({ error: 'No organization found' });
 
     // 1. Get review session metadata with organization and datasets
     const { data: session, error: sessionError } = await supabase
@@ -43,6 +63,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (sessionError || !session) {
       console.error('Failed to fetch review session:', sessionError);
       return res.status(404).json({ error: 'Review session not found' });
+    }
+
+    // Verify caller's org matches the session's org
+    if (mapping.organization_id !== session.organization_id) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     // Parse pagination parameters

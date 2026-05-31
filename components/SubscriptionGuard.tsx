@@ -55,6 +55,32 @@ export function SubscriptionGuard({ children, loadingBehavior = 'block' }: Subsc
 
   // Block access if trial expired or no subscription
   if (!subscriptionStatus.hasAccess) {
+    // Determine which blocked state we're in
+    const isTrialExpired = subscriptionStatus.trialEnded === true;
+    const isCancelled =
+      subscriptionStatus.status === 'expired' && !subscriptionStatus.trialEnded;
+    const hasNoSubscription = subscriptionStatus.status === 'none';
+
+    const heading = isTrialExpired
+      ? 'Trial Ended'
+      : isCancelled
+      ? 'Subscription Cancelled'
+      : 'Subscription Required';
+
+    const body = isTrialExpired
+      ? 'Your 7-day free trial has ended. Upgrade to continue using PayrollShield.'
+      : isCancelled
+      ? 'Your subscription was cancelled. Reactivate to continue using PayrollShield.'
+      : hasNoSubscription
+      ? 'You need an active subscription to access this feature.'
+      : 'You need an active subscription to access this feature.';
+
+    const ctaLabel = isTrialExpired
+      ? 'Upgrade Now'
+      : isCancelled
+      ? 'Reactivate Subscription'
+      : 'View Plans & Subscribe';
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full">
@@ -64,13 +90,11 @@ export function SubscriptionGuard({ children, loadingBehavior = 'block' }: Subsc
             </div>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              {subscriptionStatus.trialEnded ? 'Trial Ended' : 'Subscription Required'}
+              {heading}
             </h2>
 
             <p className="text-gray-600 mb-6">
-              {subscriptionStatus.trialEnded
-                ? 'Your 7-day free trial has ended. Subscribe to continue using PayrollShield.'
-                : 'You need an active subscription to access this feature.'}
+              {body}
             </p>
 
             <div className="space-y-3">
@@ -78,7 +102,7 @@ export function SubscriptionGuard({ children, loadingBehavior = 'block' }: Subsc
                 href="/pricing"
                 className="block w-full bg-brand-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-blue-dark transition-colors"
               >
-                View Plans & Subscribe
+                {ctaLabel}
                 <ArrowRight className="inline-block ml-2 h-4 w-4" />
               </Link>
 
@@ -95,7 +119,7 @@ export function SubscriptionGuard({ children, loadingBehavior = 'block' }: Subsc
                 <strong>7-day money-back guarantee</strong>
               </p>
               <p className="text-xs text-gray-400">
-                Start a subscription with full access. If you're not satisfied for any reason,
+                Start a subscription with full access. If you&apos;re not satisfied for any reason,
                 request a full refund within 7 days.
               </p>
             </div>

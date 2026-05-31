@@ -8,9 +8,11 @@ interface SummaryProps {
     blockers_count: number;
     approval_status: string;
   };
+  onBlockersClick?: () => void;
+  onMaterialClick?: () => void;
 }
 
-export function ChangeSummaryCards({ summary }: SummaryProps) {
+export function ChangeSummaryCards({ summary, onBlockersClick, onMaterialClick }: SummaryProps) {
   const getStatusDisplay = (status: string) => {
     switch (status) {
       case 'approved':
@@ -40,7 +42,10 @@ export function ChangeSummaryCards({ summary }: SummaryProps) {
       </Card>
 
       {/* Material Changes */}
-      <Card className="border-l-4 border-l-yellow-500 hover:shadow-md transition-shadow">
+      <Card
+        className={`border-l-4 border-l-yellow-500 hover:shadow-md transition-shadow${onMaterialClick ? ' cursor-pointer' : ''}`}
+        onClick={onMaterialClick}
+      >
         <CardContent className="pt-6">
           <div className="text-4xl font-bold text-yellow-600 mb-1">
             {summary.material_changes}
@@ -51,7 +56,10 @@ export function ChangeSummaryCards({ summary }: SummaryProps) {
       </Card>
 
       {/* Blockers */}
-      <Card className="border-l-4 border-l-red-500 hover:shadow-md transition-shadow">
+      <Card
+        className={`border-l-4 border-l-red-500 hover:shadow-md transition-shadow${onBlockersClick ? ' cursor-pointer' : ''}`}
+        onClick={onBlockersClick}
+      >
         <CardContent className="pt-6">
           <div className="text-4xl font-bold text-red-600 mb-1">
             {summary.blockers_count}

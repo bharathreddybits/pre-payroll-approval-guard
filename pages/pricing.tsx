@@ -15,7 +15,7 @@ const plans = [
     monthlyPrice: 249,
     annualPrice: 199,
     priceLabel: null,
-    cta: 'Start 7-Day Free Trial',
+    cta: 'Start 7-day trial',
     ctaHref: '/signup',
     highlight: false,
     features: [
@@ -35,7 +35,7 @@ const plans = [
     monthlyPrice: 749,
     annualPrice: 599,
     priceLabel: null,
-    cta: 'Start 7-Day Free Trial',
+    cta: 'Start 7-day trial',
     ctaHref: '/signup',
     highlight: true,
     features: [
@@ -57,7 +57,7 @@ const faqs = [
   },
   {
     q: 'Do both plans include a free trial?',
-    a: 'Yes. Both Starter and Pro include a 7-day free trial with full access to all features. No credit card required to start.',
+    a: 'Yes. Both Starter and Pro include a 7-day free trial with full access to all features. Your card is required at signup but will not be charged for 7 days.',
   },
   {
     q: 'What is your refund policy?',
@@ -174,7 +174,7 @@ export default function PricingPage() {
 
       const { checkoutUrl } = await response.json();
 
-      // Redirect to LemonSqueezy checkout
+      // Redirect to checkout
       window.location.href = checkoutUrl;
     } catch (error: any) {
       console.error('Checkout error:', error);
@@ -261,6 +261,12 @@ export default function PricingPage() {
                       {plan.monthlyPrice !== null && plan.monthlyPrice > 0 && (
                         <span className={`text-sm ml-1 ${plan.highlight ? 'text-blue-200' : 'text-slate-500'}`}>/mo</span>
                       )}
+                      {annual && plan.name === 'Starter' && (
+                        <p className="text-sm font-semibold text-green-400 mt-1">Save $597/year</p>
+                      )}
+                      {annual && plan.name === 'Pro' && (
+                        <p className={`text-sm font-semibold mt-1 ${plan.highlight ? 'text-green-300' : 'text-green-600'}`}>Save $1,800/year</p>
+                      )}
                     </div>
 
                     <ul className="space-y-3 mb-8 flex-1">
@@ -285,7 +291,7 @@ export default function PricingPage() {
                         {loading ? 'Loading...' : plan.cta}
                       </button>
                       <p className={`text-xs text-center mt-3 ${plan.highlight ? 'text-blue-200' : 'text-slate-500'}`}>
-                        7-day money-back guarantee
+                        Credit card required · No charge for 7 days
                       </p>
                     </div>
                   </div>

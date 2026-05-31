@@ -105,11 +105,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Could not determine column headers from stored data' });
     }
 
-    // Map both datasets
-    const [baselineResult, currentResult] = await Promise.all([
-      mapColumns(baselineHeaders, baselineSample || []),
-      mapColumns(currentHeaders, currentSample || []),
-    ]);
+    // Map both datasets — if AI mapping fails, mark session as 'failed' so user can re-upload
+    let baselineResult: Awaited<ReturnType<typeof mapColumns>>;
+    let currentResult: Awaited<ReturnType<typeof mapColumns>>;
+    try {
+      [baselineResult, currentResult] = await Promise.all([
+        mapColumns(baselineHeaders, baselineSample || []),
+        mapColumns(currentHeaders, currentSample || []),
+      ]);
+    } catch (error: any) {
+      // Clean up stuck session — user must re-upload
+      await supabase.from('review_session').update({ status: 'failed' }).eq('review_session_id', reviewSessionId);
+      return res.status(500).json({ error: 'Column mapping failed', message: error.message, action: 'Please re-upload your payroll files' });
+    }
 
     // Store mapping results in column_mapping table
     const mappingRows = [

@@ -19,15 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const supabase = getServiceSupabase();
 
-    // Ensure the column exists (idempotent migration)
-    try {
-      await supabase.rpc('exec', {
-        sql: 'ALTER TABLE material_judgement ADD COLUMN IF NOT EXISTS reviewer_notes TEXT;',
-      });
-    } catch {
-      // rpc may not exist; column may already exist — either way, proceed
-    }
-
     const { data, error } = await supabase
       .from('material_judgement')
       .update({ reviewer_notes: notes || null })

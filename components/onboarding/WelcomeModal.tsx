@@ -8,32 +8,34 @@ import {
   DialogDescription,
 } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface WelcomeModalProps {
   isNewUser: boolean;
 }
 
-const STORAGE_KEY = 'payrollshield_welcome_dismissed';
-
 export function WelcomeModal({ isNewUser }: WelcomeModalProps) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+
+  const storageKey = `ppg-welcome-dismissed-${user?.id || 'anon'}`;
 
   useEffect(() => {
     if (isNewUser && typeof window !== 'undefined') {
-      const dismissed = localStorage.getItem(STORAGE_KEY);
+      const dismissed = localStorage.getItem(storageKey);
       if (!dismissed) {
         setIsOpen(true);
       }
     }
-  }, [isNewUser]);
+  }, [isNewUser, storageKey]);
 
   const handleDismiss = () => {
-    localStorage.setItem(STORAGE_KEY, 'true');
+    localStorage.setItem(storageKey, 'true');
     setIsOpen(false);
   };
 
   const handleGetStarted = () => {
-    localStorage.setItem(STORAGE_KEY, 'true');
+    localStorage.setItem(storageKey, 'true');
     setIsOpen(false);
   };
 

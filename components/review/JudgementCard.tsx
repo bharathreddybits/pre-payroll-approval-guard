@@ -257,11 +257,6 @@ export function JudgementCard({ item }: JudgementCardProps) {
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Reviewer Notes
                 </label>
-                <span className="text-[10px] text-gray-400">
-                  {saveStatus === 'saving' && 'Saving...'}
-                  {saveStatus === 'saved' && 'Saved'}
-                  {saveStatus === 'error' && 'Failed to save'}
-                </span>
               </div>
               <textarea
                 value={notes}
@@ -269,6 +264,17 @@ export function JudgementCard({ item }: JudgementCardProps) {
                 placeholder="Document actions taken, findings, or follow-up items..."
                 className="w-full text-sm text-gray-800 bg-white border border-gray-200 rounded-md px-3 py-2 min-h-[72px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
               />
+              <div className="mt-1 h-4">
+                {saveStatus === 'saving' && (
+                  <span className="text-[11px] text-gray-400">Saving...</span>
+                )}
+                {saveStatus === 'saved' && (
+                  <span className="text-[11px] text-green-600">Saved ✓</span>
+                )}
+                {saveStatus === 'error' && (
+                  <span className="text-[11px] text-red-500">Save failed</span>
+                )}
+              </div>
             </div>
           )}
         </div>

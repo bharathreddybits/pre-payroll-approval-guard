@@ -97,10 +97,10 @@ export function calculateDeltas(
 
         if (bNum !== cNum) {
           const deltaAbs = cNum - bNum;
-          // Cap percentage to NUMERIC(5,2) DB range to avoid overflow
+          // NUMERIC(10,2) DB column — cap at ±99999999.99 to avoid overflow
           let deltaPct = bNum !== 0 ? (deltaAbs / Math.abs(bNum)) * 100 : null;
           if (deltaPct !== null) {
-            deltaPct = Math.max(-999.99, Math.min(999.99, Math.round(deltaPct * 100) / 100));
+            deltaPct = Math.max(-99999999.99, Math.min(99999999.99, Math.round(deltaPct * 100) / 100));
           }
 
           deltas.push({

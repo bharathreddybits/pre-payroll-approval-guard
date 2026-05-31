@@ -41,6 +41,18 @@ export default function UploadPage() {
     warnings: [],
   });
 
+  const [progressStep, setProgressStep] = useState(0);
+  const progressStepRef = useRef(0);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const PROGRESS_STEPS = [
+    { label: 'Parsing payroll files...', percent: 15 },
+    { label: 'Calculating employee changes...', percent: 35 },
+    { label: 'Applying compliance rules...', percent: 60 },
+    { label: 'Generating review report...', percent: 85 },
+    { label: 'Finalizing...', percent: 95 },
+  ];
+
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -48,6 +60,7 @@ export default function UploadPage() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     };
   }, []);
 
@@ -159,6 +172,18 @@ export default function UploadPage() {
         setState((prev) => ({ ...prev, uploading: false, processing: true }));
         toast.loading('Analyzing payroll changes...', { id: 'upload' });
 
+        // Advance progress step every 8 seconds
+        progressStepRef.current = 0;
+        setProgressStep(0);
+        progressIntervalRef.current = setInterval(() => {
+          progressStepRef.current = progressStepRef.current + 1;
+          if (progressStepRef.current < PROGRESS_STEPS.length) {
+            setProgressStep(progressStepRef.current);
+          } else {
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+          }
+        }, 8000);
+
         // Poll review API every 3 seconds until processing completes
         pollRef.current = setInterval(async () => {
           try {
@@ -168,6 +193,8 @@ export default function UploadPage() {
               if (data.session?.status === 'completed' || data.verdict) {
                 if (pollRef.current) clearInterval(pollRef.current);
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+                setProgressStep(PROGRESS_STEPS.length); // 100%
                 toast.success('Analysis complete!', {
                   id: 'upload',
                   description: 'Redirecting to review page...',
@@ -482,11 +509,15 @@ export default function UploadPage() {
           {/* Processing Status */}
           {(state.uploading || state.processing) && (
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary flex-shrink-0"></div>
                 <div>
                   <p className="font-medium text-blue-900">
-                    {state.uploading ? 'Uploading files...' : 'Processing comparison...'}
+                    {state.uploading
+                      ? 'Uploading files...'
+                      : progressStep < PROGRESS_STEPS.length
+                      ? PROGRESS_STEPS[progressStep].label
+                      : 'Finalizing...'}
                   </p>
                   <p className="text-sm text-blue-700">
                     {state.uploading
@@ -495,6 +526,22 @@ export default function UploadPage() {
                   </p>
                 </div>
               </div>
+              {state.processing && (
+                <div className="mt-2">
+                  <div className="flex justify-between text-xs text-blue-700 mb-1">
+                    <span>{progressStep < PROGRESS_STEPS.length ? PROGRESS_STEPS[progressStep].label : 'Complete'}</span>
+                    <span>{progressStep < PROGRESS_STEPS.length ? PROGRESS_STEPS[progressStep].percent : 100}%</span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-700"
+                      style={{
+                        width: `${progressStep < PROGRESS_STEPS.length ? PROGRESS_STEPS[progressStep].percent : 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -61,10 +61,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ initialized: false, reason: 'subscription_exists' });
     }
 
-    // Create 7-day trial subscription
+    // Create 7-day trial subscription.
+    // current_period_end = trial_end_date so entitlement checks are consistent
+    // regardless of which column the access guard reads.
     const now = new Date();
     const trialEnd = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-    const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     const { error: insertError } = await supabase.from('subscription').insert({
       organization_id: organizationId,
@@ -74,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       trial_end_date: trialEnd.toISOString(),
       trial_days: TRIAL_DAYS,
       current_period_start: now.toISOString(),
-      current_period_end: periodEnd.toISOString(),
+      current_period_end: trialEnd.toISOString(),
       cancel_at_period_end: false,
     });
 

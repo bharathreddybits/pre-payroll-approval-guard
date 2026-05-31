@@ -271,12 +271,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         cleanupFiles(baselineFile.filepath, currentFile.filepath);
         return res.status(403).json({
           error: 'Employee limit exceeded',
-          message: employeeLimitCheck.reason,
+          message: `Your Starter plan supports up to ${TIER_LIMITS.starter.maxEmployees} employees. This payroll has ${maxEmployeeCount} employees. Upgrade to Pro for unlimited employees.`,
           current_count: maxEmployeeCount,
           limit: TIER_LIMITS.starter.maxEmployees,
           tier: orgTier,
           upgrade_url: '/pricing',
         });
+      }
+
+      // ── Duplicate upload detection ───────────────────────────────────────
+      // Guard against double-click / browser refresh creating two identical sessions
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data: recentSessions } = await supabase
+        .from('review_session')
+        .select(`review_session_id, payroll_dataset!inner(period_start_date, period_end_date, run_type)`)
+        .eq('organization_id', finalOrganizationId)
+        .gte('created_at', fiveMinutesAgo);
+
+      if (recentSessions) {
+        const duplicate = recentSessions.find((s: any) =>
+          s.payroll_dataset?.some((d: any) =>
+            d.period_start_date === periodStartDate &&
+            d.period_end_date === periodEndDate &&
+            d.run_type === runType
+          )
+        );
+        if (duplicate) {
+          cleanupFiles(baselineFile.filepath, currentFile.filepath);
+          return res.status(409).json({
+            error: 'Duplicate upload detected',
+            message: 'A review session for this payroll period was already created in the last 5 minutes.',
+            existing_session_id: duplicate.review_session_id,
+          });
+        }
       }
 
       // ── Create review session ────────────────────────────────────────────

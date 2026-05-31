@@ -2,10 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { toast } from 'sonner';
-import { Upload, LayoutDashboard, LogOut, CreditCard } from 'lucide-react';
+import { Upload, LayoutDashboard, LogOut, CreditCard, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-export function Header() {
+interface HeaderProps {
+  isUploadLocked?: boolean;
+}
+
+export function Header({ isUploadLocked = false }: HeaderProps) {
   const { user, signOut } = useAuth();
   const router = useRouter();
 
@@ -52,10 +56,11 @@ export function Header() {
                     isActive('/upload')
                       ? 'bg-slate-100 text-slate-900'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
+                  }${isUploadLocked ? ' opacity-60' : ''}`}
                 >
                   <Upload className="h-4 w-4" />
                   Upload
+                  {isUploadLocked && <Lock size={12} className="ml-0.5" />}
                 </Link>
                 <Link
                   href="/subscription"

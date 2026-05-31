@@ -238,6 +238,48 @@ function SubscriptionContent() {
               </Link>
             </CardContent>
           </Card>
+        ) : subscription.status === 'expired' ? (
+          <Card className="border-red-200">
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <XCircle className="h-6 w-6 text-red-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <CardTitle className="text-red-900">Your 7-day trial has ended</CardTitle>
+                  <CardDescription className="mt-1">
+                    Your free trial for {organization?.organization_name} has expired. Upgrade to continue using PayrollShield.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Link href="/pricing">
+                <Button className="bg-brand-blue hover:bg-brand-blue-dark text-white">
+                  Upgrade to Pro
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : subscription.status === 'cancelled' && !subscription.cancel_at_period_end ? (
+          <Card className="border-gray-300">
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <XCircle className="h-6 w-6 text-gray-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <CardTitle className="text-gray-900">Your subscription was cancelled</CardTitle>
+                  <CardDescription className="mt-1">
+                    Your subscription has been cancelled. Reactivate to continue using PayrollShield.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Link href="/pricing">
+                <Button variant="outline">
+                  Reactivate Subscription
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-6">
             {/* Current Plan Card */}

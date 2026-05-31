@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { toast } from 'sonner';
+import { supabase } from '../../lib/supabase';
 import { Header } from '../../components/Header';
 import { ProtectedRoute } from '../../components/ProtectedRoute';
 import { SubscriptionGuard } from '../../components/SubscriptionGuard';
@@ -40,7 +41,11 @@ export default function ReviewPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/review/${reviewSessionId}`);
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = authSession?.access_token
+        ? { 'Authorization': `Bearer ${authSession.access_token}` }
+        : {};
+      const response = await fetch(`/api/review/${reviewSessionId}`, { headers });
       if (!response.ok) {
         throw new Error('Failed to fetch review data');
       }
@@ -56,9 +61,14 @@ export default function ReviewPage() {
 
   const handleApprove = async () => {
     try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(authSession?.access_token ? { 'Authorization': `Bearer ${authSession.access_token}` } : {}),
+      };
       const response = await fetch('/api/approve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           review_session_id: reviewSessionId,
           approval_status: 'approved',
@@ -82,9 +92,14 @@ export default function ReviewPage() {
 
   const handleReject = async (notes: string) => {
     try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(authSession?.access_token ? { 'Authorization': `Bearer ${authSession.access_token}` } : {}),
+      };
       const response = await fetch('/api/approve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           review_session_id: reviewSessionId,
           approval_status: 'rejected',

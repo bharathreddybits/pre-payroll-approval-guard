@@ -190,8 +190,21 @@ export default function DashboardPage() {
 
               {/* Stats Cards */}
               <DashboardStats stats={data.stats} />
+              <div className="flex items-center gap-4 mt-2">
+                <p className="text-sm text-gray-500">Showing all-time activity</p>
+                {data.stats.total_reviews > 0 && (
+                  <p className="text-sm text-gray-500">
+                    Approved: {data.stats.approved} of {data.stats.total_reviews} completed
+                  </p>
+                )}
+              </div>
 
               {/* Review Sessions — full width */}
+              {data.sessions.length > 0 && (
+                <p className="text-sm text-gray-500 mt-6 mb-2">
+                  Showing your {data.sessions.length} most recent review{data.sessions.length !== 1 ? 's' : ''}
+                </p>
+              )}
               <ReviewSessionsTable
                 sessions={data.sessions}
                 recentActivity={data.recent_activity}

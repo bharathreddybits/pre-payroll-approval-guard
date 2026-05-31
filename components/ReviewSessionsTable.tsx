@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { Badge } from './ui/badge';
-import { CheckCircle2, XCircle } from 'lucide-react';
 
 interface ReviewSession {
   review_session_id: string;
@@ -33,18 +32,7 @@ interface ReviewSessionsTableProps {
   recentActivity?: ActivityItem[];
 }
 
-export function ReviewSessionsTable({ sessions, recentActivity }: ReviewSessionsTableProps) {
-  // Build a lookup from session id to its activity (approval notes, approved_by)
-  const activityBySession = new Map<string, ActivityItem>();
-  if (recentActivity) {
-    for (const item of recentActivity) {
-      // Keep the most recent activity per session
-      if (!activityBySession.has(item.review_session_id)) {
-        activityBySession.set(item.review_session_id, item);
-      }
-    }
-  }
-
+export function ReviewSessionsTable({ sessions }: ReviewSessionsTableProps) {
   if (sessions.length === 0) {
     return (
       <div className="bg-white rounded-lg border p-8 text-center">
@@ -72,24 +60,29 @@ export function ReviewSessionsTable({ sessions, recentActivity }: ReviewSessions
     });
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
+  const getMergedStatusBadge = (session: ReviewSession) => {
+    // Processing states based on session.status
+    if (session.status === 'in_progress') {
+      return <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100">Processing...</Badge>;
     }
+    if (session.status === 'pending_mapping') {
+      return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Awaiting Mapping</Badge>;
+    }
+    if (session.status === 'failed') {
+      return <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Failed</Badge>;
+    }
+    // Completed sessions — show approval decision
+    if (session.approval_status === 'approved') {
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved ✓</Badge>;
+    }
+    if (session.approval_status === 'rejected') {
+      return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
+    }
+    // completed + approval pending
+    if (session.status === 'completed') {
+      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Under Review</Badge>;
+    }
+    return <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100">Under Review</Badge>;
   };
 
   return (
@@ -125,9 +118,6 @@ export function ReviewSessionsTable({ sessions, recentActivity }: ReviewSessions
               <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Decision
-              </th>
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Action
               </th>
@@ -135,8 +125,6 @@ export function ReviewSessionsTable({ sessions, recentActivity }: ReviewSessions
           </thead>
           <tbody className="divide-y">
             {sessions.map((session) => {
-              const activity = activityBySession.get(session.review_session_id);
-
               return (
                 <tr key={session.review_session_id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
@@ -162,30 +150,7 @@ export function ReviewSessionsTable({ sessions, recentActivity }: ReviewSessions
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-center">
-                    {getStatusBadge(session.approval_status)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 max-w-[220px]">
-                    {activity ? (
-                      <div className="flex items-start gap-1.5">
-                        {activity.approval_status === 'approved' ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-xs text-gray-500">
-                            {activity.approved_by || 'User'} &middot; {formatDateTime(activity.approved_at)}
-                          </p>
-                          {activity.approval_notes && (
-                            <p className="text-xs text-gray-400 truncate mt-0.5" title={activity.approval_notes}>
-                              {activity.approval_notes}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">&mdash;</span>
-                    )}
+                    {getMergedStatusBadge(session)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                     <Link
