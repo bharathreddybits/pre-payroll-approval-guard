@@ -65,7 +65,7 @@ export default function LoginPage() {
               src="/logo.png"
               alt="PayrollShield"
               className="mx-auto"
-              style={{ height: '80px', width: 'auto' }}
+              style={{ height: '120px', width: 'auto' }}
             />
           </Link>
           <p className="text-gray-600">
