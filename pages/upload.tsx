@@ -9,6 +9,8 @@ import { Header } from '../components/Header';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { SubscriptionGuard } from '../components/SubscriptionGuard';
 import { TrialBanner } from '../components/TrialBanner';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface UploadState {
   baselineFile: File | null;
@@ -26,6 +28,7 @@ interface UploadState {
 
 export default function UploadPage() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [state, setState] = useState<UploadState>({
     baselineFile: null,
@@ -63,6 +66,21 @@ export default function UploadPage() {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     };
   }, []);
+
+  // Auto-fill organization ID from the authenticated user's org
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('user_organization_mapping')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.organization_id) {
+          setState((prev) => ({ ...prev, organizationId: data.organization_id }));
+        }
+      });
+  }, [user]);
 
   const baselineDropzone = useDropzone({
     accept: {
@@ -124,10 +142,28 @@ export default function UploadPage() {
       return;
     }
 
+    if (state.periodStartDate >= state.periodEndDate) {
+      toast.error('Invalid dates', { description: 'Period end date must be after period start date' });
+      setState((prev) => ({ ...prev, error: 'Period end date must be after period start date' }));
+      return;
+    }
+
+    if (state.payDate < state.periodStartDate) {
+      toast.error('Invalid pay date', { description: 'Pay date cannot be before the period start date' });
+      setState((prev) => ({ ...prev, error: 'Pay date cannot be before the period start date' }));
+      return;
+    }
+
     toast.loading('Processing payroll data...', { id: 'upload' });
     setState((prev) => ({ ...prev, uploading: true, error: null, warnings: [] }));
 
     try {
+      // Get auth token for API calls
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const authHeaders: Record<string, string> = authSession?.access_token
+        ? { Authorization: `Bearer ${authSession.access_token}` }
+        : {};
+
       // Step 1: Upload files
       const formData = new FormData();
       formData.append('baseline', state.baselineFile);
@@ -140,6 +176,7 @@ export default function UploadPage() {
 
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
+        headers: authHeaders,
         body: formData,
       });
 
@@ -187,7 +224,7 @@ export default function UploadPage() {
         // Poll review API every 3 seconds until processing completes
         pollRef.current = setInterval(async () => {
           try {
-            const pollRes = await fetch(`/api/review/${reviewSessionId}`);
+            const pollRes = await fetch(`/api/review/${reviewSessionId}`, { headers: authHeaders });
             if (pollRes.ok) {
               const data = await pollRes.json();
               if (data.session?.status === 'completed' || data.verdict) {
@@ -345,6 +382,9 @@ export default function UploadPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Organization ID *
+                    {state.organizationId && (
+                      <span className="ml-2 text-xs text-green-600 font-normal">✓ Auto-filled</span>
+                    )}
                   </label>
                   <input
                     type="text"
@@ -352,8 +392,9 @@ export default function UploadPage() {
                     onChange={(e) =>
                       setState((prev) => ({ ...prev, organizationId: e.target.value }))
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="e.g., org_123456"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-gray-50"
+                    placeholder="Loading your organization..."
+                    readOnly={!!state.organizationId}
                   />
                 </div>
 
@@ -488,7 +529,7 @@ export default function UploadPage() {
 
           {/* Action Buttons */}
           <div className="flex justify-between items-center">
-            <Button variant="outline" onClick={() => router.push('/')}>
+            <Button variant="outline" onClick={() => router.push('/dashboard')}>
               Cancel
             </Button>
 

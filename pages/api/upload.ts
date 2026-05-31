@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { createClient } from '@supabase/supabase-js';
 import formidable from 'formidable';
 import fs from 'fs';
 import Papa from 'papaparse';
@@ -67,7 +68,11 @@ async function validateCSVStrict(
     }
 
     const firstRow = rows[0];
-    const requiredColumns = ['employee_id', 'net_pay', 'gross_pay', 'total_deductions'];
+    const requiredColumns = ['employee_id', 'net_pay', 'gross_pay'];
+    // Accept either 'total_deductions' or 'deductions'
+    if (!('total_deductions' in firstRow) && !('deductions' in firstRow)) {
+      requiredColumns.push('total_deductions');
+    }
     const missingColumns = requiredColumns.filter(col => !(col in firstRow));
 
     if (missingColumns.length > 0) {
@@ -205,6 +210,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Auth: require Bearer token
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Authorization required' });
+
+  const anonClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+
   const form = formidable({
     maxFileSize: 10 * 1024 * 1024,
     keepExtensions: true,
@@ -239,6 +255,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { orgId: finalOrganizationId, error: orgError } = await resolveOrganization(supabase, organizationId);
       if (orgError) {
         return res.status(400).json({ error: 'Invalid organization', details: orgError });
+      }
+
+      // Verify caller belongs to this organization
+      const { data: ownershipMapping } = await supabase
+        .from('user_organization_mapping')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .eq('organization_id', finalOrganizationId)
+        .single();
+      if (!ownershipMapping) {
+        return res.status(403).json({ error: 'Access denied: you do not belong to this organization' });
       }
 
       // Determine org tier
@@ -509,6 +536,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         processingSuccess = processingResult.success;
       } catch (processingError: any) {
         console.error('Processing error:', processingError.message);
+        // Mark session as failed so it doesn't stay stuck in 'in_progress'
+        await supabase
+          .from('review_session')
+          .update({ status: 'failed' })
+          .eq('review_session_id', reviewSessionId);
         processingResult = {
           success: false,
           error: processingError.message,

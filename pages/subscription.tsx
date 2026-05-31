@@ -19,8 +19,9 @@ interface Subscription {
   status: 'trialing' | 'active' | 'past_due' | 'cancelled' | 'expired';
   current_period_start: string;
   current_period_end: string;
+  trial_end_date: string | null;
   cancel_at_period_end: boolean;
-  lemonsqueezy_subscription_id: string;
+  dodo_subscription_id: string | null;
 }
 
 interface Organization {
@@ -85,20 +86,23 @@ function SubscriptionContent() {
     }
   }
 
+  async function getAuthHeaders(): Promise<Record<string, string>> {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    return {
+      'Content-Type': 'application/json',
+      ...(currentSession?.access_token ? { Authorization: `Bearer ${currentSession.access_token}` } : {}),
+    };
+  }
+
   async function handleCancelSubscription() {
-    if (!subscription || !confirm('Are you sure you want to cancel your subscription? You will retain access until the end of your billing period.')) {
-      return;
-    }
-
+    if (!subscription) return;
     setCancelling(true);
-
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/subscription/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscriptionId: subscription.lemonsqueezy_subscription_id,
-        }),
+        headers,
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
@@ -109,8 +113,6 @@ function SubscriptionContent() {
       toast.success('Subscription cancelled', {
         description: 'You will retain access until the end of your billing period.',
       });
-
-      // Refresh subscription data
       await fetchSubscriptionData();
     } catch (error: any) {
       console.error('Cancellation error:', error);
@@ -123,19 +125,14 @@ function SubscriptionContent() {
   }
 
   async function handleResumeSubscription() {
-    if (!subscription || !confirm('Resume your subscription? Your billing will continue as scheduled.')) {
-      return;
-    }
-
+    if (!subscription) return;
     setResuming(true);
-
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/subscription/resume', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscriptionId: subscription.lemonsqueezy_subscription_id,
-        }),
+        headers,
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {
@@ -146,8 +143,6 @@ function SubscriptionContent() {
       toast.success('Subscription resumed', {
         description: 'Your subscription is now active again.',
       });
-
-      // Refresh subscription data
       await fetchSubscriptionData();
     } catch (error: any) {
       console.error('Resume error:', error);
@@ -244,9 +239,9 @@ function SubscriptionContent() {
               <div className="flex items-start gap-3">
                 <XCircle className="h-6 w-6 text-red-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <CardTitle className="text-red-900">Your 7-day trial has ended</CardTitle>
+                  <CardTitle className="text-red-900">Your trial has ended</CardTitle>
                   <CardDescription className="mt-1">
-                    Your free trial for {organization?.organization_name} has expired. Upgrade to continue using PayrollShield.
+                    Your free trial for {organization?.organization_name} has expired. Subscribe to continue using PayrollShield.
                   </CardDescription>
                 </div>
               </div>
@@ -254,7 +249,7 @@ function SubscriptionContent() {
             <CardContent>
               <Link href="/pricing">
                 <Button className="bg-brand-blue hover:bg-brand-blue-dark text-white">
-                  Upgrade to Pro
+                  Choose a Plan
                 </Button>
               </Link>
             </CardContent>
@@ -303,10 +298,21 @@ function SubscriptionContent() {
                   <div className="flex items-start gap-3">
                     <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Billing Period</p>
-                      <p className="text-sm text-gray-600">
-                        {formatDate(subscription.current_period_start)} — {formatDate(subscription.current_period_end)}
-                      </p>
+                      {subscription.status === 'trialing' && subscription.trial_end_date ? (
+                        <>
+                          <p className="text-sm font-medium text-gray-900">Trial Period</p>
+                          <p className="text-sm text-gray-600">
+                            Ends {formatDate(subscription.trial_end_date)}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium text-gray-900">Billing Period</p>
+                          <p className="text-sm text-gray-600">
+                            {formatDate(subscription.current_period_start)} — {formatDate(subscription.current_period_end)}
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
 

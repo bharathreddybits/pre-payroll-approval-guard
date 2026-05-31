@@ -92,7 +92,7 @@ export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const { user } = useAuth();
+  const { user, session: authSession } = useAuth();
   const router = useRouter();
 
   // Fetch user's organizations if logged in
@@ -156,9 +156,13 @@ export default function PricingPage() {
     setLoading(true);
 
     try {
+      const authHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(authSession?.access_token ? { Authorization: `Bearer ${authSession.access_token}` } : {}),
+      };
       const response = await fetch('/api/checkout/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           planId,
           organizationId: org.organization_id,

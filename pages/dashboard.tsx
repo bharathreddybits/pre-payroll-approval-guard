@@ -12,6 +12,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Button } from '../components/ui/button';
 import { WelcomeModal, OnboardingChecklist } from '../components/onboarding';
 import { TrialBanner } from '../components/TrialBanner';
+import { supabase } from '../lib/supabase';
 
 interface DashboardData {
   stats: {
@@ -105,7 +106,12 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/dashboard');
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = authSession?.access_token
+        ? { Authorization: `Bearer ${authSession.access_token}` }
+        : {};
+
+      const response = await fetch('/api/dashboard', { headers });
 
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data');

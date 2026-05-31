@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../lib/supabase';
 
 /**
@@ -15,15 +16,56 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Auth: require Bearer token and scope data to caller's org
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Authorization required' });
+
+  const anonClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+
   try {
     const supabase = getServiceSupabase();
 
+    // Always scope dashboard to the authenticated user's organization
+    const { data: userMapping } = await supabase
+      .from('user_organization_mapping')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single();
+    if (!userMapping) return res.status(403).json({ error: 'No organization found' });
+
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-    const organizationId = req.query.organization_id as string | undefined;
+    // organizationId is now always the authenticated user's org (ignoring query param for security)
+    const organizationId = userMapping.organization_id;
 
-    // 1. Get review sessions with approval data
-    let sessionsQuery = supabase
+    // 1a. Get all-time stats (separate count query — not paginated)
+    const { data: allTimeSessions } = await supabase
+      .from('review_session')
+      .select('review_session_id, approval(approval_status)')
+      .eq('organization_id', organizationId);
+
+    const allTimeStats = {
+      total_reviews: allTimeSessions?.length || 0,
+      approved: 0,
+      rejected: 0,
+      pending: 0,
+    };
+    let hasCompletedReview = false;
+    allTimeSessions?.forEach(session => {
+      const approval = Array.isArray(session.approval) ? session.approval[0] : (session.approval as any);
+      const status = approval?.approval_status || 'pending';
+      if (status === 'approved') { allTimeStats.approved++; hasCompletedReview = true; }
+      else if (status === 'rejected') { allTimeStats.rejected++; hasCompletedReview = true; }
+      else allTimeStats.pending++;
+    });
+
+    // 1b. Get paginated review sessions with full detail
+    const { data: sessions, error: sessionsError } = await supabase
       .from('review_session')
       .select(`
         review_session_id,
@@ -48,14 +90,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           approved_by
         )
       `)
+      .eq('organization_id', organizationId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
-
-    if (organizationId) {
-      sessionsQuery = sessionsQuery.eq('organization_id', organizationId);
-    }
-
-    const { data: sessions, error: sessionsError } = await sessionsQuery;
 
     if (sessionsError) {
       console.error('Failed to fetch sessions:', sessionsError);
@@ -106,32 +143,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // 3. Calculate stats and onboarding progress
-    const stats = {
-      total_reviews: sessions?.length || 0,
-      approved: 0,
-      rejected: 0,
-      pending: 0,
-    };
-
-    let hasCompletedReview = false;
-
-    sessions?.forEach(session => {
-      const approval = Array.isArray(session.approval) ? session.approval[0] : session.approval;
-      const status = approval?.approval_status || 'pending';
-      if (status === 'approved') {
-        stats.approved++;
-        hasCompletedReview = true;
-      } else if (status === 'rejected') {
-        stats.rejected++;
-        hasCompletedReview = true;
-      } else {
-        stats.pending++;
-      }
-    });
+    // 3. Stats come from the all-time query (not paginated)
+    const stats = allTimeStats;
 
     // Onboarding status
-    const isNewUser = (sessions?.length || 0) === 0;
+    const isNewUser = allTimeStats.total_reviews === 0;
     const onboarding = {
       account_created: true, // Always true for logged-in users
       first_upload: (sessions?.length || 0) > 0,
@@ -170,7 +186,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }) || [];
 
     // 5. Get recent activity (last 10 approvals/rejections)
-    let activityQuery = supabase
+    const { data: activity } = await supabase
       .from('approval')
       .select(`
         approval_id,
@@ -190,15 +206,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           )
         )
       `)
+      .eq('organization_id', organizationId)
       .not('approval_status', 'eq', 'pending')
       .order('approved_at', { ascending: false })
       .limit(10);
-
-    if (organizationId) {
-      activityQuery = activityQuery.eq('organization_id', organizationId);
-    }
-
-    const { data: activity, error: activityError } = await activityQuery;
 
     const recentActivity = activity?.map(a => {
       const reviewSession = a.review_session as any;

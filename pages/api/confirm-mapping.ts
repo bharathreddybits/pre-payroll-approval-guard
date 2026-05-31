@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../lib/supabase';
 import { CANONICAL_FIELD_MAP } from '../../lib/canonicalSchema';
 import { processReview } from '../../lib/processReview';
@@ -27,6 +28,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Auth: require Bearer token
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Authorization required' });
+
+  const anonClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+
   try {
     const { reviewSessionId, baselineMappings, currentMappings } = req.body;
 
@@ -48,6 +60,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (sessionError || !session) {
       return res.status(404).json({ error: 'Review session not found' });
+    }
+
+    // Verify caller belongs to the session's organization
+    const { data: callerMapping } = await supabase
+      .from('user_organization_mapping')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single();
+    if (!callerMapping || callerMapping.organization_id !== session.organization_id) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     // Check if flexible import (which requires column mapping) is available

@@ -8,6 +8,7 @@ import { Header } from '../../components/Header';
 import { ProtectedRoute } from '../../components/ProtectedRoute';
 import { SubscriptionGuard } from '../../components/SubscriptionGuard';
 import { CANONICAL_FIELDS } from '../../lib/canonicalSchema';
+import { supabase } from '../../lib/supabase';
 
 interface ColumnMapping {
   uploadedColumn: string;
@@ -173,14 +174,23 @@ export default function MappingPage() {
     };
   }, []);
 
+  const getAuthHeaders = async (): Promise<Record<string, string>> => {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    return {
+      'Content-Type': 'application/json',
+      ...(authSession?.access_token ? { Authorization: `Bearer ${authSession.access_token}` } : {}),
+    };
+  };
+
   useEffect(() => {
     if (!reviewSessionId) return;
 
     const fetchMappings = async () => {
       try {
+        const headers = await getAuthHeaders();
         const res = await fetch('/api/map-columns', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             reviewSessionId,
             extractFromSession: true,
@@ -255,13 +265,36 @@ export default function MappingPage() {
   };
 
   const handleConfirm = async () => {
+    // Validate required canonical fields are mapped in BOTH datasets
+    const getMapped = (mappings: ColumnMapping[]) =>
+      new Set(mappings.map((m) => m.canonicalField).filter(Boolean));
+
+    const baselineMapped = getMapped(state.baselineMappings);
+    const currentMapped = getMapped(state.currentMappings);
+    const missingInBaseline = REQUIRED_CANONICAL_FIELDS.filter((f) => !baselineMapped.has(f));
+    const missingInCurrent = REQUIRED_CANONICAL_FIELDS.filter((f) => !currentMapped.has(f));
+
+    if (missingInBaseline.length > 0 || missingInCurrent.length > 0) {
+      const missing = [...new Set([...missingInBaseline, ...missingInCurrent])];
+      toast.error('Required fields not mapped', {
+        description: `Please map these required fields before confirming: ${missing.join(', ')}`,
+        duration: 6000,
+      });
+      setState((prev) => ({
+        ...prev,
+        error: `Required fields not mapped: ${missing.join(', ')}. These are needed for the rules engine to function correctly.`,
+      }));
+      return;
+    }
+
     setState((prev) => ({ ...prev, submitting: true, error: null }));
     toast.loading('Processing with confirmed mappings...', { id: 'confirm' });
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch('/api/confirm-mapping', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           reviewSessionId,
           baselineMappings: state.baselineMappings.map((m) => ({
@@ -288,7 +321,8 @@ export default function MappingPage() {
 
         pollRef.current = setInterval(async () => {
           try {
-            const pollRes = await fetch(`/api/review/${reviewSessionId}`);
+            const pollHeaders = await getAuthHeaders();
+            const pollRes = await fetch(`/api/review/${reviewSessionId}`, { headers: pollHeaders });
             if (pollRes.ok) {
               const data = await pollRes.json();
               if (data.session?.status === 'completed' || data.verdict) {

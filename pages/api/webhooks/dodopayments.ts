@@ -133,7 +133,7 @@ async function handleSubscriptionActive(data: any) {
     return;
   }
 
-  // Upsert subscription — idempotent on dodo_subscription_id
+  // Upsert subscription — idempotent on organization_id
   const { error } = await supabase.from('subscription').upsert(
     {
       organization_id: organizationId,
@@ -143,6 +143,8 @@ async function handleSubscriptionActive(data: any) {
       current_period_start: new Date().toISOString(),
       current_period_end: nextBilling.toISOString(),
       cancel_at_period_end: data.cancel_at_next_billing_date ?? false,
+      dodo_subscription_id: data.subscription_id ?? null,
+      dodo_customer_id: data.customer_id ?? null,
       lemonsqueezy_subscription_id: null,
       lemonsqueezy_customer_id: null,
     },
@@ -172,6 +174,7 @@ async function handleSubscriptionRenewed(data: any) {
       current_period_start: new Date().toISOString(),
       current_period_end: nextBilling.toISOString(),
       cancel_at_period_end: data.cancel_at_next_billing_date ?? false,
+      ...(data.subscription_id ? { dodo_subscription_id: data.subscription_id } : {}),
     })
     .eq('organization_id', organizationId);
 
