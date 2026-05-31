@@ -254,7 +254,7 @@ function SubscriptionContent() {
               </Link>
             </CardContent>
           </Card>
-        ) : subscription.status === 'cancelled' && !subscription.cancel_at_period_end ? (
+        ) : subscription.status === 'cancelled' ? (
           <Card className="border-gray-300">
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -353,37 +353,40 @@ function SubscriptionContent() {
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t">
-                    {!subscription.cancel_at_period_end ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          onClick={handleCancelSubscription}
-                          disabled={cancelling}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
-                        </Button>
-                        <p className="text-xs text-gray-500 mt-2">
-                          You will retain access until the end of your billing period
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          variant="outline"
-                          onClick={handleResumeSubscription}
-                          disabled={resuming}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          {resuming ? 'Resuming...' : 'Resume Subscription'}
-                        </Button>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Continue your subscription and retain access beyond the current period
-                        </p>
-                      </>
-                    )}
-                  </div>
+                  {/* Hide cancel/resume for trialing users — no Dodo subscription exists yet */}
+                  {subscription.status !== 'trialing' && (
+                    <div className="pt-4 border-t">
+                      {!subscription.cancel_at_period_end ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            onClick={handleCancelSubscription}
+                            disabled={cancelling}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
+                          </Button>
+                          <p className="text-xs text-gray-500 mt-2">
+                            You will retain access until the end of your billing period
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            onClick={handleResumeSubscription}
+                            disabled={resuming}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            {resuming ? 'Resuming...' : 'Resume Subscription'}
+                          </Button>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Continue your subscription and retain access beyond the current period
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

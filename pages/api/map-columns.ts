@@ -141,7 +141,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Column mapping failed', message: error.message, action: 'Please re-upload your payroll files' });
     }
 
-    // Store mapping results in column_mapping table
+    // Store mapping results — delete any existing rows first to prevent duplicates on refresh
+    await supabase
+      .from('column_mapping')
+      .delete()
+      .eq('review_session_id', reviewSessionId);
+
     const mappingRows = [
       ...baselineResult.mappings.map(m => ({
         review_session_id: reviewSessionId,

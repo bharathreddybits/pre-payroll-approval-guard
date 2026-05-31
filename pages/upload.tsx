@@ -11,6 +11,7 @@ import { SubscriptionGuard } from '../components/SubscriptionGuard';
 import { TrialBanner } from '../components/TrialBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { FileText, CheckCircle2 } from 'lucide-react';
 
 interface UploadState {
   baselineFile: File | null;
@@ -301,14 +302,14 @@ export default function UploadPage() {
       <div className="flex flex-col items-center gap-2">
         {file ? (
           <>
-            <div className="text-4xl">✓</div>
+            <CheckCircle2 className="h-10 w-10 text-green-500" />
             <p className="font-semibold text-green-700">{file.name}</p>
             <p className="text-sm text-gray-600">{(file.size / 1024).toFixed(2)} KB</p>
             <p className="text-xs text-gray-500">Click to replace</p>
           </>
         ) : (
           <>
-            <div className="text-4xl text-gray-400">📄</div>
+            <FileText className="h-10 w-10 text-gray-400" />
             <p className="font-semibold text-gray-700">{label}</p>
             <p className="text-sm text-gray-500">{description}</p>
             <p className="text-xs text-gray-400 mt-2">

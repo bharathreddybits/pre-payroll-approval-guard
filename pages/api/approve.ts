@@ -50,8 +50,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'approval_status must be "approved" or "rejected"' });
     }
 
-    // If rejecting, notes are required
-    if (approval_status === 'rejected' && (!approval_notes || approval_notes.length < 10)) {
+    // If rejecting, notes are required (trim whitespace before length check)
+    const trimmedNotes = typeof approval_notes === 'string' ? approval_notes.trim() : '';
+    if (approval_status === 'rejected' && trimmedNotes.length < 10) {
       return res.status(400).json({
         error: 'approval_notes are required for rejections (minimum 10 characters)',
       });
@@ -82,6 +83,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Verify caller's org matches the session's org
     if (mapping.organization_id !== session.organization_id) {
       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Session must be in a reviewable state (rules engine must have run)
+    if (!['completed', 'reviewed'].includes(session.status)) {
+      return res.status(400).json({
+        error: 'Cannot approve or reject — payroll data is still being processed',
+        current_status: session.status,
+      });
     }
 
     // Check for blockers if approving
@@ -131,12 +140,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Create or update approval record
+    // approved_by always comes from the authenticated user, never from client body
     const approvalData = {
       review_session_id,
       organization_id: session.organization_id,
-      approved_by: approved_by || null,
+      approved_by: user.id,
       approval_status,
-      approval_notes: approval_notes || null,
+      approval_notes: trimmedNotes || null,
       approved_at: new Date().toISOString(),
     };
 

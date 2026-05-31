@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { ShieldX, AlertTriangle, Info, StickyNote } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import type { EnrichedJudgement } from '../../lib/types/review';
 
 interface JudgementCardProps {
@@ -107,9 +108,13 @@ export function JudgementCard({ item }: JudgementCardProps) {
   const saveNotes = useCallback(async (value: string) => {
     setSaveStatus('saving');
     try {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
       const res = await fetch('/api/judgement-notes', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authSession?.access_token ? { Authorization: `Bearer ${authSession.access_token}` } : {}),
+        },
         body: JSON.stringify({ judgement_id: item.judgement_id, notes: value }),
       });
       if (!res.ok) throw new Error('Save failed');

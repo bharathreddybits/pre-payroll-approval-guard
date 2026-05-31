@@ -233,6 +233,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       processingResult = await processReview(reviewSessionId);
     } catch (procError: any) {
       console.error('Processing error after mapping:', procError.message);
+      // Mark session as failed so it doesn't stay stuck in 'pending_mapping'
+      await supabase
+        .from('review_session')
+        .update({ status: 'failed' })
+        .eq('review_session_id', reviewSessionId);
       processingResult = {
         success: false,
         error: procError.message,

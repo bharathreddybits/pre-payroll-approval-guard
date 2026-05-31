@@ -77,7 +77,7 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
     };
 
     const handleReject = async () => {
-      if (rejectNotes.length < 10) return;
+      if (rejectNotes.trim().length < 10) return;
       setIsRejecting(true);
       try {
         await onReject(rejectNotes);
@@ -188,16 +188,21 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
                     value={rejectNotes}
                     onChange={(e) => setRejectNotes(e.target.value)}
                     className="mt-4 min-h-[120px]"
+                    autoFocus
                   />
-                  <div className="text-sm text-gray-500 mt-1">
-                    {rejectNotes.length}/10 characters minimum
+                  <div className="text-sm mt-1">
+                    {rejectNotes.trim().length >= 10 ? (
+                      <span className="text-green-600">{rejectNotes.trim().length} characters ✓</span>
+                    ) : (
+                      <span className="text-gray-400">{rejectNotes.trim().length} of 10 characters minimum</span>
+                    )}
                   </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <Button
                       variant="destructive"
                       onClick={handleReject}
-                      disabled={rejectNotes.length < 10 || isRejecting}
+                      disabled={rejectNotes.trim().length < 10 || isRejecting}
                     >
                       {isRejecting ? 'Rejecting...' : 'Confirm Rejection'}
                     </Button>
@@ -211,7 +216,7 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
                 disabled={!canApprove || isApproving}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
-                {isApproving ? 'Finalizing...' : 'Finalize with Confidence'}
+                {isApproving ? 'Approving...' : 'Approve Payroll'}
               </Button>
             </div>
 

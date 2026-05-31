@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Badge } from './ui/badge';
+import { BarChart2 } from 'lucide-react';
 
 interface ReviewSession {
   review_session_id: string;
@@ -36,7 +37,7 @@ export function ReviewSessionsTable({ sessions }: ReviewSessionsTableProps) {
   if (sessions.length === 0) {
     return (
       <div className="bg-white rounded-lg border p-8 text-center">
-        <div className="text-4xl mb-4">📊</div>
+        <BarChart2 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-gray-900 mb-2">No review sessions yet</h3>
         <p className="text-gray-600 mb-4">
           Upload your first payroll comparison to get started.
@@ -154,10 +155,14 @@ export function ReviewSessionsTable({ sessions }: ReviewSessionsTableProps) {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
                     <Link
-                      href={`/review/${session.review_session_id}`}
+                      href={
+                        session.status === 'pending_mapping'
+                          ? `/mapping/${session.review_session_id}`
+                          : `/review/${session.review_session_id}`
+                      }
                       className="text-primary hover:underline font-medium"
                     >
-                      View
+                      {session.status === 'pending_mapping' ? 'Continue' : 'View'}
                     </Link>
                   </td>
                 </tr>

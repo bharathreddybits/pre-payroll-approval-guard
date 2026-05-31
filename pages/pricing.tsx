@@ -247,7 +247,7 @@ export default function PricingPage() {
                     }`}
                   >
                     {plan.highlight && (
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-red text-white text-xs font-bold px-3 py-1 rounded-full">
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
                         Most Popular
                       </span>
                     )}
@@ -266,7 +266,7 @@ export default function PricingPage() {
                         <span className={`text-sm ml-1 ${plan.highlight ? 'text-blue-200' : 'text-slate-500'}`}>/mo</span>
                       )}
                       {annual && plan.name === 'Starter' && (
-                        <p className="text-sm font-semibold text-green-400 mt-1">Save $597/year</p>
+                        <p className="text-sm font-semibold text-green-400 mt-1">Save $600/year</p>
                       )}
                       {annual && plan.name === 'Pro' && (
                         <p className={`text-sm font-semibold mt-1 ${plan.highlight ? 'text-green-300' : 'text-green-600'}`}>Save $1,800/year</p>

@@ -14,9 +14,10 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
     {
       label: 'Total Reviews',
       value: stats.total_reviews,
-      color: 'gray',
-      bgColor: 'bg-gray-50',
-      textColor: 'text-gray-900',
+      color: 'blue',
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-700',
+      borderColor: 'border-l-4 border-blue-500',
     },
     {
       label: 'Approved',
