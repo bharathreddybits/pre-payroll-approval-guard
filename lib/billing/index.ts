@@ -20,10 +20,9 @@ export type {
 export {
   TIER_LIMITS,
   PLANS,
-  LEMONSQUEEZY_VARIANT_TO_PLAN,
   getTierLimits,
   getPlanById,
-  getPlanByVariantId,
+  getPlanByDodoProductId,
   isFeatureAvailable,
 } from './plans';
 

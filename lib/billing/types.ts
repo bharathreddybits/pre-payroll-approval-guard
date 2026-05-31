@@ -1,8 +1,5 @@
 /**
  * Billing & Entitlements Type Definitions
- *
- * This module defines the core types for pricing plans, subscriptions,
- * and entitlements. Prepared for future LemonSqueezy integration.
  */
 
 export type Tier = 'starter' | 'pro';
@@ -18,8 +15,8 @@ export interface PricingPlan {
   interval: 'month' | 'year';
   /** Price in cents */
   price: number;
-  /** LemonSqueezy variant ID - filled after LS integration */
-  lemonSqueezyVariantId?: string;
+  /** Dodo Payments product ID */
+  dodoProductId?: string;
 }
 
 export interface Subscription {
@@ -31,10 +28,10 @@ export interface Subscription {
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
-  /** LemonSqueezy subscription ID */
-  lemonSqueezySubscriptionId?: string;
-  /** LemonSqueezy customer ID */
-  lemonSqueezyCustomerId?: string;
+  /** Dodo Payments subscription ID */
+  dodoSubscriptionId?: string;
+  /** Dodo Payments customer ID */
+  dodoCustomerId?: string;
 }
 
 export interface TierLimits {

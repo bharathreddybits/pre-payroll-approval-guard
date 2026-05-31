@@ -1,11 +1,5 @@
-/**
- * Create Checkout Session API
- *
- * Creates a LemonSqueezy checkout session for a subscription plan
- */
-
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createCheckoutSession } from '../../../lib/billing/lemonsqueezy';
+import { createCheckoutSession } from '../../../lib/billing/dodopayments';
 import type { PlanId } from '../../../lib/billing/types';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -16,7 +10,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { planId, organizationId, organizationName, userEmail } = req.body;
 
-    // Validate required fields
     if (!planId || !organizationId || !organizationName || !userEmail) {
       return res.status(400).json({
         error: 'Missing required fields',
@@ -24,7 +17,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Create checkout session
     const checkout = await createCheckoutSession({
       planId: planId as PlanId,
       organizationId,
@@ -34,10 +26,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({
       checkoutUrl: checkout.checkoutUrl,
-      checkoutId: checkout.checkoutId,
+      sessionId: checkout.sessionId,
     });
   } catch (error: any) {
-    console.error('Checkout creation failed:', error);
+    console.error('[checkout/create] Error:', error.message);
     return res.status(500).json({
       error: 'Failed to create checkout session',
       message: error.message,
