@@ -249,7 +249,8 @@ export function JudgementCard({ item }: JudgementCardProps) {
         <div className="pt-2 border-t border-gray-100 space-y-3">
           <button
             onClick={() => setShowNotes(!showNotes)}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+            aria-expanded={showNotes}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded"
           >
             <StickyNote className="h-3.5 w-3.5" />
             {notes ? 'Edit notes' : 'Add notes'}
@@ -268,7 +269,7 @@ export function JudgementCard({ item }: JudgementCardProps) {
                 value={notes}
                 onChange={(e) => handleNotesChange(e.target.value)}
                 placeholder="Document actions taken, findings, or follow-up items..."
-                className="w-full text-sm text-gray-800 bg-white border border-gray-200 rounded-md px-3 py-2 min-h-[72px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                className="w-full text-sm text-gray-800 bg-white border border-gray-200 rounded-md px-3 py-2 min-h-[72px] resize-y focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue"
               />
               <div className="mt-1 h-4">
                 {saveStatus === 'pending' && (

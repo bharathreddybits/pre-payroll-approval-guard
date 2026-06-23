@@ -431,8 +431,13 @@ export default function UploadPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
                   >
                     <option value="regular">Regular</option>
-                    <option value="off_cycle">Off-Cycle</option>
+                    <option value="off_cycle">Off-Cycle (bonus, correction, termination)</option>
                   </select>
+                  {state.runType === 'off_cycle' && (
+                    <p className="text-xs text-amber-700 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                      Off-cycle runs (bonuses, corrections, terminations) use supplemental wage tax treatment. Verify flat-rate federal withholding (22%) or aggregate method was applied correctly.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -487,7 +492,12 @@ export default function UploadPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Baseline Payroll</CardTitle>
-                <CardDescription>Previously approved payroll data</CardDescription>
+                <CardDescription>
+                  Previously approved payroll data.{' '}
+                  <span className="text-gray-500">
+                    First time? Upload last period&rsquo;s final approved register as the baseline.
+                  </span>
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {renderDropzone(

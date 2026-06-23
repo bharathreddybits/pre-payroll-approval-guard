@@ -25,7 +25,6 @@ interface FinalizeChecklistProps {
 
 export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistProps>(
   function FinalizeChecklist({ reviewSessionId, verdict, onApprove, onReject }, ref) {
-    const [blockersAcknowledged, setBlockersAcknowledged] = useState(false);
     const [materialReviewed, setMaterialReviewed] = useState(false);
     const [noBackdatedImpact, setNoBackdatedImpact] = useState(false);
     const [rejectNotes, setRejectNotes] = useState('');
@@ -34,11 +33,12 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
     const [showRejectDialog, setShowRejectDialog] = useState(false);
 
     const hasBlockers = verdict.blockers_count > 0;
-    const blockersResolved = hasBlockers ? blockersAcknowledged : true;
     const materialCount = verdict.reviews_count;
 
-    const allChecked = blockersResolved && materialReviewed && noBackdatedImpact;
-    const canApprove = allChecked;
+    // Blockers are permanent — they cannot be overridden via acknowledgement.
+    // The reviewer must fix source data and re-upload to get a clean session.
+    const allChecked = materialReviewed && noBackdatedImpact;
+    const canApprove = !hasBlockers && allChecked;
 
     // Already approved or rejected
     if (verdict.approval_status === 'approved' || verdict.approval_status === 'rejected') {
@@ -100,34 +100,26 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
             <CardTitle className="text-xl text-gray-900">Before you finalize</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Checkbox 1: Blockers resolved */}
-            <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${
-              blockersResolved
-                ? 'bg-green-50 border-green-200'
-                : hasBlockers
-                  ? 'bg-red-50 border-red-200 hover:bg-red-100'
-                  : 'bg-green-50 border-green-200'
+            {/* Blocker status — informational only; blockers cannot be overridden */}
+            <div className={`flex items-start gap-3 p-3 rounded-lg border ${
+              hasBlockers ? 'bg-red-50 border-red-300' : 'bg-green-50 border-green-200'
             }`}>
-              <input
-                type="checkbox"
-                checked={blockersResolved}
-                disabled={!hasBlockers}
-                onChange={(e) => setBlockersAcknowledged(e.target.checked)}
-                className="mt-0.5 w-5 h-5"
-              />
+              {hasBlockers ? (
+                <XCircle className="mt-0.5 h-5 w-5 text-red-600 shrink-0" aria-hidden="true" />
+              ) : (
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-green-600 shrink-0" aria-hidden="true" />
+              )}
               <div>
-                <span className={`text-sm font-medium ${blockersResolved ? 'text-green-800' : 'text-red-800'}`}>
-                  All blockers reviewed & resolved
+                <span className={`text-sm font-medium ${hasBlockers ? 'text-red-800' : 'text-green-800'}`}>
+                  {hasBlockers ? `${verdict.blockers_count} blocker${verdict.blockers_count !== 1 ? 's' : ''} present — approval blocked` : 'No blockers detected'}
                 </span>
-                <p className={`text-xs ${blockersResolved ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-xs ${hasBlockers ? 'text-red-600' : 'text-green-600'}`}>
                   {hasBlockers
-                    ? blockersAcknowledged
-                      ? `${verdict.blockers_count} blocker${verdict.blockers_count !== 1 ? 's' : ''} acknowledged as resolved`
-                      : `${verdict.blockers_count} blocker${verdict.blockers_count !== 1 ? 's' : ''} require your review`
-                    : 'No blockers detected'}
+                    ? 'Fix the issues above in your payroll system, then re-upload corrected data to approve.'
+                    : 'All hard-stop checks passed'}
                 </p>
               </div>
-            </label>
+            </div>
 
             {/* Checkbox 2: Material items reviewed */}
             <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
@@ -225,7 +217,9 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
 
             {!canApprove && (
               <p className="text-xs text-gray-400 text-center">
-                Check all boxes above to enable finalization
+                {hasBlockers
+                  ? 'Fix blockers in source data and re-upload to enable approval'
+                  : 'Check all boxes above to enable finalization'}
               </p>
             )}
           </CardContent>

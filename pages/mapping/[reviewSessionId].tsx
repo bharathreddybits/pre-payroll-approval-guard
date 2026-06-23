@@ -105,7 +105,7 @@ function MappingTable({
                           <select
                             value={m.canonicalField || ''}
                             onChange={(e) => onUpdate(i, e.target.value || null)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
                           >
                             <option value="">-- Skip (unmapped) --</option>
                             {canonicalOptions.map((opt) => (
@@ -120,7 +120,7 @@ function MappingTable({
                             type="button"
                             title="Reset to AI suggestion"
                             onClick={() => onReset(i)}
-                            className="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
+                            className="flex-shrink-0 text-gray-400 hover:text-brand-blue transition-colors p-1 rounded hover:bg-brand-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
                           </button>
