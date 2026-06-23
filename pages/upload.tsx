@@ -155,6 +155,12 @@ export default function UploadPage() {
       return;
     }
 
+    if (state.payDate < state.periodEndDate) {
+      toast.warning('Early pay date', {
+        description: 'Pay date is before the period end date. Verify this is intentional (e.g., holiday-adjusted payroll).',
+      });
+    }
+
     toast.loading('Processing payroll data...', { id: 'upload' });
     setState((prev) => ({ ...prev, uploading: true, error: null, warnings: [] }));
 
@@ -294,10 +300,10 @@ export default function UploadPage() {
         dropzone.isDragReject
           ? 'border-red-400 bg-red-50'
           : dropzone.isDragActive
-          ? 'border-primary bg-primary/5'
+          ? 'border-brand-blue bg-brand-blue/5'
           : file
           ? 'border-green-500 bg-green-50'
-          : 'border-gray-300 hover:border-primary hover:bg-gray-50'
+          : 'border-gray-300 hover:border-brand-blue hover:bg-gray-50'
       }`}
     >
       <input {...dropzone.getInputProps()} />
@@ -404,7 +410,7 @@ export default function UploadPage() {
                     onChange={(e) =>
                       setState((prev) => ({ ...prev, organizationId: e.target.value }))
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-gray-50"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue bg-gray-50"
                     placeholder="Loading your organization..."
                     readOnly={!!state.organizationId}
                   />
@@ -422,7 +428,7 @@ export default function UploadPage() {
                         runType: e.target.value as 'regular' | 'off_cycle',
                       }))
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
                   >
                     <option value="regular">Regular</option>
                     <option value="off_cycle">Off-Cycle</option>
@@ -439,7 +445,7 @@ export default function UploadPage() {
                     onChange={(e) =>
                       setState((prev) => ({ ...prev, periodStartDate: e.target.value }))
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
                   />
                   <p className="text-xs text-gray-400 mt-1">First day of the payroll period</p>
                 </div>
@@ -454,7 +460,7 @@ export default function UploadPage() {
                     onChange={(e) =>
                       setState((prev) => ({ ...prev, periodEndDate: e.target.value }))
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
                   />
                   <p className="text-xs text-gray-400 mt-1">Last day of the payroll period</p>
                 </div>
@@ -467,7 +473,7 @@ export default function UploadPage() {
                     type="date"
                     value={state.payDate}
                     onChange={(e) => setState((prev) => ({ ...prev, payDate: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-brand-blue"
                   />
                   <p className="text-xs text-gray-400 mt-1">Date employees receive payment</p>
                 </div>
@@ -566,7 +572,7 @@ export default function UploadPage() {
           {(state.uploading || state.processing) && (
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center gap-3 mb-3">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary flex-shrink-0"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-blue flex-shrink-0"></div>
                 <div>
                   <p className="font-medium text-blue-900">
                     {state.uploading

@@ -11,7 +11,7 @@ export const employeeIdentityRules: RuleDefinition[] = [
     condition: (ctx) => {
       const status = ctx.current.employment_status;
       const gross = ctx.current.gross_pay;
-      return status != null && status.toLowerCase() !== 'active' && gross != null && gross > 0;
+      return status != null && status.trim().toLowerCase() !== 'active' && gross != null && gross > 0;
     },
     explanation: 'Inactive employee received pay',
     userAction: 'Fix status or reverse payment',
@@ -366,7 +366,18 @@ export const employeeIdentityRules: RuleDefinition[] = [
     confidence: 0.95,
     confidenceLevel: 'VERY_HIGH',
     condition: (ctx) => {
-      return false;
+      if (!ctx.allCurrentEmployees || ctx.allCurrentEmployees.length < 2) return false;
+      const currentStart = ctx.current.metadata?.pay_period_start;
+      const currentEnd = ctx.current.metadata?.pay_period_end;
+      // Only check when this employee has per-row period dates in their metadata
+      if (!currentStart && !currentEnd) return false;
+      return ctx.allCurrentEmployees.some(e => {
+        if (e.employee_id === ctx.current.employee_id) return false;
+        const otherStart = e.metadata?.pay_period_start;
+        const otherEnd = e.metadata?.pay_period_end;
+        if (!otherStart && !otherEnd) return false;
+        return currentStart !== otherStart || currentEnd !== otherEnd;
+      });
     },
     explanation: 'Pay period dates inconsistent across employees',
     userAction: 'Fix period setup',

@@ -139,7 +139,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Create or update approval record
+    // Check if approval already exists — finalized decisions are immutable (audit trail integrity)
+    const { data: existingApproval } = await supabase
+      .from('approval')
+      .select('approval_id, approval_status')
+      .eq('review_session_id', review_session_id)
+      .single();
+
+    if (existingApproval && ['approved', 'rejected'].includes(existingApproval.approval_status)) {
+      return res.status(409).json({
+        error: 'Payroll already finalized',
+        current_status: existingApproval.approval_status,
+        message: `This payroll run was already ${existingApproval.approval_status}. Finalized decisions cannot be changed to preserve the audit trail.`,
+      });
+    }
+
+    // Create approval record
     // approved_by always comes from the authenticated user, never from client body
     const approvalData = {
       review_session_id,
@@ -150,16 +165,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       approved_at: new Date().toISOString(),
     };
 
-    // Check if approval already exists
-    const { data: existingApproval } = await supabase
-      .from('approval')
-      .select('approval_id')
-      .eq('review_session_id', review_session_id)
-      .single();
-
     let approval;
     if (existingApproval) {
-      // Update existing approval
+      // Pending record exists — update it (e.g., re-submitting after a validation error)
       const { data, error } = await supabase
         .from('approval')
         .update(approvalData)

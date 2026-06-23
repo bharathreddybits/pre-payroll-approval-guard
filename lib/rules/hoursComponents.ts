@@ -143,31 +143,44 @@ export const hoursComponentsRules: RuleDefinition[] = [
     confidenceLevel: 'VERY_HIGH',
     condition: (ctx) => {
       const hours = ctx.current.total_hours_worked;
-      return hours != null && hours > 168;
+      if (hours == null) return false;
+      // Determine max possible hours based on pay frequency (24 hours × days in period)
+      const rawFreq = String(
+        ctx.current.pay_frequency ?? ctx.current.metadata?.pay_frequency ?? ''
+      ).toLowerCase().replace(/[\s\-_]/g, '');
+      let maxHours = 168; // default: weekly (7 days × 24 hrs)
+      if (rawFreq.includes('biweekly') || rawFreq === 'biweekly') {
+        maxHours = 336; // 14 days × 24 hrs
+      } else if (rawFreq.includes('semimonthly') || rawFreq.includes('semi')) {
+        maxHours = 184; // ~15.3 days × 24 hrs
+      } else if (rawFreq === 'monthly') {
+        maxHours = 744; // 31 days × 24 hrs
+      }
+      return hours > maxHours;
     },
-    explanation: 'Hours exceed weekly maximum',
+    explanation: 'Hours exceed pay-period maximum',
     userAction: 'Correct time entry',
-    columnsUsed: ['TotalHoursWorked'],
+    columnsUsed: ['TotalHoursWorked', 'Pay_Frequency'],
     minTier: 'pro',
-    flagReason: 'Total hours exceed 168 (the maximum possible hours in a 7-day week).',
-    riskStatement: 'Hours above the physical weekly maximum indicate data entry errors that will cause overpayments.',
+    flagReason: 'Total hours exceed the maximum physically possible for this pay period length (e.g., 168 for weekly, 336 for bi-weekly).',
+    riskStatement: 'Hours above the physical maximum for the pay period indicate data entry errors that will cause overpayments.',
     commonCauses: [
       'Hours entered for wrong pay period length',
       'Decimal point error (e.g., 800 instead of 80)',
-      'Multiple weeks of hours summed into one field',
+      'Multiple periods of hours summed into one field',
       'System import error',
     ],
     reviewSteps: [
-      'Verify the pay period length (weekly, bi-weekly, etc.)',
+      'Verify the pay period length (weekly, bi-weekly, semi-monthly, monthly)',
       'Check for data entry or decimal errors',
       'Correct the hours to the actual amount worked',
       'Re-upload the corrected file',
     ],
     // NEW: 4-Line Golden Template fields
     judgmentCategory: 'Hours Components Rules',
-    triggeredCondition: 'Total hours exceed 168 (maximum possible in a 7-day week)',
-    whyThisMatters: 'Hours above physical weekly maximum indicate data entry errors that will cause overpayments and incorrect labor cost allocation.',
-    reviewerAction: 'Verify pay period length, check for data entry or decimal errors, correct hours to actual amount worked, and re-upload before approval.',
+    triggeredCondition: 'Total hours exceed the physical maximum for this pay period (168 weekly / 336 bi-weekly / 184 semi-monthly / 744 monthly)',
+    whyThisMatters: 'Hours above the physical maximum for the pay period indicate data entry errors that will cause overpayments and incorrect labor cost allocation.',
+    reviewerAction: 'Verify pay period length and frequency, check for data entry or decimal errors, correct hours to actual amount worked, and re-upload before approval.',
     uiHints: {
       defaultExpanded: true,
       requiresAcknowledgement: true,
