@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Badge } from './ui/badge';
-import { BarChart2 } from 'lucide-react';
+import { BarChart2, CheckCircle2 } from 'lucide-react';
 
 interface ReviewSession {
   review_session_id: string;
@@ -44,7 +44,7 @@ export function ReviewSessionsTable({ sessions }: ReviewSessionsTableProps) {
         </p>
         <Link
           href="/upload"
-          className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+          className="inline-flex items-center px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue-dark"
         >
           Upload Payroll
         </Link>
@@ -74,7 +74,7 @@ export function ReviewSessionsTable({ sessions }: ReviewSessionsTableProps) {
     }
     // Completed sessions — show approval decision
     if (session.approval_status === 'approved') {
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved ✓</Badge>;
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100"><CheckCircle2 className="h-3 w-3 mr-1" />Approved</Badge>;
     }
     if (session.approval_status === 'rejected') {
       return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
@@ -160,7 +160,7 @@ export function ReviewSessionsTable({ sessions }: ReviewSessionsTableProps) {
                           ? `/mapping/${session.review_session_id}`
                           : `/review/${session.review_session_id}`
                       }
-                      className="text-primary hover:underline font-medium"
+                      className="text-brand-blue hover:underline font-medium"
                     >
                       {session.status === 'pending_mapping' ? 'Continue' : 'View'}
                     </Link>

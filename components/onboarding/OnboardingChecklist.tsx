@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { Check, CheckCircle2, ClipboardCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 
@@ -53,19 +54,7 @@ export function OnboardingChecklist({ progress, latestSessionId }: OnboardingChe
         <CardContent className="pt-6">
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-              <svg
-                className="h-8 w-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
             <h3 className="text-lg font-semibold text-green-800">
               You're all set!
@@ -88,19 +77,7 @@ export function OnboardingChecklist({ progress, latestSessionId }: OnboardingChe
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <svg
-            className="h-5 w-5 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-            />
-          </svg>
+          <ClipboardCheck className="h-5 w-5 text-brand-blue" />
           Getting Started
         </CardTitle>
       </CardHeader>
@@ -117,7 +94,7 @@ export function OnboardingChecklist({ progress, latestSessionId }: OnboardingChe
                   step.completed
                     ? 'bg-green-50'
                     : isActive
-                    ? 'bg-primary/5 ring-1 ring-primary/20'
+                    ? 'bg-brand-blue/5 ring-1 ring-brand-blue/20'
                     : 'bg-gray-50'
                 }`}
               >
@@ -127,24 +104,12 @@ export function OnboardingChecklist({ progress, latestSessionId }: OnboardingChe
                     step.completed
                       ? 'bg-green-500 text-white'
                       : isActive
-                      ? 'bg-primary text-white'
+                      ? 'bg-brand-blue text-white'
                       : 'bg-gray-300 text-white'
                   }`}
                 >
                   {step.completed ? (
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+                    <Check className="h-4 w-4" />
                   ) : (
                     index + 1
                   )}
@@ -197,7 +162,7 @@ export function OnboardingChecklist({ progress, latestSessionId }: OnboardingChe
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-primary transition-all duration-300"
+              className="h-full bg-brand-blue transition-all duration-300"
               style={{
                 width: `${(steps.filter((s) => s.completed).length / steps.length) * 100}%`,
               }}

@@ -59,7 +59,7 @@ export function MarketingNav() {
             {!loading && user ? (
               <Link
                 href="/dashboard"
-                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg hover:bg-brand-blue-dark transition-colors"
+                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg hover:bg-brand-blue-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
               >
                 Go to Dashboard
               </Link>
@@ -73,7 +73,7 @@ export function MarketingNav() {
                 </Link>
                 <Link
                   href="/signup"
-                  className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg hover:bg-brand-blue-dark transition-colors"
+                  className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg hover:bg-brand-blue-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
                 >
                   Start Free Trial
                 </Link>
@@ -83,9 +83,10 @@ export function MarketingNav() {
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden p-2 text-slate-600 hover:text-slate-900"
+            className="md:hidden p-2 text-slate-600 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? (
               <X className="h-6 w-6" />
@@ -114,7 +115,7 @@ export function MarketingNav() {
               {!loading && user ? (
                 <Link
                   href="/dashboard"
-                  className="block w-full text-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg"
+                  className="block w-full text-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg hover:bg-brand-blue-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
                 >
                   Go to Dashboard
                 </Link>
@@ -128,7 +129,7 @@ export function MarketingNav() {
                   </Link>
                   <Link
                     href="/signup"
-                    className="block w-full text-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg"
+                    className="block w-full text-center px-5 py-2.5 text-sm font-semibold text-white bg-brand-blue rounded-lg hover:bg-brand-blue-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
                   >
                     Start Free Trial
                   </Link>

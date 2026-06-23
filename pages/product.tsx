@@ -84,7 +84,7 @@ export default function ProductPage() {
               </p>
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-blue-dark rounded-lg hover:shadow-lg hover:shadow-brand-blue/20 transition-all duration-300"
+                className="inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-blue-dark rounded-lg hover:shadow-lg hover:shadow-brand-blue/20 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
               >
                 Start Free Trial
               </Link>
@@ -168,7 +168,7 @@ export default function ProductPage() {
             </p>
             <Link
               href="/signup"
-              className="inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-blue-dark rounded-lg hover:shadow-lg hover:shadow-brand-blue/20 transition-all duration-300"
+              className="inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-blue-dark rounded-lg hover:shadow-lg hover:shadow-brand-blue/20 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
             >
               Start Free Trial
             </Link>

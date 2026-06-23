@@ -164,14 +164,16 @@ export default function DashboardPage() {
 
           {/* Error State */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 flex items-center justify-between gap-4">
               <p className="text-red-800">{error}</p>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={fetchDashboardData}
-                className="mt-2 text-sm text-red-600 hover:underline"
+                className="shrink-0 text-red-700 border-red-300 hover:bg-red-100"
               >
-                Try again
-              </button>
+                Try Again
+              </Button>
             </div>
           )}
 

@@ -9,6 +9,7 @@ import { ProtectedRoute } from '../../components/ProtectedRoute';
 import { SubscriptionGuard } from '../../components/SubscriptionGuard';
 import { CANONICAL_FIELDS } from '../../lib/canonicalSchema';
 import { supabase } from '../../lib/supabase';
+import { RotateCcw } from 'lucide-react';
 
 interface ColumnMapping {
   uploadedColumn: string;
@@ -119,9 +120,9 @@ function MappingTable({
                             type="button"
                             title="Reset to AI suggestion"
                             onClick={() => onReset(i)}
-                            className="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors text-base leading-none p-1 rounded hover:bg-blue-50"
+                            className="flex-shrink-0 text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
                           >
-                            ↺
+                            <RotateCcw className="h-3.5 w-3.5" />
                           </button>
                         )}
                       </div>
@@ -399,15 +400,25 @@ export default function MappingPage() {
             )}
           </div>
 
-          {state.error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 font-medium">Error: {state.error}</p>
+          {state.error && !state.submitting && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start justify-between gap-4">
+              <p className="text-red-800 font-medium">{state.error}</p>
+              {!state.baselineMappings.length && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 text-red-700 border-red-300 hover:bg-red-100"
+                  onClick={() => window.location.reload()}
+                >
+                  Try Again
+                </Button>
+              )}
             </div>
           )}
 
           {state.loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3" />
+            <div className="flex items-center justify-center py-20" role="status" aria-label="Analyzing columns">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-blue mr-3" aria-hidden="true" />
               <span className="text-gray-600">Analyzing columns...</span>
             </div>
           ) : (

@@ -49,7 +49,7 @@ export function LandingHero() {
           >
             <Link
               href="/signup"
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-blue-dark rounded-lg shadow-md hover:shadow-xl hover:shadow-brand-blue/25 hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-blue-dark rounded-lg shadow-md hover:shadow-xl hover:shadow-brand-blue/25 hover:-translate-y-0.5 transition-all duration-300 w-full sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
             >
               <Upload className="h-5 w-5" />
               Upload Last Payroll + Current Payroll

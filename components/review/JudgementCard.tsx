@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { ShieldX, AlertTriangle, Info, StickyNote } from 'lucide-react';
+import { ShieldX, AlertTriangle, Info, StickyNote, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { EnrichedJudgement } from '../../lib/types/review';
 
@@ -278,7 +278,10 @@ export function JudgementCard({ item }: JudgementCardProps) {
                   <span className="text-[11px] text-gray-400">Saving…</span>
                 )}
                 {saveStatus === 'saved' && (
-                  <span className="text-[11px] text-green-600">Saved ✓</span>
+                  <span className="text-[11px] text-green-600 flex items-center gap-0.5">
+                    <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+                    Saved
+                  </span>
                 )}
                 {saveStatus === 'error' && (
                   <span className="text-[11px] text-red-500">Save failed — try again</span>

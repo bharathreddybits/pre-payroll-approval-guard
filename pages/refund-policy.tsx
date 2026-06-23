@@ -14,8 +14,8 @@ export default function RefundPolicyPage() {
 
       <MarketingNav />
 
-      <main className="min-h-screen bg-white">
-        <div className="max-w-4xl mx-auto px-6 lg:px-8 py-24">
+      <main className="min-h-screen bg-white pt-48 pb-20 lg:pt-56 lg:pb-28">
+        <div className="max-w-4xl mx-auto px-6 lg:px-8">
           {/* Back Link */}
           <Link
             href="/pricing"

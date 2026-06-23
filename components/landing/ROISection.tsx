@@ -206,7 +206,7 @@ export function ROISection() {
 
                 <Link
                   href="/signup"
-                  className="block w-full text-center mt-6 px-6 py-3 bg-brand-blue text-white rounded-lg font-semibold hover:bg-brand-blue-dark transition-colors"
+                  className="block w-full text-center mt-6 px-6 py-3 bg-brand-blue text-white rounded-lg font-semibold hover:bg-brand-blue-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
                 >
                   Start Free Trial
                 </Link>
