@@ -11,7 +11,7 @@ import { SkeletonReviewPage } from '../../components/ui/skeleton';
 import { VerdictBanner, ReviewSection, FinalizeChecklist } from '../../components/review';
 import type { ReviewPageData } from '../../lib/types/review';
 import type { UxSection } from '../../lib/rules/uxSectionMapping';
-import { CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const SECTION_ORDER: { key: UxSection; defaultExpanded: boolean }[] = [
   { key: 'blockers', defaultExpanded: true },
@@ -145,23 +145,19 @@ export default function ReviewPage() {
         <Header />
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center max-w-md bg-white p-8 rounded-lg border shadow-sm">
-            <div className="text-red-500 text-5xl mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
+            <AlertTriangle className="w-16 h-16 mx-auto text-red-500 mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Review</h1>
             <p className="text-gray-600 mb-6">{error || 'Review data not found'}</p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => fetchReviewData()}
-                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                className="px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-brand-blue-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2"
               >
                 Try Again
               </button>
               <button
                 onClick={() => router.push('/dashboard')}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
               >
                 Return to Dashboard
               </button>

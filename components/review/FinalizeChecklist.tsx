@@ -192,7 +192,10 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
                   />
                   <div className="text-sm mt-1">
                     {rejectNotes.trim().length >= 10 ? (
-                      <span className="text-green-600">{rejectNotes.trim().length} characters ✓</span>
+                      <span className="text-green-600 inline-flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      {rejectNotes.trim().length} characters
+                    </span>
                     ) : (
                       <span className="text-gray-400">{rejectNotes.trim().length} of 10 characters minimum</span>
                     )}

@@ -100,7 +100,7 @@ export function SubscriptionGuard({ children, loadingBehavior = 'block' }: Subsc
             <div className="space-y-3">
               <Link
                 href="/pricing"
-                className="block w-full bg-brand-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-blue-dark transition-colors"
+                className="block w-full bg-brand-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-blue-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 text-center"
               >
                 {ctaLabel}
                 <ArrowRight className="inline-block ml-2 h-4 w-4" />
@@ -108,7 +108,7 @@ export function SubscriptionGuard({ children, loadingBehavior = 'block' }: Subsc
 
               <Link
                 href="/dashboard"
-                className="block w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                className="block w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 text-center"
               >
                 Go to Dashboard
               </Link>

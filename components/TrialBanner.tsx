@@ -33,14 +33,14 @@ export function TrialBanner() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/pricing')}
-                className="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+                className="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-red-600"
               >
                 Upgrade Now &rarr;
               </button>
               <button
                 onClick={() => setDismissed(true)}
-                className="text-white/80 hover:text-white"
-                aria-label="Dismiss"
+                className="text-white/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+                aria-label="Dismiss banner"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -73,14 +73,14 @@ export function TrialBanner() {
             <div className="flex items-center gap-4">
               <Link
                 href="/pricing"
-                className="bg-white text-amber-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-50 transition-colors"
+                className="bg-white text-amber-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-amber-500"
               >
                 Subscribe Now
               </Link>
               <button
                 onClick={() => setDismissed(true)}
-                className="text-white/80 hover:text-white"
-                aria-label="Dismiss"
+                className="text-white/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+                aria-label="Dismiss banner"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -106,14 +106,14 @@ export function TrialBanner() {
             <div className="flex items-center gap-4">
               <Link
                 href="/pricing"
-                className="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors"
+                className="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600"
               >
                 Start Free Trial
               </Link>
               <button
                 onClick={() => setDismissed(true)}
-                className="text-white/80 hover:text-white"
-                aria-label="Dismiss"
+                className="text-white/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+                aria-label="Dismiss banner"
               >
                 <X className="h-5 w-5" />
               </button>
