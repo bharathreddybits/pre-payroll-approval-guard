@@ -21,13 +21,13 @@ export const RULE_UX_SECTION: Record<string, UxSection> = {
   DUPLICATE_EMPLOYEE_ROWS: 'blockers',
   PAY_PERIOD_START_AFTER_END: 'blockers',
   PAY_PERIOD_MISMATCH: 'blockers',
-  ZERO_HOURS_WITH_PAY: 'blockers',
+  ZERO_HOURS_WITH_PAY: 'high_risk',
   NEGATIVE_HOURS: 'blockers',
   HOURS_EXCEED_MAX: 'blockers',
   HOURS_SUM_MISMATCH: 'blockers',
   PAID_HOURS_EXCEED_TOTAL: 'blockers',
   OVERTIME_PAY_WITHOUT_OT_HOURS: 'blockers',
-  EARNINGS_NEGATIVE: 'blockers',
+  EARNINGS_NEGATIVE: 'high_risk',
   EARNINGS_WITHOUT_EMPLOYEE: 'blockers',
   NEGATIVE_GROSS_PAY: 'blockers',
   NET_PAY_NEGATIVE: 'blockers',
@@ -44,7 +44,7 @@ export const RULE_UX_SECTION: Record<string, UxSection> = {
   BONUS_PAID_UNEXPECTEDLY: 'high_risk',
   NET_PAY_UNUSUALLY_LOW: 'high_risk',
   MISSING_BASELINE_ROW: 'high_risk',
-  GROSS_LESS_THAN_NET: 'high_risk',
+  GROSS_LESS_THAN_NET: 'blockers',
   OTHER_EARNINGS_HIGH: 'high_risk',
 
   // === DEDUCTION & COMPLIANCE CHECKS ===
@@ -74,7 +74,7 @@ export const RULE_UX_SECTION: Record<string, UxSection> = {
 
   // === NOISE SUPPRESSION ===
   DEPARTMENT_MISSING: 'noise',
-  MISSING_PAY_FREQUENCY: 'noise',
+  MISSING_PAY_FREQUENCY: 'systemic',
   PAY_DATE_IN_PAST: 'noise',
   TOTAL_HOURS_ZERO_ACTIVE: 'noise',
   PTO_SPIKE: 'noise',

@@ -5,41 +5,45 @@ export const hoursComponentsRules: RuleDefinition[] = [
     id: 'ZERO_HOURS_WITH_PAY',
     name: 'Zero hours with pay',
     category: 'Hours Components',
-    severity: 'blocker',
-    confidence: 1.0,
-    confidenceLevel: 'VERY_HIGH',
+    severity: 'review',
+    confidence: 0.80,
+    confidenceLevel: 'MODERATE',
     condition: (ctx) => {
       const hours = ctx.current.total_hours_worked;
       const gross = ctx.current.gross_pay;
-      return hours != null && hours === 0 && gross != null && gross > 0;
+      if (hours == null || hours !== 0 || gross == null || gross <= 0) return false;
+      // Salaried/exempt employees routinely export 0 hours — suppress false positive
+      const payType = String(ctx.current.pay_type ?? ctx.current.flsa_classification ?? '').toLowerCase().trim();
+      if (payType === 'salary' || payType === 'salaried' || payType === 'exempt') return false;
+      return true;
     },
     explanation: 'Pay without hours detected',
-    userAction: 'Add hours or confirm salaried',
+    userAction: 'Confirm salaried status or add missing hours',
     columnsUsed: ['TotalHoursWorked', 'GrossPay'],
     minTier: 'pro',
     flagReason: 'Employee has zero hours reported but is receiving pay.',
-    riskStatement: 'Zero hours with pay may indicate missing timekeeping data or incorrect salaried classification.',
+    riskStatement: 'Zero hours with pay may indicate missing timekeeping data. Salaried exempt employees commonly export zero hours from timekeeping systems — confirm employment type.',
     commonCauses: [
+      'Salaried exempt employee whose payroll system exports 0 hours by design',
       'Timesheet not submitted before payroll cutoff',
-      'Salaried employee incorrectly classified as hourly',
       'Hours field not mapped from source system',
       'Leave taken but hours not recorded',
     ],
     reviewSteps: [
-      'Determine if the employee is salaried or hourly',
-      'If hourly, obtain and enter the correct hours',
-      'If salaried, confirm hours are not required',
-      'Verify timesheet submission status',
+      'Determine if the employee is salaried/exempt or hourly',
+      'If salaried, zero hours is expected — confirm and continue',
+      'If hourly, obtain and enter the correct hours worked',
+      'Verify timesheet submission status for hourly employees',
     ],
     // NEW: 4-Line Golden Template fields
     judgmentCategory: 'Hours Components Rules',
     triggeredCondition: 'Employee has zero hours reported but is receiving pay',
-    whyThisMatters: 'Zero hours with pay may indicate missing timekeeping data or incorrect salaried classification that could mask timesheet gaps.',
-    reviewerAction: 'Determine if employee is salaried or hourly, obtain correct hours if hourly, confirm salaried status if applicable, verify timesheet submission.',
+    whyThisMatters: 'Zero hours with pay may indicate missing timesheet data for hourly employees. Salaried exempt employees often export zero hours by design — confirm employment type first.',
+    reviewerAction: 'Confirm if salaried/exempt (zero hours is expected) or hourly (obtain and enter missing hours). Verify timesheet submission for hourly employees.',
     uiHints: {
       defaultExpanded: true,
-      requiresAcknowledgement: true,
-      highlightLevel: 'RED',
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
     },
     systemLimits: {
       doesNotJudgeAuthorization: true,

@@ -424,42 +424,43 @@ export const employeeIdentityRules: RuleDefinition[] = [
   },
   {
     id: 'PAY_DATE_IN_PAST',
-    name: 'Pay date in past',
+    name: 'Pay date before period end',
     category: 'Employee Identity & Context',
-    severity: 'review',
-    confidence: 0.85,
-    confidenceLevel: 'HIGH',
+    severity: 'info',
+    confidence: 0.6,
+    confidenceLevel: 'MODERATE',
     condition: (ctx) => {
       const payDate = ctx.current.metadata?.pay_date;
       const periodEnd = ctx.current.metadata?.pay_period_end;
       if (!payDate || !periodEnd) return false;
       return new Date(payDate) < new Date(periodEnd);
     },
-    explanation: 'Pay date earlier than period end',
-    userAction: 'Confirm payroll calendar',
+    explanation: 'Pay date is before period end date',
+    userAction: 'Verify payroll calendar if unexpected',
     columnsUsed: ['PayDate', 'PayPeriodEnd'],
     minTier: 'pro',
     flagReason: 'The pay date is before the pay period end date.',
-    riskStatement: 'Early pay dates may indicate calendar errors affecting tax deposit timing.',
+    riskStatement: 'Pay date before period end is normal for semi-monthly and monthly payrolls. This is informational — verify only if the dates appear incorrect.',
     commonCauses: [
-      'Payroll calendar not updated for the new period',
-      'Holiday-adjusted pay date not reflected',
-      'Date field contains wrong value',
+      'Standard payroll calendar — many employers pay on or before the period end date',
+      'Friday pay date advanced ahead of a weekend period end',
+      'Holiday-adjusted pay date',
+      'Date field contains wrong value (investigate if unexpected)',
     ],
     reviewSteps: [
-      'Verify the pay date against your payroll calendar',
-      'Confirm if this is an intentional early payment',
-      'Correct the date if it is an error',
+      'Compare the pay date against your standard payroll calendar',
+      'If pay date matches your normal schedule, no action is needed',
+      'Investigate only if the date is significantly earlier than your normal pay date',
     ],
     // NEW: 4-Line Golden Template fields
     judgmentCategory: 'Employee Identity & Context Rules',
     triggeredCondition: 'Pay date is before the pay period end date',
-    whyThisMatters: 'Early pay dates may indicate calendar errors affecting tax deposit timing and compliance.',
-    reviewerAction: 'Verify pay date against payroll calendar, confirm if intentional early payment, correct the date if it is an error.',
+    whyThisMatters: 'Pay date before period end is common and expected in many payroll schedules (semi-monthly, monthly, Friday advances). This is informational context only.',
+    reviewerAction: 'Verify pay date against your payroll calendar. If it matches your normal schedule, no action needed.',
     uiHints: {
-      defaultExpanded: true,
+      defaultExpanded: false,
       requiresAcknowledgement: false,
-      highlightLevel: 'AMBER',
+      highlightLevel: 'GRAY',
     },
     systemLimits: {
       doesNotJudgeAuthorization: true,

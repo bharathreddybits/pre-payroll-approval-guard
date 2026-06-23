@@ -1,7 +1,7 @@
 /**
  * SME Rule Validation Test
  *
- * Runs the production rules engine against 38 hand-crafted payroll scenarios
+ * Runs the production rules engine against 45 hand-crafted payroll scenarios
  * covering every category a payroll SME would audit.
  *
  * Usage: npx tsx --env-file=.env scripts/dev/sme-rule-test.ts
@@ -323,6 +323,46 @@ test('Normal earner with correct FICA: SS tax at 6.2% of gross', 'Taxes',
   ctx(emp({ gross_pay: 5000, social_security_tax: 310, medicare_tax: 72.5 }), emp({ gross_pay: 5000, social_security_tax: 310, medicare_tax: 72.5 }), 'social_security_tax'),
   [],
   ['MISSING_FICA_TAXES']);
+
+// ─── Round 4: New tests for severity and false-positive fixes ─────────────────
+
+// 39. Salaried employee with pay_type='salary' and 0 hours — ZERO_HOURS_WITH_PAY must NOT fire
+test('Salaried employee (pay_type=salary) with 0 hours — valid scenario, no flag', 'Hours & Earnings',
+  ctx(emp({ total_hours_worked: 0, regular_hours: 0, pay_type: 'salary', gross_pay: 5000 }), emp({ total_hours_worked: 0, pay_type: 'salary' }), '__employee_level__'),
+  [],
+  ['ZERO_HOURS_WITH_PAY']);
+
+// 40. Exempt employee (flsa_classification=exempt) with 0 hours — ZERO_HOURS_WITH_PAY must NOT fire
+test('Exempt employee (flsa_classification=exempt) with 0 hours — valid scenario, no flag', 'Hours & Earnings',
+  ctx(emp({ total_hours_worked: 0, regular_hours: 0, flsa_classification: 'exempt', gross_pay: 5000 }), emp({ total_hours_worked: 0 }), '__employee_level__'),
+  [],
+  ['ZERO_HOURS_WITH_PAY']);
+
+// 41. Hourly employee (pay_type=hourly) with 0 hours — ZERO_HOURS_WITH_PAY MUST fire
+test('Hourly employee (pay_type=hourly) with 0 hours and pay — data error, must flag', 'Hours & Earnings',
+  ctx(emp({ total_hours_worked: 0, regular_hours: 0, pay_type: 'hourly', gross_pay: 5000 }), emp({ total_hours_worked: 80 }), '__employee_level__'),
+  ['ZERO_HOURS_WITH_PAY']);
+
+// 42. GROSS_LESS_THAN_NET now a blocker — verify it fires correctly
+test('Gross ($3,000) < Net ($3,200) — must flag as blocker domain error', 'Fundamental Pay',
+  ctx(emp({ gross_pay: 3000, net_pay: 3200, total_deductions: 0, federal_income_tax: 0, social_security_tax: 0, medicare_tax: 0 }), emp(), '__employee_level__'),
+  ['GROSS_LESS_THAN_NET']);
+
+// 43. PAY_DATE_IN_PAST downgraded to info — normal calendar scenario should not drive verdict
+test('Pay date before period end — standard semi-monthly schedule, info only (not review)', 'Employee Identity',
+  ctx(emp({ metadata: { pay_date: '2025-01-15', pay_period_end: '2025-01-31' } }), emp(), '__employee_level__'),
+  ['PAY_DATE_IN_PAST']);
+
+// 44. 401K annualized limit check: bi-weekly contribution of $1,000/period = $26,000/yr > $23,500 IRS limit
+test('401K contribution $1,000/bi-weekly (= $26,000 annualized) exceeds $23,500 IRS limit', 'Deductions',
+  ctx(emp({ pay_frequency: 'bi-weekly', pay_components: [{ component_name: '401k', amount: 1000 }] }), emp(), '__employee_level__'),
+  ['401K_OVER_IRS_LIMIT']);
+
+// 45. 401K annualized limit check: bi-weekly contribution of $800/period = $20,800/yr — within limit
+test('401K contribution $800/bi-weekly (= $20,800 annualized) within $23,500 IRS limit — no flag', 'Deductions',
+  ctx(emp({ pay_frequency: 'bi-weekly', pay_components: [{ component_name: '401k', amount: 800 }] }), emp(), '__employee_level__'),
+  [],
+  ['401K_OVER_IRS_LIMIT']);
 
 // ─── Output ───────────────────────────────────────────────────────────────────
 

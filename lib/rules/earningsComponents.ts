@@ -237,9 +237,9 @@ export const earningsComponentsRules: RuleDefinition[] = [
     id: 'EARNINGS_NEGATIVE',
     name: 'Earnings negative',
     category: 'Earnings Components',
-    severity: 'blocker',
-    confidence: 1.0,
-    confidenceLevel: 'VERY_HIGH',
+    severity: 'review',
+    confidence: 0.88,
+    confidenceLevel: 'HIGH',
     condition: (ctx) => {
       const fields = ['base_earnings', 'overtime_pay', 'bonus_earnings', 'other_earnings'];
       return fields.some(f => {
@@ -247,33 +247,33 @@ export const earningsComponentsRules: RuleDefinition[] = [
         return val != null && val < 0;
       });
     },
-    explanation: 'Negative earnings invalid',
-    userAction: 'Correct values',
+    explanation: 'Negative earnings component detected',
+    userAction: 'Verify whether this is an authorized correction or entry error',
     columnsUsed: ['Base_Earnings', 'OvertimePay', 'Bonus_Earnings', 'Other_Earnings'],
     minTier: 'starter',
     flagReason: 'One or more earnings fields contain negative values.',
-    riskStatement: 'Negative earnings are invalid in standard payroll and indicate data entry or system errors.',
+    riskStatement: 'Most negative earnings are data entry errors. Some payroll systems (e.g., Ceridian Dayforce) represent in-period overpayment recoveries as negative earnings — confirm this is authorized before proceeding.',
     commonCauses: [
+      'Overpayment recovery entered as a negative earning offset (some payroll systems do this)',
+      'Prior-period correction reversal recorded in current period',
       'Retroactive adjustment entered with wrong sign',
-      'Overpayment recovery entered as negative earning instead of deduction',
-      'System calculation error',
       'Manual entry error',
     ],
     reviewSteps: [
       'Identify which earnings field is negative',
-      'Determine if this should be a deduction instead',
-      'Correct the value or reclassify the entry',
-      'Re-upload the corrected file',
+      'Determine if this is an authorized overpayment recovery or prior-period reversal',
+      'If authorized correction: confirm the amount and continue',
+      'If an error: correct the value or reclassify as a deduction and re-upload',
     ],
     // NEW: 4-Line Golden Template fields
     judgmentCategory: 'Earnings Components Rules',
     triggeredCondition: 'One or more earnings fields contain negative values',
-    whyThisMatters: 'Negative earnings are invalid in standard payroll and indicate data entry or system errors that will distort compensation records.',
-    reviewerAction: 'Identify which earnings field is negative, determine if should be a deduction instead, correct the value or reclassify, and re-upload.',
+    whyThisMatters: 'Negative earnings usually indicate a data error, but some payroll systems use negative earning offsets for authorized overpayment recoveries. Confirm this is intentional before approving.',
+    reviewerAction: 'Identify the negative field and confirm whether it is an authorized correction. If not authorized, correct or reclassify as a deduction and re-upload.',
     uiHints: {
       defaultExpanded: true,
-      requiresAcknowledgement: true,
-      highlightLevel: 'RED',
+      requiresAcknowledgement: false,
+      highlightLevel: 'AMBER',
     },
     systemLimits: {
       doesNotJudgeAuthorization: true,

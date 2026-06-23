@@ -289,32 +289,42 @@ export const deductionsComponentsRules: RuleDefinition[] = [
         (c: { component_name: string }) =>
           c.component_name && /401.?k/i.test(c.component_name)
       );
-      if (!k401) return false;
-      return k401.amount != null && k401.amount > 10000;
+      if (!k401 || k401.amount == null || k401.amount <= 0) return false;
+      // Annualize the per-period contribution and compare against the 2025 IRS elective deferral limit ($23,500).
+      // The $10,000 single-period threshold previously used only caught extreme outliers and missed
+      // the common case of a contribution set too high on a standard pay schedule.
+      const IRS_ANNUAL_LIMIT_2025 = 23500;
+      const rawFreq = String(ctx.current.pay_frequency ?? '').toLowerCase().replace(/[\s\-_]/g, '');
+      let periodsPerYear = 26; // bi-weekly default (conservative — more likely to fire than miss)
+      if (rawFreq === 'weekly') periodsPerYear = 52;
+      else if (rawFreq === 'monthly') periodsPerYear = 12;
+      else if (rawFreq.includes('semimonthly') || rawFreq.includes('semi')) periodsPerYear = 24;
+      const annualized = k401.amount * periodsPerYear;
+      return annualized > IRS_ANNUAL_LIMIT_2025;
     },
-    explanation: '401(k) contribution exceeds plausible per-period max',
+    explanation: 'Annualized 401(k) contribution exceeds IRS elective deferral limit',
     userAction: 'Verify 401(k) deduction amount.',
     columnsUsed: ['DeductionComponents'],
     minTier: 'pro',
-    flagReason: '401(k) contribution exceeds $10,000 for a single pay period, well above the plausible per-period maximum.',
-    riskStatement: 'Excessive 401(k) contributions violate IRS limits and create compliance and correction obligations.',
+    flagReason: 'The per-period 401(k) contribution, when annualized at the current pay frequency, exceeds the IRS 2025 elective deferral limit of $23,500.',
+    riskStatement: 'Over-contributing to a 401(k) beyond IRS limits creates an excess deferral that must be corrected by April 15 of the following year, with associated income tax and plan correction obligations.',
     commonCauses: [
-      'Percentage entered instead of dollar amount',
-      'Annual limit amount entered for a single period',
-      'Catch-up contribution calculated incorrectly',
+      'Contribution percentage set too high for the employee salary level',
+      'Annual limit dollar amount entered as a per-period amount',
+      'Catch-up contribution for under-50 employees ($31,000 limit applies only to age 50+)',
       'System error in contribution calculation',
     ],
     reviewSteps: [
-      'Verify the 401(k) contribution amount is correct',
+      'Calculate the annualized contribution: per-period amount × pay periods per year',
+      'Compare against the IRS 2025 limit: $23,500 (or $31,000 for age 50+ catch-up)',
       'Check if the percentage vs. dollar amount is properly configured',
-      'Compare against the IRS annual limit ($23,500 for 2025)',
-      'Correct the contribution amount',
+      'Reduce the contribution rate and correct before approval',
     ],
     // NEW: 4-Line Golden Template fields
     judgmentCategory: 'Deductions Components Rules',
-    triggeredCondition: '401(k) contribution exceeds $10,000 for a single pay period',
-    whyThisMatters: 'Excessive 401(k) contributions violate IRS limits and create compliance obligations and correction requirements with the plan administrator.',
-    reviewerAction: 'Verify 401(k) contribution amount is correct, check if percentage vs. dollar amount is properly configured, and correct before approval.',
+    triggeredCondition: 'Annualized 401(k) contribution exceeds IRS 2025 elective deferral limit ($23,500)',
+    whyThisMatters: 'Excess 401(k) deferrals must be corrected by April 15 of the following year. Failure to correct creates dual income tax liability for the employee and plan compliance issues.',
+    reviewerAction: 'Calculate annualized contribution (per-period × periods/year), compare against $23,500 IRS limit, and reduce the contribution rate before approval.',
     uiHints: {
       defaultExpanded: true,
       requiresAcknowledgement: true,

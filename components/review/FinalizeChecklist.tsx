@@ -154,7 +154,7 @@ export const FinalizeChecklist = forwardRef<HTMLDivElement, FinalizeChecklistPro
                   No statutory backdated impact
                 </span>
                 <p className="text-xs text-gray-500">
-                  Confirm changes do not create retroactive compliance issues
+                  No retroactive changes to pay dates, tax rates, or deduction amounts that would require amending prior-period 941 deposits or state tax filings
                 </p>
               </div>
             </label>

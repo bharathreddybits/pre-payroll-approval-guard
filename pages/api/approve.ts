@@ -198,7 +198,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Update review session status
-    const newStatus = approval_status === 'approved' ? 'completed' : 'reviewed';
+    const newStatus = approval_status === 'approved' ? 'approved' : 'reviewed';
     const { error: updateError } = await supabase
       .from('review_session')
       .update({ status: newStatus })
