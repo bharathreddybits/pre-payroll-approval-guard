@@ -11,7 +11,19 @@ export const employeeIdentityRules: RuleDefinition[] = [
     condition: (ctx) => {
       const status = ctx.current.employment_status;
       const gross = ctx.current.gross_pay;
-      return status != null && status.trim().toLowerCase() !== 'active' && gross != null && gross > 0;
+      if (status == null || gross == null || gross <= 0) return false;
+      const n = status.trim().toLowerCase();
+      // Whitelist of statuses where payment is definitively wrong.
+      // Using a whitelist (not "!== active") avoids false positives on
+      // legitimate active variants like "Part-Time", "Contract", "Seasonal".
+      return (
+        n === 'terminated' || n.startsWith('terminated') ||
+        n === 'inactive' || n === 'inact' ||
+        n === 'separated' || n === 'sep' ||
+        n === 'deceased' || n === 'void' ||
+        n === 'leave of absence' || n === 'loa' ||
+        n === 'unpaid leave' || n === 'unpaid loa'
+      );
     },
     explanation: 'Inactive employee received pay',
     userAction: 'Fix status or reverse payment',
