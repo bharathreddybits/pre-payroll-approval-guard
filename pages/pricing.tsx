@@ -219,8 +219,10 @@ export default function PricingPage() {
               <span className={`text-sm font-medium ${!annual ? 'text-slate-900' : 'text-slate-400'}`}>Monthly</span>
               <button
                 onClick={() => setAnnual(!annual)}
-                className={`relative w-12 h-6 rounded-full transition-colors ${annual ? 'bg-brand-blue' : 'bg-slate-300'}`}
+                role="switch"
+                aria-checked={annual}
                 aria-label="Toggle annual billing"
+                className={`relative w-12 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 ${annual ? 'bg-brand-blue' : 'bg-slate-300'}`}
               >
                 <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${annual ? 'translate-x-6' : ''}`} />
               </button>
@@ -240,10 +242,10 @@ export default function PricingPage() {
                 return (
                   <div
                     key={plan.name}
-                    className={`rounded-2xl p-8 flex flex-col ${
+                    className={`rounded-2xl p-8 flex flex-col transition-shadow ${
                       plan.highlight
                         ? 'bg-gradient-to-b from-brand-blue to-brand-blue-dark text-white shadow-xl shadow-brand-blue/20 ring-2 ring-brand-blue/30 relative'
-                        : 'bg-white border border-slate-200'
+                        : 'bg-white border border-slate-200 hover:shadow-lg hover:border-slate-300'
                     }`}
                   >
                     {plan.highlight && (
@@ -286,13 +288,13 @@ export default function PricingPage() {
                       <button
                         onClick={() => handleSubscribe(plan.name)}
                         disabled={loading}
-                        className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-blue ${
                           plan.highlight
                             ? 'bg-white text-brand-blue hover:bg-blue-50'
                             : 'bg-slate-900 text-white hover:bg-slate-800'
                         }`}
                       >
-                        {loading ? 'Loading...' : plan.cta}
+                        {loading ? 'Loading...' : user ? 'Subscribe Now' : plan.cta}
                       </button>
                       <p className={`text-xs text-center mt-3 ${plan.highlight ? 'text-blue-200' : 'text-slate-500'}`}>
                         Credit card required · No charge for 7 days

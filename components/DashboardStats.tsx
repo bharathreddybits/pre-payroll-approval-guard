@@ -40,7 +40,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
       value: stats.pending,
       color: 'yellow',
       bgColor: 'bg-yellow-50',
-      textColor: 'text-yellow-700',
+      textColor: 'text-yellow-800',
       borderColor: 'border-l-4 border-yellow-500',
     },
   ];

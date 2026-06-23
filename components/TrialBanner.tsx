@@ -57,18 +57,17 @@ export function TrialBanner() {
     subscriptionStatus.daysRemaining !== undefined &&
     subscriptionStatus.daysRemaining <= 3
   ) {
-    const daysText = subscriptionStatus.daysRemaining === 1
-      ? '1 day'
-      : `${subscriptionStatus.daysRemaining} days`;
+    const days = subscriptionStatus.daysRemaining!;
 
     return (
       <div className="bg-amber-500 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between flex-wrap">
+          <div className="flex items-center justify-between flex-wrap gap-y-2">
             <div className="flex items-center flex-1">
               <Clock className="h-5 w-5 mr-3 flex-shrink-0" />
               <p className="font-medium text-sm">
-                <strong>{daysText} remaining in your trial.</strong> Subscribe now to keep your access.
+                <span className="text-xl font-extrabold leading-none mr-1">{days}</span>
+                {days === 1 ? 'day' : 'days'} left in your trial — subscribe now to keep your access.
               </p>
             </div>
             <div className="flex items-center gap-4">

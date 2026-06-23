@@ -102,7 +102,7 @@ function getConfidenceBadge(level: string): { className: string; label: string }
 export function JudgementCard({ item }: JudgementCardProps) {
   const [notes, setNotes] = useState(item.reviewer_notes || '');
   const [showNotes, setShowNotes] = useState(!!item.reviewer_notes);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'pending' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const saveNotes = useCallback(async (value: string) => {
@@ -127,6 +127,7 @@ export function JudgementCard({ item }: JudgementCardProps) {
 
   const handleNotesChange = (value: string) => {
     setNotes(value);
+    setSaveStatus('pending');
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => saveNotes(value), 1000);
   };
@@ -270,14 +271,17 @@ export function JudgementCard({ item }: JudgementCardProps) {
                 className="w-full text-sm text-gray-800 bg-white border border-gray-200 rounded-md px-3 py-2 min-h-[72px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
               />
               <div className="mt-1 h-4">
+                {saveStatus === 'pending' && (
+                  <span className="text-[11px] text-gray-400">Unsaved changes…</span>
+                )}
                 {saveStatus === 'saving' && (
-                  <span className="text-[11px] text-gray-400">Saving...</span>
+                  <span className="text-[11px] text-gray-400">Saving…</span>
                 )}
                 {saveStatus === 'saved' && (
                   <span className="text-[11px] text-green-600">Saved ✓</span>
                 )}
                 {saveStatus === 'error' && (
-                  <span className="text-[11px] text-red-500">Save failed</span>
+                  <span className="text-[11px] text-red-500">Save failed — try again</span>
                 )}
               </div>
             </div>

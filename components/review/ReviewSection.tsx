@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ShieldX,
   AlertTriangle,
@@ -52,6 +52,8 @@ function formatMetricLabel(metric: string): string {
 }
 
 export function ReviewSection({ section, items, defaultExpanded }: ReviewSectionProps) {
+  const [allExpanded, setAllExpanded] = useState(false);
+
   if (items.length === 0) return null;
 
   const meta = UX_SECTION_META[section];
@@ -71,10 +73,29 @@ export function ReviewSection({ section, items, defaultExpanded }: ReviewSection
         grouped[key].push(item);
       }
 
+      const metricEntries = Object.entries(grouped);
+      const metricCount = metricEntries.length;
+
       return (
         <div className="space-y-4">
-          {Object.entries(grouped).map(([metric, metricItems]) => (
-            <Accordion key={metric} type="single" collapsible defaultValue={metricItems.length <= 3 ? metric : undefined}>
+          {metricCount > 1 && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setAllExpanded((v) => !v)}
+                className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors underline underline-offset-2"
+              >
+                {allExpanded ? 'Collapse all metrics' : `Expand all ${metricCount} metrics`}
+              </button>
+            </div>
+          )}
+          {metricEntries.map(([metric, metricItems]) => (
+            <Accordion
+              key={metric}
+              type="single"
+              collapsible
+              value={allExpanded ? metric : undefined}
+              defaultValue={!allExpanded && metricItems.length <= 3 ? metric : undefined}
+            >
               <AccordionItem value={metric} className="border rounded-lg">
                 <AccordionTrigger className="px-4 py-3 hover:no-underline">
                   <div className="flex items-center gap-2">

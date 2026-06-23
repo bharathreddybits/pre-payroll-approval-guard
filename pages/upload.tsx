@@ -291,11 +291,13 @@ export default function UploadPage() {
     <div
       {...dropzone.getRootProps()}
       className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-        dropzone.isDragActive
+        dropzone.isDragReject
+          ? 'border-red-400 bg-red-50'
+          : dropzone.isDragActive
           ? 'border-primary bg-primary/5'
           : file
           ? 'border-green-500 bg-green-50'
-          : 'border-gray-300 hover:border-primary'
+          : 'border-gray-300 hover:border-primary hover:bg-gray-50'
       }`}
     >
       <input {...dropzone.getInputProps()} />
@@ -309,12 +311,21 @@ export default function UploadPage() {
           </>
         ) : (
           <>
-            <FileText className="h-10 w-10 text-gray-400" />
-            <p className="font-semibold text-gray-700">{label}</p>
-            <p className="text-sm text-gray-500">{description}</p>
-            <p className="text-xs text-gray-400 mt-2">
-              Click to browse or drag and drop CSV file here
-            </p>
+            <FileText className={`h-10 w-10 ${dropzone.isDragReject ? 'text-red-400' : 'text-gray-400'}`} />
+            {dropzone.isDragReject ? (
+              <>
+                <p className="font-semibold text-red-600">Only CSV files accepted</p>
+                <p className="text-sm text-red-400">Please drop a .csv file</p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-gray-700">{label}</p>
+                <p className="text-sm text-gray-500">{description}</p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Click to browse or drag and drop CSV file here
+                </p>
+              </>
+            )}
           </>
         )}
       </div>
@@ -430,6 +441,7 @@ export default function UploadPage() {
                     }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
+                  <p className="text-xs text-gray-400 mt-1">First day of the payroll period</p>
                 </div>
 
                 <div>
@@ -444,6 +456,7 @@ export default function UploadPage() {
                     }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
+                  <p className="text-xs text-gray-400 mt-1">Last day of the payroll period</p>
                 </div>
 
                 <div>
@@ -456,6 +469,7 @@ export default function UploadPage() {
                     onChange={(e) => setState((prev) => ({ ...prev, payDate: e.target.value }))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
+                  <p className="text-xs text-gray-400 mt-1">Date employees receive payment</p>
                 </div>
               </div>
             </CardContent>

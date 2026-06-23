@@ -41,19 +41,19 @@ export function VerdictBanner({ verdict }: VerdictBannerProps) {
               <p className="text-lg font-semibold">{config.title}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
             {verdict.blockers_count > 0 && (
-              <span className="bg-white/20 rounded-full px-3 py-1 font-medium">
+              <span className="bg-white/20 rounded-full px-3 py-1 font-medium whitespace-nowrap">
                 {verdict.blockers_count} Blocker{verdict.blockers_count !== 1 ? 's' : ''}
               </span>
             )}
             {verdict.reviews_count > 0 && (
-              <span className="bg-white/20 rounded-full px-3 py-1 font-medium">
+              <span className="bg-white/20 rounded-full px-3 py-1 font-medium whitespace-nowrap">
                 {verdict.reviews_count} Review{verdict.reviews_count !== 1 ? 's' : ''}
               </span>
             )}
             {verdict.info_count > 0 && (
-              <span className="bg-white/20 rounded-full px-3 py-1 font-medium">
+              <span className="bg-white/20 rounded-full px-3 py-1 font-medium whitespace-nowrap">
                 {verdict.info_count} Info
               </span>
             )}

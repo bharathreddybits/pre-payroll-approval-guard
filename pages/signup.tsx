@@ -119,10 +119,22 @@ export default function SignupPage() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      password.length > 0 && password.length < 6 ? 'border-red-300' : 'border-gray-300'
+                    }`}
                     placeholder="At least 6 characters"
                     autoComplete="new-password"
+                    aria-describedby="password-hint"
                   />
+                  {password.length > 0 && (
+                    <p id="password-hint" className={`mt-1 text-xs flex items-center gap-1 ${password.length >= 6 ? 'text-green-600' : 'text-red-500'}`}>
+                      {password.length >= 6 ? (
+                        <><span>✓</span> Password looks good</>
+                      ) : (
+                        <><span>✗</span> {6 - password.length} more character{6 - password.length !== 1 ? 's' : ''} needed</>
+                      )}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -134,10 +146,23 @@ export default function SignupPage() {
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      confirmPassword.length > 0 && confirmPassword !== password ? 'border-red-300' : 'border-gray-300'
+                    }`}
                     placeholder="Confirm your password"
                     autoComplete="new-password"
+                    aria-describedby="confirm-hint"
                   />
+                  {confirmPassword.length > 0 && confirmPassword !== password && (
+                    <p id="confirm-hint" className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                      <span>✗</span> Passwords do not match
+                    </p>
+                  )}
+                  {confirmPassword.length > 0 && confirmPassword === password && password.length >= 6 && (
+                    <p id="confirm-hint" className="mt-1 text-xs text-green-600 flex items-center gap-1">
+                      <span>✓</span> Passwords match
+                    </p>
+                  )}
                 </div>
 
                 <Button

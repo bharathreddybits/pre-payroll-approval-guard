@@ -300,7 +300,7 @@ function SubscriptionContent() {
                     <div>
                       {subscription.status === 'trialing' && subscription.trial_end_date ? (
                         <>
-                          <p className="text-sm font-medium text-gray-900">Trial Period</p>
+                          <p className="text-sm font-medium text-gray-900">Free Trial</p>
                           <p className="text-sm text-gray-600">
                             Ends {formatDate(subscription.trial_end_date)}
                           </p>
@@ -334,6 +334,25 @@ function SubscriptionContent() {
               </CardContent>
             </Card>
 
+            {/* Trial conversion banner */}
+            {subscription.status === 'trialing' && (
+              <Card className="border-brand-blue/30 bg-blue-50">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex-1">
+                      <p className="font-semibold text-slate-900 mb-1">Your trial ends {subscription.trial_end_date ? formatDate(subscription.trial_end_date) : 'soon'}</p>
+                      <p className="text-sm text-slate-600">Choose a plan now to keep uninterrupted access. No charge until your trial ends.</p>
+                    </div>
+                    <Link href="/pricing" className="flex-shrink-0">
+                      <Button className="bg-brand-blue hover:bg-brand-blue-dark text-white w-full sm:w-auto">
+                        Choose a Plan →
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Actions Card */}
             <Card>
               <CardHeader>
@@ -345,11 +364,13 @@ function SubscriptionContent() {
                   <div>
                     <Link href="/pricing">
                       <Button variant="outline" className="w-full sm:w-auto">
-                        Change Plan
+                        {subscription.status === 'trialing' ? 'View Plans' : 'Change Plan'}
                       </Button>
                     </Link>
                     <p className="text-xs text-gray-500 mt-2">
-                      Upgrade to Pro for unlimited employees and AI-powered features
+                      {subscription.status === 'trialing'
+                        ? 'Starter from $249/mo · Pro from $749/mo · both include a 7-day free trial'
+                        : 'Upgrade to Pro for unlimited employees and AI-powered features'}
                     </p>
                   </div>
 
