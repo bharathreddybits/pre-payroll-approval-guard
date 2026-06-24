@@ -288,6 +288,32 @@ export default function MappingPage() {
       return;
     }
 
+    // Warn on duplicate canonical field assignments (same field mapped to multiple columns).
+    // The last mapping wins in confirm-mapping.ts — earlier data would be silently discarded.
+    const getDuplicates = (mappings: ColumnMapping[]) => {
+      const seen = new Map<string, string[]>();
+      for (const m of mappings) {
+        if (!m.canonicalField) continue;
+        const cols = seen.get(m.canonicalField) ?? [];
+        cols.push(m.uploadedColumn);
+        seen.set(m.canonicalField, cols);
+      }
+      return [...seen.entries()].filter(([, cols]) => cols.length > 1);
+    };
+    const baselineDups = getDuplicates(state.baselineMappings);
+    const currentDups = getDuplicates(state.currentMappings);
+    if (baselineDups.length > 0 || currentDups.length > 0) {
+      const dupList = [...baselineDups, ...currentDups]
+        .map(([field, cols]) => `"${field}" mapped to: ${cols.join(', ')}`)
+        .join('; ');
+      toast.error('Duplicate field mapping', {
+        description: `Each canonical field should be mapped to only one column. ${dupList}`,
+        duration: 8000,
+      });
+      setState((prev) => ({ ...prev, error: `Duplicate field mapping detected: ${dupList}` }));
+      return;
+    }
+
     setState((prev) => ({ ...prev, submitting: true, error: null }));
     toast.loading('Processing with confirmed mappings...', { id: 'confirm' });
 
@@ -343,8 +369,8 @@ export default function MappingPage() {
         <meta name="description" content="Review and confirm column mappings for your payroll data" />
       </Head>
 
-      <SubscriptionGuard loadingBehavior="block">
       <Header />
+      <SubscriptionGuard loadingBehavior="block">
 
       <div className="min-h-screen bg-gray-50 py-12 px-4">
         <div className="max-w-6xl mx-auto">

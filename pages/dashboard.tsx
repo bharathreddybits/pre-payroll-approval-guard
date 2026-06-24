@@ -20,6 +20,7 @@ interface DashboardData {
     approved: number;
     rejected: number;
     pending: number;
+    failed?: number;
   };
   recent_activity: Array<{
     approval_id: string;
@@ -51,6 +52,12 @@ interface DashboardData {
     first_review: boolean;
   };
   latest_session_id: string | null;
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    has_more: boolean;
+  };
 }
 
 function DashboardSkeleton() {
@@ -83,10 +90,12 @@ export default function DashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
+  const fetchDashboardData = useCallback(async (offset = 0, append = false) => {
+    if (offset === 0) setLoading(true);
+    else setLoadingMore(true);
     setError(null);
 
     try {
@@ -95,26 +104,35 @@ export default function DashboardPage() {
         ? { Authorization: `Bearer ${authSession.access_token}` }
         : {};
 
-      const response = await fetch('/api/dashboard', { headers });
+      const response = await fetch(`/api/dashboard?offset=${offset}`, { headers });
 
+      if (response.status === 401) {
+        router.push('/login');
+        return;
+      }
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data');
       }
 
-      const dashboardData = await response.json();
-      setData(dashboardData);
+      const dashboardData: DashboardData = await response.json();
+      if (append && data) {
+        setData({ ...dashboardData, sessions: [...data.sessions, ...dashboardData.sessions] });
+      } else {
+        setData(dashboardData);
+      }
     } catch (err: any) {
       console.error('Dashboard fetch error:', err);
       setError(err.message || 'Failed to load dashboard');
       toast.error('Failed to load dashboard');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, []);
+  }, [data]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    fetchDashboardData(0);
+  }, []);
 
   // Show success toast when redirected back from checkout
   useEffect(() => {
@@ -168,7 +186,7 @@ export default function DashboardPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={fetchDashboardData}
+                onClick={() => fetchDashboardData(0)}
                 className="shrink-0 text-red-700 border-red-300 hover:bg-red-100"
               >
                 Try Again
@@ -209,13 +227,24 @@ export default function DashboardPage() {
               {/* Review Sessions — full width */}
               {data.sessions.length > 0 && (
                 <p className="text-sm text-gray-500 mt-6 mb-2">
-                  Showing your {data.sessions.length} most recent review{data.sessions.length !== 1 ? 's' : ''}
+                  Showing {data.sessions.length} of {data.pagination.total} review{data.pagination.total !== 1 ? 's' : ''}
                 </p>
               )}
               <ReviewSessionsTable
                 sessions={data.sessions}
                 recentActivity={data.recent_activity}
               />
+              {data.pagination.has_more && (
+                <div className="flex justify-center mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => fetchDashboardData(data.sessions.length, true)}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? 'Loading...' : `Load more (${data.pagination.total - data.sessions.length} remaining)`}
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </div>

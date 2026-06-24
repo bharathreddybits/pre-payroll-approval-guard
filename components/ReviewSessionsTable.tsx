@@ -154,16 +154,23 @@ export function ReviewSessionsTable({ sessions }: ReviewSessionsTableProps) {
                     {getMergedStatusBadge(session)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                    <Link
-                      href={
-                        session.status === 'pending_mapping'
-                          ? `/mapping/${session.review_session_id}`
-                          : `/review/${session.review_session_id}`
-                      }
-                      className="text-brand-blue hover:underline font-medium"
-                    >
-                      {session.status === 'pending_mapping' ? 'Continue' : 'View'}
-                    </Link>
+                    {session.status === 'failed' ? (
+                      <span className="text-gray-400 text-xs">Re-upload required</span>
+                    ) : session.status === 'pending_mapping' ? (
+                      <Link
+                        href={`/mapping/${session.review_session_id}`}
+                        className="text-brand-blue hover:underline font-medium"
+                      >
+                        Continue
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/review/${session.review_session_id}`}
+                        className="text-brand-blue hover:underline font-medium"
+                      >
+                        View
+                      </Link>
+                    )}
                   </td>
                 </tr>
               );

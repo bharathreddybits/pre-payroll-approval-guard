@@ -150,11 +150,23 @@ async function handleSubscriptionActive(data: any) {
     return;
   }
 
-  // Resolve tier from product ID or plan_id metadata
+  // Resolve tier from product ID or plan_id metadata.
+  // If neither resolves, throw so Dodo retries the event — we must not silently
+  // set a Pro subscriber to Starter tier due to a missing product_id.
   const plan = data.product_id
     ? getPlanByDodoProductId(data.product_id)
     : undefined;
-  const tier: Tier = (plan?.tier ?? (planId?.startsWith('pro') ? 'pro' : 'starter')) as Tier;
+
+  let tier: Tier;
+  if (plan?.tier) {
+    tier = plan.tier;
+  } else if (planId?.startsWith('pro')) {
+    tier = 'pro';
+  } else if (planId) {
+    tier = 'starter';
+  } else {
+    throw new Error(`[subscription.active] Cannot resolve tier for org=${organizationId} — product_id and plan_id metadata both missing`);
+  }
 
   const nextBilling = data.next_billing_date ? new Date(data.next_billing_date) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
@@ -296,9 +308,12 @@ async function handleSubscriptionEnded(data: any, eventType: string) {
 
   const status: SubscriptionStatus = eventType === 'subscription.expired' ? 'expired' : 'cancelled';
 
+  // cancel_at_period_end: false — subscription is already fully terminated,
+  // this flag has no meaning and showing it as true would render a spurious
+  // "Resume Subscription" button on the subscription management page.
   await supabase
     .from('subscription')
-    .update({ status, cancel_at_period_end: true })
+    .update({ status, cancel_at_period_end: false })
     .eq('organization_id', organizationId);
 
   // Downgrade to starter on cancel/expire

@@ -14,6 +14,7 @@ export default function AuthCallback() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const queryParams = new URLSearchParams(window.location.search);
 
+        const code = queryParams.get('code');
         const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
         const type = hashParams.get('type') || queryParams.get('type');
@@ -26,8 +27,16 @@ export default function AuthCallback() {
           return;
         }
 
-        if (accessToken && refreshToken) {
-          // Set the session
+        // PKCE flow (Supabase default for SPA): exchange authorization code for session
+        if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            setMessage('Verification failed. Redirecting to login...');
+            setTimeout(() => router.push('/login'), 2000);
+            return;
+          }
+        } else if (accessToken && refreshToken) {
+          // Legacy implicit flow: set session from tokens in URL hash
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
@@ -44,35 +53,9 @@ export default function AuthCallback() {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session) {
-          // Check if user has an organization, create one if not
-          const { data: mapping } = await supabase
-            .from('user_organization_mapping')
-            .select('organization_id')
-            .eq('user_id', session.user.id)
-            .single();
-
-          if (!mapping) {
-            // User doesn't have an organization - create one
-            const orgName = (session.user.email?.split('@')[0] || 'User') + "'s Organization";
-
-            const { data: newOrg, error: orgError } = await supabase
-              .from('organization')
-              .insert({ organization_name: orgName })
-              .select()
-              .single();
-
-            if (!orgError && newOrg) {
-              // Link user to organization
-              await supabase
-                .from('user_organization_mapping')
-                .insert({
-                  user_id: session.user.id,
-                  organization_id: newOrg.organization_id,
-                  role: 'admin'
-                });
-            }
-          }
-
+          // Organization is created by the DB trigger (migration 008) on signup.
+          // init-account is called in AuthContext.ensureUserHasOrganization on every login.
+          // Nothing to do here — just redirect to dashboard.
           setMessage('Email confirmed! Redirecting...');
           setTimeout(() => router.push('/dashboard'), 1500);
         } else if (type === 'signup' || type === 'email_confirmation') {

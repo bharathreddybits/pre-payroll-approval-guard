@@ -49,15 +49,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { count: totalReviews },
       { count: approvedCount },
       { count: rejectedCount },
+      { count: failedCount },
     ] = await Promise.all([
       supabase.from('review_session').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId),
       supabase.from('approval').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('approval_status', 'approved'),
       supabase.from('approval').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('approval_status', 'rejected'),
+      supabase.from('review_session').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('status', 'failed'),
     ]);
     const total_reviews = totalReviews ?? 0;
     const approved = approvedCount ?? 0;
     const rejected = rejectedCount ?? 0;
-    const allTimeStats = { total_reviews, approved, rejected, pending: total_reviews - approved - rejected };
+    const failed = failedCount ?? 0;
+    // pending = sessions that are in review (not yet finalized, not failed, not still processing)
+    const pending = Math.max(0, total_reviews - approved - rejected - failed);
+    const allTimeStats = { total_reviews, approved, rejected, pending, failed };
     const hasCompletedReview = approved + rejected > 0;
 
     // 1b. Get paginated review sessions.

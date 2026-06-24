@@ -45,26 +45,11 @@ export default function UploadPage() {
     warnings: [],
   });
 
-  const [progressStep, setProgressStep] = useState(0);
-  const progressStepRef = useRef(0);
-  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const PROGRESS_STEPS = [
-    { label: 'Parsing payroll files...', percent: 15 },
-    { label: 'Calculating employee changes...', percent: 35 },
-    { label: 'Applying compliance rules...', percent: 60 },
-    { label: 'Generating review report...', percent: 85 },
-    { label: 'Finalizing...', percent: 95 },
-  ];
-
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const submittedRef = useRef(false);
 
   useEffect(() => {
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      submittedRef.current = false;
     };
   }, []);
 
@@ -76,9 +61,14 @@ export default function UploadPage() {
       .select('organization_id')
       .eq('user_id', user.id)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data?.organization_id) {
           setState((prev) => ({ ...prev, organizationId: data.organization_id }));
+        } else if (error) {
+          setState((prev) => ({
+            ...prev,
+            error: 'Unable to load your organization. Please refresh the page or contact support.',
+          }));
         }
       });
   }, [user]);
@@ -126,6 +116,10 @@ export default function UploadPage() {
   });
 
   const handleUpload = async () => {
+    // Prevent double-submit
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+
     // Validation
     if (!state.baselineFile || !state.currentFile) {
       toast.error('Missing files', {
@@ -211,6 +205,15 @@ export default function UploadPage() {
         return;
       }
 
+      // Check if processing succeeded
+      if (!uploadResult.processing_completed) {
+        const errMsg = uploadResult.processing?.error || 'Payroll processing failed. Please re-upload your files.';
+        toast.error('Processing failed', { id: 'upload', description: errMsg });
+        setState((prev) => ({ ...prev, uploading: false, processing: false, error: errMsg }));
+        submittedRef.current = false;
+        return;
+      }
+
       // Inline processing completed, go to review
       toast.success('Processing complete!', {
         id: 'upload',
@@ -230,6 +233,7 @@ export default function UploadPage() {
         processing: false,
         error: error.message || 'Failed to process payroll data',
       }));
+      submittedRef.current = false;
     }
   };
 
@@ -524,41 +528,15 @@ export default function UploadPage() {
           </div>
 
           {/* Processing Status */}
-          {(state.uploading || state.processing) && (
+          {state.uploading && (
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-blue flex-shrink-0"></div>
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-blue flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-blue-900">
-                    {state.uploading
-                      ? 'Uploading files...'
-                      : progressStep < PROGRESS_STEPS.length
-                      ? PROGRESS_STEPS[progressStep].label
-                      : 'Finalizing...'}
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    {state.uploading
-                      ? 'Validating and storing payroll data'
-                      : 'Calculating differences and applying judgement rules'}
-                  </p>
+                  <p className="font-medium text-blue-900">Uploading and processing payroll data…</p>
+                  <p className="text-sm text-blue-700">Validating files, calculating differences, and applying rules</p>
                 </div>
               </div>
-              {state.processing && (
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs text-blue-700 mb-1">
-                    <span>{progressStep < PROGRESS_STEPS.length ? PROGRESS_STEPS[progressStep].label : 'Complete'}</span>
-                    <span>{progressStep < PROGRESS_STEPS.length ? PROGRESS_STEPS[progressStep].percent : 100}%</span>
-                  </div>
-                  <div className="w-full bg-blue-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-700"
-                      style={{
-                        width: `${progressStep < PROGRESS_STEPS.length ? PROGRESS_STEPS[progressStep].percent : 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

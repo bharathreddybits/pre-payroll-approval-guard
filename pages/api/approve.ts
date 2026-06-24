@@ -104,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Check for blockers if approving
     if (approval_status === 'approved') {
-      // First get all deltas for this session
+      // Get all deltas for this session — zero deltas (identical payrolls) is fine to approve
       const { data: deltas, error: deltasError } = await supabase
         .from('payroll_delta')
         .select('delta_id')
@@ -115,20 +115,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ error: 'Failed to validate approval' });
       }
 
-      if (!deltas || deltas.length === 0) {
-        return res.status(400).json({
-          error: 'Cannot approve - no payroll changes found',
-          message: 'Review session has no delta records',
-        });
-      }
+      // Check for blockers in judgements — only if there are any deltas
+      const deltaIds = (deltas ?? []).map(d => d.delta_id);
+      let blockerJudgements: any[] | null = null;
+      let blockersError: any = null;
 
-      // Then check for blockers in judgements
-      const deltaIds = deltas.map(d => d.delta_id);
-      const { data: blockerJudgements, error: blockersError } = await supabase
-        .from('material_judgement')
-        .select('judgement_id, delta_id, is_blocker, reasoning')
-        .in('delta_id', deltaIds)
-        .eq('is_blocker', true);
+      if (deltaIds.length > 0) {
+        const result = await supabase
+          .from('material_judgement')
+          .select('judgement_id, delta_id, is_blocker, reasoning')
+          .in('delta_id', deltaIds)
+          .eq('is_blocker', true);
+        blockerJudgements = result.data;
+        blockersError = result.error;
+      }
 
       if (blockersError) {
         console.error('Failed to check for blockers:', blockersError);

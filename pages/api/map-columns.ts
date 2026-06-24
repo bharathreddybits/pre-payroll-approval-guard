@@ -81,6 +81,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    // If mapping rows already exist for this session, return them without re-running AI.
+    // This preserves any user edits made on the mapping page if they close and reopen the tab.
+    const { data: existingMappings } = await supabase
+      .from('column_mapping')
+      .select('dataset_type, uploaded_column, canonical_field, confidence, reasoning')
+      .eq('review_session_id', reviewSessionId);
+
+    if (existingMappings && existingMappings.length > 0) {
+      const baselineMappings = existingMappings
+        .filter(m => m.dataset_type === 'baseline')
+        .map(m => ({ uploadedColumn: m.uploaded_column, canonicalField: m.canonical_field, confidence: m.confidence, reasoning: m.reasoning }));
+      const currentMappings = existingMappings
+        .filter(m => m.dataset_type === 'current')
+        .map(m => ({ uploadedColumn: m.uploaded_column, canonicalField: m.canonical_field, confidence: m.confidence, reasoning: m.reasoning }));
+
+      return res.status(200).json({
+        success: true,
+        fromCache: true,
+        baseline: { mappings: baselineMappings, method: 'cached' },
+        current: { mappings: currentMappings, method: 'cached' },
+      });
+    }
+
     // If headers not provided, extract from stored raw_row metadata in employee records
     if (extractFromSession || !baselineHeaders?.length || !currentHeaders?.length) {
       const { data: datasets } = await supabase

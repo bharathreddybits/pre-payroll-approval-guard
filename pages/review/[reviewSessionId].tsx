@@ -42,6 +42,10 @@ export default function ReviewPage() {
         ? { 'Authorization': `Bearer ${authSession.access_token}` }
         : {};
       const response = await fetch(`/api/review/${reviewSessionId}`, { headers });
+      if (response.status === 401) {
+        router.push('/login');
+        return;
+      }
       if (!response.ok) {
         throw new Error('Failed to fetch review data');
       }
@@ -60,6 +64,7 @@ export default function ReviewPage() {
   }, [fetchReviewData]);
 
   const handleApprove = async () => {
+    if (!reviewSessionId || typeof reviewSessionId !== 'string') return;
     try {
       const { data: { session: authSession } } = await supabase.auth.getSession();
       const authHeaders: Record<string, string> = {
@@ -91,6 +96,7 @@ export default function ReviewPage() {
   };
 
   const handleReject = async (notes: string) => {
+    if (!reviewSessionId || typeof reviewSessionId !== 'string') return;
     try {
       const { data: { session: authSession } } = await supabase.auth.getSession();
       const authHeaders: Record<string, string> = {
@@ -218,6 +224,13 @@ export default function ReviewPage() {
               defaultExpanded={defaultExpanded}
             />
           ))}
+
+          {/* Pagination notice — shown when payroll has >1000 deltas */}
+          {data.pagination.has_more && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+              <strong>Large payroll:</strong> Showing {data.pagination.limit} of {data.pagination.total} changes. Verdict counts above reflect all changes. Contact support if you need to page through additional items.
+            </div>
+          )}
 
           {/* Empty State */}
           {totalFlagged === 0 && (

@@ -18,6 +18,39 @@ export function TrialBanner() {
   // Don't show if active subscription
   if (subscriptionStatus.status === 'active') return null;
 
+  // Payment failed / past due — show payment failure warning
+  if (subscriptionStatus.status === 'past_due') {
+    return (
+      <div className="bg-orange-600 text-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between flex-wrap">
+            <div className="flex items-center flex-1">
+              <AlertTriangle className="h-5 w-5 mr-3 flex-shrink-0" />
+              <p className="font-medium text-sm">
+                Your payment failed. Please update your payment method to avoid losing access.
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push('/subscription')}
+                className="bg-white text-orange-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-orange-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-orange-600"
+              >
+                Update Payment &rarr;
+              </button>
+              <button
+                onClick={() => setDismissed(true)}
+                className="text-white/80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+                aria-label="Dismiss banner"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Trial expired - critical banner
   if (subscriptionStatus.trialEnded) {
     return (

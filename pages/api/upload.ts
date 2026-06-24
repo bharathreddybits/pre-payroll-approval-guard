@@ -344,6 +344,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Current CSV validation failed', details: currentValidation.errors });
     }
 
+    // ── Absolute row cap — prevent Vercel timeout from enormous CSVs ────
+    const MAX_ROWS_PER_FILE = 10000;
+    if (baselineValidation.row_count > MAX_ROWS_PER_FILE || currentValidation.row_count > MAX_ROWS_PER_FILE) {
+      cleanupFiles(baselineFile.filepath, currentFile.filepath);
+      return res.status(400).json({
+        error: 'File too large',
+        message: `Each CSV file may contain at most ${MAX_ROWS_PER_FILE.toLocaleString()} employee rows. The uploaded file has ${Math.max(baselineValidation.row_count, currentValidation.row_count).toLocaleString()} rows. Contact support for bulk imports.`,
+      });
+    }
+
     // ── Check employee limit ─────────────────────────────────────────────
     const maxEmployeeCount = Math.max(baselineValidation.row_count, currentValidation.row_count);
     const employeeLimitCheck = await checkEmployeeLimit(finalOrganizationId, maxEmployeeCount);

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export interface SubscriptionStatus {
   hasAccess: boolean;
-  status: 'active' | 'trialing' | 'expired' | 'none' | 'loading';
+  status: 'active' | 'trialing' | 'expired' | 'none' | 'loading' | 'past_due';
   daysRemaining?: number;
   trialEnded?: boolean;
   needsSubscription?: boolean;
@@ -142,9 +142,8 @@ export function useSubscriptionStatus() {
         if (status === 'past_due') {
           setSubscriptionStatus({
             hasAccess: true,
-            status: 'expired', // closest available status type for UI warning display
+            status: 'past_due',
             daysRemaining: 0,
-            needsSubscription: true,
             loading: false,
           });
           return;

@@ -374,8 +374,11 @@ function SubscriptionContent() {
                     </p>
                   </div>
 
-                  {/* Hide cancel/resume for trialing users — no Dodo subscription exists yet */}
-                  {subscription.status !== 'trialing' && (
+                  {/* Hide cancel/resume for trialing users — no Dodo subscription exists yet.
+                      Also hide if no dodo_subscription_id — cancel/resume API requires it. */}
+                  {subscription.status !== 'trialing' &&
+                   !['cancelled', 'expired', 'failed'].includes(subscription.status) &&
+                   subscription.dodo_subscription_id && (
                     <div className="pt-4 border-t">
                       {!subscription.cancel_at_period_end ? (
                         <>
