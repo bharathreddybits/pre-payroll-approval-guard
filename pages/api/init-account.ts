@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../lib/supabase';
+import { verifyToken } from '../../lib/auth/verifyToken';
 
 const TRIAL_DAYS = 7;
 
@@ -18,23 +18,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const auth = await verifyToken(req, res);
+  if (!auth) return;
+  const { user } = auth;
+
   try {
-    // Verify the caller's Supabase session
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ error: 'Authorization header required' });
-    }
-
-    const anonClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
-
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
-    }
-
     const supabase = getServiceSupabase();
 
     // Get the user's organization

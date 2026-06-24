@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../lib/supabase';
+import { verifyToken } from '../../lib/auth/verifyToken';
 import { sanitizeErrorMessage } from '../../lib/errorHandler';
+import { checkSubscriptionAccess } from '../../lib/billing/entitlements';
 
 /**
  * POST /api/approve
@@ -28,16 +29,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Auth: require Bearer token and verify org membership
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Authorization required' });
-
-  const anonClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+  const auth = await verifyToken(req, res);
+  if (!auth) return;
+  const { user } = auth;
 
   try {
     // approved_by is intentionally NOT accepted from the client body — it is always
@@ -70,6 +64,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('user_id', user.id)
       .single();
     if (!mapping) return res.status(403).json({ error: 'No organization found' });
+
+    // Server-side subscription gate
+    const subAccess = await checkSubscriptionAccess(mapping.organization_id);
+    if (!subAccess.hasAccess) {
+      return res.status(402).json({ error: 'Subscription required', upgrade_url: '/pricing' });
+    }
 
     // Check if review session exists and get organization_id
     const { data: session, error: sessionError } = await supabase
@@ -200,7 +200,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       approval = data;
     }
 
-    // Update review session status
+    // Update review session status — throw on failure so the response reflects reality.
+    // The approval record is already written; a divergent session status would cause
+    // the UI to show the wrong state on every subsequent review page load.
     const newStatus = approval_status === 'approved' ? 'approved' : 'reviewed';
     const { error: updateError } = await supabase
       .from('review_session')
@@ -209,7 +211,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (updateError) {
       console.error('Failed to update review session status:', updateError);
-      // Don't fail the request, approval is already recorded
+      throw new Error(`Approval recorded but session status update failed: ${updateError.message}`);
     }
 
     return res.status(200).json({

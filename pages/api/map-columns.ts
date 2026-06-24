@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../lib/supabase';
+import { verifyToken } from '../../lib/auth/verifyToken';
 import { mapColumns } from '../../lib/columnMapper';
 import { checkAiMapping } from '../../lib/billing';
 import { sanitizeErrorMessage } from '../../lib/errorHandler';
@@ -25,16 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Auth: require Bearer token
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Authorization required' });
-
-  const anonClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+  const auth = await verifyToken(req, res);
+  if (!auth) return;
+  const { user } = auth;
 
   try {
     const {
@@ -142,12 +135,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Column mapping failed', message: error.message, action: 'Please re-upload your payroll files' });
     }
 
-    // Store mapping results — delete any existing rows first to prevent duplicates on refresh
-    await supabase
-      .from('column_mapping')
-      .delete()
-      .eq('review_session_id', reviewSessionId);
-
+    // Upsert mapping results — idempotent on (review_session_id, dataset_type, uploaded_column).
+    // The prior delete+insert was non-atomic: a concurrent refresh between the delete and the
+    // insert would observe an empty mapping table and could route the user to an error state.
     const mappingRows = [
       ...baselineResult.mappings.map(m => ({
         review_session_id: reviewSessionId,
@@ -167,12 +157,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })),
     ];
 
-    const { error: insertError } = await supabase
+    const { error: upsertError } = await supabase
       .from('column_mapping')
-      .insert(mappingRows);
+      .upsert(mappingRows, {
+        onConflict: 'review_session_id,dataset_type,uploaded_column',
+        ignoreDuplicates: false,
+      });
 
-    if (insertError) {
-      console.error('Failed to store column mappings:', insertError);
+    if (upsertError) {
+      console.error('Failed to store column mappings:', upsertError);
       return res.status(500).json({ error: 'Failed to store mapping results' });
     }
 

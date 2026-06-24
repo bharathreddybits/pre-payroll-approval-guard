@@ -106,12 +106,16 @@ Return a JSON object with this exact structure:
     throw new Error('Invalid response structure from OpenAI');
   }
 
-  return parsed.mappings.map((m: any) => ({
-    uploadedColumn: m.uploaded_column,
-    canonicalField: m.canonical_field || null,
-    confidence: typeof m.confidence === 'number' ? m.confidence : 0,
-    reasoning: m.reasoning || '',
-  }));
+  const rawMappings: unknown[] = parsed.mappings;
+  return rawMappings
+    .filter((m): m is Record<string, unknown> => m !== null && typeof m === 'object')
+    .map(m => ({
+      uploadedColumn: typeof m.uploaded_column === 'string' ? m.uploaded_column : '',
+      canonicalField: typeof m.canonical_field === 'string' ? m.canonical_field : null,
+      confidence: typeof m.confidence === 'number' ? m.confidence : 0,
+      reasoning: typeof m.reasoning === 'string' ? m.reasoning : '',
+    }))
+    .filter(m => m.uploadedColumn !== '');
 }
 
 // ---------------------------------------------------------------------------

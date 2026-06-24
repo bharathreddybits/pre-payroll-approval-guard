@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../lib/supabase';
+import { verifyToken } from '../../lib/auth/verifyToken';
 import { CANONICAL_FIELD_MAP } from '../../lib/canonicalSchema';
 import { processReview } from '../../lib/processReview';
 import { checkFlexibleImport } from '../../lib/billing';
@@ -29,16 +29,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Auth: require Bearer token
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Authorization required' });
-
-  const anonClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+  const auth = await verifyToken(req, res);
+  if (!auth) return;
+  const { user } = auth;
 
   try {
     const { reviewSessionId, baselineMappings, currentMappings } = req.body;
@@ -228,13 +221,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await transformAndUpdate(baselineRecords, baselineLookup);
     await transformAndUpdate(currentRecords, currentLookup);
 
-    // 6. Run processing inline
+    // 6. Run processing with a 25-second timeout guard.
+    // Vercel kills the function at 30s; we race to mark the session 'failed' cleanly
+    // before that happens, rather than leaving it stuck in 'pending_mapping'.
+    const PROCESSING_TIMEOUT_MS = 25_000;
     let processingResult;
     try {
-      processingResult = await processReview(reviewSessionId);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Processing timed out — payroll may be too large for synchronous processing')), PROCESSING_TIMEOUT_MS)
+      );
+      processingResult = await Promise.race([processReview(reviewSessionId), timeoutPromise]);
     } catch (procError: any) {
       console.error('Processing error after mapping:', procError.message);
-      // Mark session as failed so it doesn't stay stuck in 'pending_mapping'
       await supabase
         .from('review_session')
         .update({ status: 'failed' })

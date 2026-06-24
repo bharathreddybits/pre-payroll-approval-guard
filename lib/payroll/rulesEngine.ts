@@ -22,10 +22,40 @@ export interface JudgementRow {
   rule_id: string;
 }
 
+export interface EmployeePayRecord {
+  employee_id: string;
+  employee_name: string | null;
+  department: string | null;
+  employment_status: string | null;
+  gross_pay: number;
+  net_pay: number;
+  total_deductions: number;
+  regular_hours?: number | null;
+  overtime_hours?: number | null;
+  base_earnings?: number | null;
+  overtime_pay?: number | null;
+  bonus_earnings?: number | null;
+  federal_income_tax?: number | null;
+  state_income_tax?: number | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface DeltaRecord {
+  delta_id: string;
+  employee_id: string;
+  metric: string;
+  component_name: string | null;
+  baseline_value: number | null;
+  current_value: number | null;
+  delta_absolute: number | null;
+  delta_percentage: number | null;
+  change_type: string;
+}
+
 export function runRulesEngine(
-  insertedDeltas: any[],   // deltas already saved to DB (have delta_id)
-  currentEmployees: any[],
-  baselineEmployees: any[],
+  insertedDeltas: DeltaRecord[],
+  currentEmployees: EmployeePayRecord[],
+  baselineEmployees: EmployeePayRecord[],
   orgTier: string,
 ): JudgementRow[] {
   const allJudgements: JudgementRow[] = [];
@@ -34,7 +64,7 @@ export function runRulesEngine(
   const currentMap = new Map(currentEmployees.map(e => [e.employee_id, e]));
 
   // Group deltas by employee so we can run employee-level rules once per person
-  const deltasByEmployee = new Map<string, any[]>();
+  const deltasByEmployee = new Map<string, DeltaRecord[]>();
   for (const delta of insertedDeltas) {
     const list = deltasByEmployee.get(delta.employee_id) ?? [];
     list.push(delta);
@@ -45,15 +75,17 @@ export function runRulesEngine(
     const currentEmp = currentMap.get(employeeId);
     const baselineEmp = baselineMap.get(employeeId) ?? null;
 
-    // Track which rules fired for this employee to prevent duplicates
-    const seenRuleIds = new Set<string>();
+    // Employee-level rules dedup on rule_id alone (they attach to the representative delta).
+    const seenEmployeeRuleIds = new Set<string>();
+
+    // Delta-level rules dedup on "rule_id:delta_id" so the same rule can fire on different
+    // deltas for the same employee (e.g., R1 fires for net_pay AND gross_pay separately).
+    const seenDeltaRuleKeys = new Set<string>();
 
     // Pick a representative delta for employee-level judgements (prefer net_pay)
     const repDelta = empDeltas.find(d => d.metric === 'net_pay') ?? empDeltas[0];
 
     // ── Employee-level rules ───────────────────────────────────────────────
-    // These fire once per employee regardless of how many metrics changed.
-    // Examples: duplicate employee ID, inactive employee receiving pay, new hire.
     const empRecord = currentEmp ?? baselineEmp;
     if (empRecord) {
       const empJudgements = applyEmployeeRules(
@@ -65,8 +97,8 @@ export function runRulesEngine(
       );
 
       for (const j of empJudgements) {
-        if (!seenRuleIds.has(j.rule_id)) {
-          seenRuleIds.add(j.rule_id);
+        if (!seenEmployeeRuleIds.has(j.rule_id)) {
+          seenEmployeeRuleIds.add(j.rule_id);
           allJudgements.push({
             delta_id: repDelta.delta_id,
             is_material: j.is_material,
@@ -80,8 +112,6 @@ export function runRulesEngine(
     }
 
     // ── Delta-level rules ─────────────────────────────────────────────────
-    // These fire per metric change (e.g. net_pay dropped 40%, tax spiked).
-    // new_employee and removed_employee changes are handled by employee-level rules above.
     for (const delta of empDeltas) {
       if (delta.change_type === 'new_employee' || delta.change_type === 'removed_employee') {
         continue;
@@ -100,8 +130,9 @@ export function runRulesEngine(
         );
 
         for (const j of deltaJudgements) {
-          if (!seenRuleIds.has(j.rule_id)) {
-            seenRuleIds.add(j.rule_id);
+          const key = `${j.rule_id}:${delta.delta_id}`;
+          if (!seenDeltaRuleKeys.has(key)) {
+            seenDeltaRuleKeys.add(key);
             allJudgements.push({
               delta_id: delta.delta_id,
               is_material: j.is_material,

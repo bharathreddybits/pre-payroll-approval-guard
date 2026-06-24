@@ -1,13 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../lib/supabase';
+import { verifyToken } from '../../lib/auth/verifyToken';
+import { sanitizeErrorMessage } from '../../lib/errorHandler';
 
 /**
  * GET /api/dashboard
- * Fetch dashboard data including stats, recent activity, and review sessions
+ * Fetch dashboard data including stats, recent activity, and review sessions.
  *
  * Query params:
- *   - organization_id (optional): Filter by organization
  *   - limit (optional): Number of sessions to return (default: 20)
  *   - offset (optional): Pagination offset (default: 0)
  */
@@ -16,16 +16,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Auth: require Bearer token and scope data to caller's org
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Authorization required' });
-
-  const anonClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+  const auth = await verifyToken(req, res);
+  if (!auth) return;
+  const { user } = auth;
 
   try {
     const supabase = getServiceSupabase();
@@ -38,9 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
     if (!userMapping) return res.status(403).json({ error: 'No organization found' });
 
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-    const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-    // organizationId is now always the authenticated user's org (ignoring query param for security)
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+    const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
     const organizationId = userMapping.organization_id;
 
     // 1a. Get all-time stats (separate count query — not paginated)
@@ -49,23 +41,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select('review_session_id, approval(approval_status)')
       .eq('organization_id', organizationId);
 
-    const allTimeStats = {
-      total_reviews: allTimeSessions?.length || 0,
-      approved: 0,
-      rejected: 0,
-      pending: 0,
-    };
+    const allTimeStats = { total_reviews: 0, approved: 0, rejected: 0, pending: 0 };
     let hasCompletedReview = false;
-    allTimeSessions?.forEach(session => {
-      const approval = Array.isArray(session.approval) ? session.approval[0] : (session.approval as any);
+    for (const session of allTimeSessions ?? []) {
+      allTimeStats.total_reviews++;
+      const approval = Array.isArray(session.approval) ? session.approval[0] : session.approval as any;
       const status = approval?.approval_status || 'pending';
       if (status === 'approved') { allTimeStats.approved++; hasCompletedReview = true; }
       else if (status === 'rejected') { allTimeStats.rejected++; hasCompletedReview = true; }
       else allTimeStats.pending++;
-    });
+    }
 
-    // 1b. Get paginated review sessions with full detail
-    const { data: sessions, error: sessionsError } = await supabase
+    // 1b. Get paginated review sessions — count: 'exact' gives the true total for pagination.
+    // Exclude approved_by (raw UUID) from approval join; it is never shown on the dashboard.
+    const { data: sessions, error: sessionsError, count: totalSessionCount } = await supabase
       .from('review_session')
       .select(`
         review_session_id,
@@ -86,10 +75,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           approval_id,
           approval_status,
           approval_notes,
-          approved_at,
-          approved_by
+          approved_at
         )
-      `)
+      `, { count: 'exact' })
       .eq('organization_id', organizationId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -99,70 +87,60 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to fetch dashboard data' });
     }
 
-    // 2. Get delta and judgement counts for each session
-    const sessionIds = sessions?.map(s => s.review_session_id) || [];
-
-    let deltaCounts: Record<string, { total: number; material: number; blockers: number }> = {};
+    // 2. Get delta counts and judgement counts for sessions on this page.
+    //    API-002 fix: fetch only (review_session_id, delta_id) rows rather than full delta
+    //    rows with nested material_judgement join, which was unbounded and O(n*m) in data.
+    const sessionIds = sessions?.map(s => s.review_session_id) ?? [];
+    const deltaCounts: Record<string, { total: number; material: number; blockers: number }> = {};
 
     if (sessionIds.length > 0) {
-      // Get delta counts
-      const { data: deltas, error: deltasError } = await supabase
+      // Fetch lean rows — just the two IDs needed for counting and lookup
+      const { data: deltaRows } = await supabase
         .from('payroll_delta')
-        .select(`
-          review_session_id,
-          delta_id,
-          material_judgement (
-            is_material,
-            is_blocker
-          )
-        `)
+        .select('review_session_id, delta_id')
         .in('review_session_id', sessionIds);
 
-      if (!deltasError && deltas) {
-        // Aggregate counts by session — check ALL judgements per delta
-        deltas.forEach(delta => {
-          if (!deltaCounts[delta.review_session_id]) {
-            deltaCounts[delta.review_session_id] = { total: 0, material: 0, blockers: 0 };
-          }
-          deltaCounts[delta.review_session_id].total++;
+      const deltaToSession = new Map<string, string>();
+      for (const d of deltaRows ?? []) {
+        if (!deltaCounts[d.review_session_id]) {
+          deltaCounts[d.review_session_id] = { total: 0, material: 0, blockers: 0 };
+        }
+        deltaCounts[d.review_session_id].total++;
+        deltaToSession.set(d.delta_id, d.review_session_id);
+      }
 
-          const judgements = Array.isArray(delta.material_judgement)
-            ? delta.material_judgement
-            : delta.material_judgement ? [delta.material_judgement] : [];
+      const allDeltaIds = [...deltaToSession.keys()];
+      if (allDeltaIds.length > 0) {
+        // Fetch only the three lightweight columns needed for aggregation
+        const { data: judgementRows } = await supabase
+          .from('material_judgement')
+          .select('delta_id, is_material, is_blocker')
+          .in('delta_id', allDeltaIds);
 
-          const hasMaterial = judgements.some((j: any) => j.is_material);
-          const hasBlocker = judgements.some((j: any) => j.is_blocker);
-
-          if (hasMaterial) {
-            deltaCounts[delta.review_session_id].material++;
-          }
-          if (hasBlocker) {
-            deltaCounts[delta.review_session_id].blockers++;
-          }
-        });
+        for (const j of judgementRows ?? []) {
+          const sid = deltaToSession.get(j.delta_id);
+          if (!sid || !deltaCounts[sid]) continue;
+          if (j.is_material) deltaCounts[sid].material++;
+          if (j.is_blocker) deltaCounts[sid].blockers++;
+        }
       }
     }
 
-    // 3. Stats come from the all-time query (not paginated)
-    const stats = allTimeStats;
-
-    // Onboarding status
     const isNewUser = allTimeStats.total_reviews === 0;
     const onboarding = {
-      account_created: true, // Always true for logged-in users
-      first_upload: (sessions?.length || 0) > 0,
+      account_created: true,
+      first_upload: (sessions?.length ?? 0) > 0,
       first_review: hasCompletedReview,
     };
 
-    // 4. Format sessions for response
+    // 4. Format sessions — never expose approved_by (raw user UUID)
     const formattedSessions = sessions?.map(session => {
       const currentDataset = Array.isArray(session.payroll_dataset)
         ? session.payroll_dataset.find((d: any) => d.dataset_type === 'current')
         : null;
-
-      const approval = Array.isArray(session.approval) ? session.approval[0] : session.approval;
+      const approval = Array.isArray(session.approval) ? session.approval[0] : session.approval as any;
       const org = session.organization as any;
-      const counts = deltaCounts[session.review_session_id] || { total: 0, material: 0, blockers: 0 };
+      const counts = deltaCounts[session.review_session_id] ?? { total: 0, material: 0, blockers: 0 };
 
       return {
         review_session_id: session.review_session_id,
@@ -180,12 +158,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         approval_status: approval?.approval_status || 'pending',
         approval_notes: approval?.approval_notes || null,
         approved_at: approval?.approved_at || null,
-        approved_by: approval?.approved_by || null,
         created_at: session.created_at,
       };
-    }) || [];
+    }) ?? [];
 
-    // 5. Get recent activity (last 10 approvals/rejections)
+    // 5. Get recent activity — exclude approved_by UUID
     const { data: activity } = await supabase
       .from('approval')
       .select(`
@@ -194,7 +171,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         approval_status,
         approval_notes,
         approved_at,
-        approved_by,
         review_session (
           organization (
             organization_name
@@ -228,17 +204,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         approval_status: a.approval_status,
         approval_notes: a.approval_notes,
         approved_at: a.approved_at,
-        approved_by: a.approved_by,
       };
-    }) || [];
+    }) ?? [];
 
-    // Find latest session ID for onboarding checklist
     const latestSessionId = formattedSessions.length > 0
       ? formattedSessions[0].review_session_id
       : null;
 
+    const total = totalSessionCount ?? 0;
+
     return res.status(200).json({
-      stats,
+      stats: allTimeStats,
       recent_activity: recentActivity,
       sessions: formattedSessions,
       is_new_user: isNewUser,
@@ -247,12 +223,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       pagination: {
         limit,
         offset,
-        total: formattedSessions.length,
-        has_more: formattedSessions.length === limit,
+        total,
+        has_more: offset + formattedSessions.length < total,
       },
     });
   } catch (error: any) {
     console.error('Dashboard API error:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    return res.status(500).json({ error: sanitizeErrorMessage(error) });
   }
 }

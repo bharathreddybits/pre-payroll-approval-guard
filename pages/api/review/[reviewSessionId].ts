@@ -1,9 +1,35 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../../lib/supabase';
+import { verifyToken } from '../../../lib/auth/verifyToken';
+import { checkSubscriptionAccess } from '../../../lib/billing/entitlements';
 import { getRuleMetadata } from '../../../lib/rules/ruleRegistry';
 import { getUxSection } from '../../../lib/rules/uxSectionMapping';
+import { sanitizeErrorMessage } from '../../../lib/errorHandler';
 import type { EnrichedJudgement, ReviewPageData, ReviewSections, VerdictStatus } from '../../../lib/types/review';
+
+interface DeltaRow {
+  delta_id: string;
+  employee_id: string;
+  metric: string;
+  component_name: string | null;
+  baseline_value: number | null;
+  current_value: number | null;
+  delta_absolute: number | null;
+  delta_percentage: number | null;
+  change_type: string;
+  created_at: string;
+  material_judgement: JudgementRow[];
+}
+
+interface JudgementRow {
+  judgement_id: string;
+  is_material: boolean;
+  is_blocker: boolean;
+  confidence_score: number;
+  reasoning: string;
+  rule_id: string;
+  reviewer_notes: string | null;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -16,16 +42,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'reviewSessionId is required' });
   }
 
-  // Auth: require Bearer token and verify org membership
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ error: 'Authorization required' });
-
-  const anonClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
-  if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
+  const auth = await verifyToken(req, res);
+  if (!auth) return;
+  const { user } = auth;
 
   try {
     const supabase = getServiceSupabase();
@@ -37,6 +56,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('user_id', user.id)
       .single();
     if (!mapping) return res.status(403).json({ error: 'No organization found' });
+
+    // Server-side subscription gate
+    const subAccess = await checkSubscriptionAccess(mapping.organization_id);
+    if (!subAccess.hasAccess) {
+      return res.status(402).json({ error: 'Subscription required', upgrade_url: '/pricing' });
+    }
 
     // 1. Get review session metadata with organization and datasets
     const { data: session, error: sessionError } = await supabase
@@ -81,11 +106,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid offset parameter', details: 'Offset must be >= 0' });
     }
 
-    // 2. Get deltas with their judgements (with pagination)
+    // 2a. Aggregate counts for accurate verdict — independent of display pagination.
+    // Fetch all delta IDs for the session, then count blocker and review judgements.
+    // This prevents MISS-001: blockers beyond page 1 being invisible to the verdict.
+    const { data: allDeltaIds } = await supabase
+      .from('payroll_delta')
+      .select('delta_id')
+      .eq('review_session_id', reviewSessionId);
+
+    const deltaIdList = allDeltaIds?.map((d: { delta_id: string }) => d.delta_id) ?? [];
+
+    let aggregateBlockers = 0;
+    let aggregateReviews = 0;
+
+    if (deltaIdList.length > 0) {
+      const { count: bCount } = await supabase
+        .from('material_judgement')
+        .select('*', { count: 'exact', head: true })
+        .in('delta_id', deltaIdList)
+        .eq('is_blocker', true);
+      aggregateBlockers = bCount ?? 0;
+
+      const { count: mCount } = await supabase
+        .from('material_judgement')
+        .select('*', { count: 'exact', head: true })
+        .in('delta_id', deltaIdList)
+        .eq('is_material', true)
+        .eq('is_blocker', false);
+      aggregateReviews = mCount ?? 0;
+    }
+
+    // 2b. Get paginated deltas with their judgements (for UI display)
     const { data: deltas, error: deltasError, count } = await supabase
       .from('payroll_delta')
       .select(`
-        *,
+        delta_id,
+        employee_id,
+        metric,
+        component_name,
+        baseline_value,
+        current_value,
+        delta_absolute,
+        delta_percentage,
+        change_type,
+        created_at,
         material_judgement (
           judgement_id,
           is_material,
@@ -206,9 +270,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     sections.systemic.sort((a, b) => a.employee_id.localeCompare(b.employee_id));
     sections.noise.sort((a, b) => a.employee_id.localeCompare(b.employee_id));
 
-    // 6. Compute verdict
-    const blockersCount = sections.blockers.length;
-    const reviewsCount = sections.high_risk.length + sections.compliance.length + sections.volatility.length + sections.systemic.length;
+    // 6. Compute verdict using session-wide aggregate counts, not paginated section lengths.
+    // Page 1 can miss blockers on later pages — use the pre-computed aggregates.
+    const blockersCount = aggregateBlockers;
+    const reviewsCount = aggregateReviews;
     const infoCount = sections.noise.length;
     const totalFlagged = blockersCount + reviewsCount + infoCount;
 
@@ -259,7 +324,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Review data fetch error:', error);
     return res.status(500).json({
       error: 'Failed to fetch review data',
-      details: error.message,
+      details: sanitizeErrorMessage(error),
     });
   }
 }

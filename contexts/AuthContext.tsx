@@ -18,61 +18,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to ensure user has an organization and an active trial
-  const ensureUserHasOrganization = async (user: User) => {
+  // Helper function to initialize the trial on first login.
+  // Organization creation is handled exclusively by the DB trigger in migration 008.
+  // We do NOT fall back to client-side org creation — that would bypass RLS and let
+  // the frontend write directly to organization tables with the anon key.
+  const ensureUserHasOrganization = async (_user: User) => {
     try {
-      // Check if user already has an organization
-      const { data: mapping } = await supabase
-        .from('user_organization_mapping')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!mapping) {
-        // Fallback: DB trigger (migration 008) should have created the org on signup.
-        // If it didn't, create it here.
-        const orgName = (user.email?.split('@')[0] || 'User') + "'s Organization";
-
-        const { data: newOrg, error: orgError } = await supabase
-          .from('organization')
-          .insert({ organization_name: orgName })
-          .select()
-          .single();
-
-        if (!orgError && newOrg) {
-          await supabase
-            .from('user_organization_mapping')
-            .insert({
-              user_id: user.id,
-              organization_id: newOrg.organization_id,
-              role: 'admin'
-            });
-        }
-      }
-
       // Always attempt trial initialization — idempotent, returns early if
-      // subscription already exists. Covers both new users (DB trigger created
-      // the org but not the subscription) and existing users with no subscription.
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        const accessToken = currentSession?.access_token;
-        if (accessToken) {
-          const initRes = await fetch('/api/init-account', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-          if (!initRes.ok) {
-            const body = await initRes.json().catch(() => ({}));
-            console.error('init-account failed:', initRes.status, body);
-          }
+      // subscription already exists.
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const accessToken = currentSession?.access_token;
+      if (accessToken) {
+        const initRes = await fetch('/api/init-account', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!initRes.ok) {
+          const body = await initRes.json().catch(() => ({}));
+          console.error('init-account failed:', initRes.status, body);
         }
-      } catch (initErr) {
-        // Non-fatal: trial will be re-attempted on next page load via SubscriptionGuard
-        console.error('init-account request failed:', initErr);
       }
-    } catch (error) {
-      // Silently fail - don't block auth flow
-      console.error('Error ensuring user has organization:', error);
+    } catch (initErr) {
+      // Non-fatal: trial will be re-attempted on next page load via SubscriptionGuard
+      console.error('init-account request failed:', initErr);
     }
   };
 

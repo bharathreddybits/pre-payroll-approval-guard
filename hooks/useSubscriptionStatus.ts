@@ -15,7 +15,7 @@ export interface SubscriptionStatus {
 export function useSubscriptionStatus() {
   const { user } = useAuth();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
-    hasAccess: true, // Optimistic - assume access until proven otherwise
+    hasAccess: false, // Deny by default until the server-side check confirms access
     status: 'loading',
     loading: true,
   });
