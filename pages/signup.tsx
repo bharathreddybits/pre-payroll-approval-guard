@@ -158,7 +158,7 @@ export default function SignupPage() {
                       <span>✗</span> Passwords do not match
                     </p>
                   )}
-                  {confirmPassword.length > 0 && confirmPassword === password && password.length >= 6 && (
+                  {confirmPassword.length > 0 && confirmPassword === password && password.length >= 8 && (
                     <p id="confirm-hint" className="mt-1 text-xs text-green-600 flex items-center gap-1">
                       <span>✓</span> Passwords match
                     </p>
