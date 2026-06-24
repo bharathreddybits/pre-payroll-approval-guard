@@ -37,6 +37,7 @@ export interface EmployeePayRecord {
   bonus_earnings?: number | null;
   federal_income_tax?: number | null;
   state_income_tax?: number | null;
+  pay_components?: any[]; // component-level deductions (e.g., 401K), initialized in processor
   metadata?: Record<string, unknown>;
 }
 

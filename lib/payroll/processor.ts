@@ -22,6 +22,7 @@ import { getOrganizationTier } from '../tierGating';
 import { calculateDeltas } from './diff';
 import { runRulesEngine } from './rulesEngine';
 import { saveDeltas, saveJudgements, updateSessionStatus, updateSessionCounts } from './persistence';
+import type { EmployeePayRecord } from './rulesEngine';
 
 export interface ProcessingResult {
   success: boolean;
@@ -63,13 +64,27 @@ export async function processPayrollReview(reviewSessionId: string): Promise<Pro
     console.log(`[Processor] Org tier: ${orgTier}, session: ${reviewSessionId}`);
 
     // ── Step 2: Load employee records ────────────────────────────────────
+    // Select only the columns needed by the rules engine — exclude 'metadata' which
+    // stores the full raw_row JSON (up to several KB per employee). Loading metadata
+    // for 10,000 employees would materialize 50+ MB in Node.js memory unnecessarily.
+    // Cast to any to bypass Supabase's literal-type select inference; we assert the
+    // correct type after destructuring.
+    const EMPLOYEE_COLUMNS = 'record_id,dataset_id,employee_id,employee_name,department,' +
+      'employment_status,pay_group,pay_frequency,pay_type,flsa_classification,' +
+      'regular_hours,overtime_hours,other_paid_hours,total_hours_worked,' +
+      'base_earnings,overtime_pay,bonus_earnings,other_earnings,' +
+      'federal_income_tax,social_security_tax,medicare_tax,' +
+      'state_income_tax,local_tax,gross_pay,net_pay,total_deductions';
+
     const [
-      { data: baselineEmployees, error: blErr },
-      { data: currentEmployees, error: curErr },
+      { data: baselineEmployeesRaw, error: blErr },
+      { data: currentEmployeesRaw, error: curErr },
     ] = await Promise.all([
-      supabase.from('employee_pay_record').select('*').eq('dataset_id', baselineDs.dataset_id),
-      supabase.from('employee_pay_record').select('*').eq('dataset_id', currentDs.dataset_id),
+      supabase.from('employee_pay_record').select(EMPLOYEE_COLUMNS as any).eq('dataset_id', baselineDs.dataset_id),
+      supabase.from('employee_pay_record').select(EMPLOYEE_COLUMNS as any).eq('dataset_id', currentDs.dataset_id),
     ]);
+    const baselineEmployees = baselineEmployeesRaw as EmployeePayRecord[] | null;
+    const currentEmployees = currentEmployeesRaw as EmployeePayRecord[] | null;
 
     if (blErr) throw new Error(`Failed to load baseline employees: ${blErr.message}`);
     if (curErr) throw new Error(`Failed to load current employees: ${curErr.message}`);

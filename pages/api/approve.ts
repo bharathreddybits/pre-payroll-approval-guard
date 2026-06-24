@@ -199,6 +199,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .single();
 
       if (error) {
+        if (error.code === '23505') {
+          // Unique constraint on review_session_id — concurrent approval requests; return 409
+          return res.status(409).json({
+            error: 'Payroll already finalized',
+            message: 'Another approval decision was submitted concurrently for this session.',
+          });
+        }
         console.error('Failed to create approval:', error);
         return res.status(500).json({ error: 'Failed to create approval' });
       }

@@ -86,7 +86,7 @@ export async function getEntitlements(organizationId: string): Promise<Entitleme
  */
 export async function checkSubscriptionAccess(organizationId: string): Promise<{
   hasAccess: boolean;
-  status: 'active' | 'trialing' | 'expired' | 'none';
+  status: 'active' | 'trialing' | 'expired' | 'none' | 'past_due';
   daysRemaining?: number;
   trialEnded?: boolean;
   needsSubscription?: boolean;
@@ -167,7 +167,7 @@ export async function checkSubscriptionAccess(organizationId: string): Promise<{
   if (status === 'past_due') {
     return {
       hasAccess: true,
-      status: 'past_due' as 'active', // cast required until type union is widened in a follow-up
+      status: 'past_due',
       daysRemaining: 0,
     };
   }

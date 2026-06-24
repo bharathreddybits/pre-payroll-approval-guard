@@ -31,8 +31,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
     if (!userMapping) return res.status(403).json({ error: 'No organization found' });
 
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
-    const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
+    const rawLimit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+    const rawOffset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
+    if (!Number.isFinite(rawLimit) || rawLimit < 1 || rawLimit > 100) {
+      return res.status(400).json({ error: 'Invalid limit — must be an integer between 1 and 100' });
+    }
+    if (!Number.isFinite(rawOffset) || rawOffset < 0) {
+      return res.status(400).json({ error: 'Invalid offset — must be a non-negative integer' });
+    }
+    const limit = rawLimit;
+    const offset = rawOffset;
     const organizationId = userMapping.organization_id;
 
     // 1a. All-time stats via SQL COUNT aggregates — avoids loading all session rows.
@@ -91,45 +99,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to fetch dashboard data' });
     }
 
-    // 2. Get delta counts and judgement counts for sessions on this page.
-    //    API-002 fix: fetch only (review_session_id, delta_id) rows rather than full delta
-    //    rows with nested material_judgement join, which was unbounded and O(n*m) in data.
-    const sessionIds = sessions?.map(s => s.review_session_id) ?? [];
-    const deltaCounts: Record<string, { total: number; material: number; blockers: number }> = {};
-
-    if (sessionIds.length > 0) {
-      // Fetch lean rows — just the two IDs needed for counting and lookup
-      const { data: deltaRows } = await supabase
-        .from('payroll_delta')
-        .select('review_session_id, delta_id')
-        .in('review_session_id', sessionIds);
-
-      const deltaToSession = new Map<string, string>();
-      for (const d of deltaRows ?? []) {
-        if (!deltaCounts[d.review_session_id]) {
-          deltaCounts[d.review_session_id] = { total: 0, material: 0, blockers: 0 };
-        }
-        deltaCounts[d.review_session_id].total++;
-        deltaToSession.set(d.delta_id, d.review_session_id);
-      }
-
-      const allDeltaIds = [...deltaToSession.keys()];
-      if (allDeltaIds.length > 0) {
-        // Fetch only the three lightweight columns needed for aggregation
-        const { data: judgementRows } = await supabase
-          .from('material_judgement')
-          .select('delta_id, is_material, is_blocker')
-          .in('delta_id', allDeltaIds);
-
-        for (const j of judgementRows ?? []) {
-          const sid = deltaToSession.get(j.delta_id);
-          if (!sid || !deltaCounts[sid]) continue;
-          if (j.is_material) deltaCounts[sid].material++;
-          if (j.is_blocker) deltaCounts[sid].blockers++;
-        }
-      }
-    }
-
+    // 2. Counts come from denormalized columns on review_session (migration 017).
+    //    No delta or judgement table joins needed — O(1) per session at read time.
+    //    The processor writes delta_count/material_count/blocker_count after each run.
     const isNewUser = allTimeStats.total_reviews === 0;
     const onboarding = {
       account_created: true,
@@ -144,7 +116,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : null;
       const approval = Array.isArray(session.approval) ? session.approval[0] : session.approval as any;
       const org = session.organization as any;
-      const counts = deltaCounts[session.review_session_id] ?? { total: 0, material: 0, blockers: 0 };
+      const counts = {
+        total: (session as any).delta_count ?? 0,
+        material: (session as any).material_count ?? 0,
+        blockers: (session as any).blocker_count ?? 0,
+      };
 
       return {
         review_session_id: session.review_session_id,

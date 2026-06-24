@@ -122,21 +122,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let aggregateBlockers = 0;
     let aggregateReviews = 0;
 
+    let aggregateInfoCount = 0;
     if (deltaIdList.length > 0) {
-      const { count: bCount } = await supabase
-        .from('material_judgement')
-        .select('*', { count: 'exact', head: true })
-        .in('delta_id', deltaIdList)
-        .eq('is_blocker', true);
-      aggregateBlockers = bCount ?? 0;
-
-      const { count: mCount } = await supabase
-        .from('material_judgement')
-        .select('*', { count: 'exact', head: true })
-        .in('delta_id', deltaIdList)
-        .eq('is_material', true)
-        .eq('is_blocker', false);
-      aggregateReviews = mCount ?? 0;
+      const [bResult, mResult, iResult] = await Promise.all([
+        supabase.from('material_judgement').select('*', { count: 'exact', head: true }).in('delta_id', deltaIdList).eq('is_blocker', true),
+        supabase.from('material_judgement').select('*', { count: 'exact', head: true }).in('delta_id', deltaIdList).eq('is_material', true).eq('is_blocker', false),
+        // info = flagged items that are neither blocker nor material (noise section)
+        supabase.from('material_judgement').select('*', { count: 'exact', head: true }).in('delta_id', deltaIdList).eq('is_material', false).eq('is_blocker', false),
+      ]);
+      aggregateBlockers = bResult.count ?? 0;
+      aggregateReviews = mResult.count ?? 0;
+      aggregateInfoCount = iResult.count ?? 0;
     }
 
     // 2b. Get paginated deltas with their judgements (for UI display)
@@ -277,7 +273,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Page 1 can miss blockers on later pages — use the pre-computed aggregates.
     const blockersCount = aggregateBlockers;
     const reviewsCount = aggregateReviews;
-    const infoCount = sections.noise.length;
+    const infoCount = aggregateInfoCount; // session-wide, not paginated section length
     const totalFlagged = blockersCount + reviewsCount + infoCount;
 
     let verdictStatus: VerdictStatus = 'ready_to_approve';

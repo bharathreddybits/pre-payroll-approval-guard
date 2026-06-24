@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceSupabase } from '../../lib/supabase';
 import { verifyToken } from '../../lib/auth/verifyToken';
+import { checkSubscriptionAccess } from '../../lib/billing/entitlements';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'PATCH') {
@@ -34,6 +35,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('user_id', user.id)
       .single();
     if (!mapping) return res.status(403).json({ error: 'No organization found' });
+
+    const subAccess = await checkSubscriptionAccess(mapping.organization_id);
+    if (!subAccess.hasAccess) {
+      return res.status(402).json({ error: 'Subscription required', upgrade_url: '/pricing' });
+    }
 
     // Trace: judgement → delta → review_session → organization
     const { data: judgement } = await supabase

@@ -4,6 +4,7 @@ import { verifyToken } from '../../lib/auth/verifyToken';
 import { CANONICAL_FIELD_MAP } from '../../lib/canonicalSchema';
 import { processReview } from '../../lib/processReview';
 import { checkFlexibleImport } from '../../lib/billing';
+import { checkSubscriptionAccess } from '../../lib/billing/entitlements';
 import { sanitizeErrorMessage } from '../../lib/errorHandler';
 
 interface ConfirmedMapping {
@@ -64,6 +65,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
     if (!callerMapping || callerMapping.organization_id !== session.organization_id) {
       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Subscription gate: must have active/trialing access before any processing
+    const subAccess = await checkSubscriptionAccess(session.organization_id);
+    if (!subAccess.hasAccess) {
+      return res.status(402).json({ error: 'Subscription required', upgrade_url: '/pricing' });
     }
 
     // Check if flexible import (which requires column mapping) is available
@@ -166,6 +173,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const baselineLookup = buildMappingLookup(baselineMappings);
     const currentLookup = buildMappingLookup(currentMappings);
+
+    // Require at least one core canonical field on each dataset.
+    // If zero fields are mapped (e.g. map-columns was never called and no column_mapping
+    // rows exist), every employee record stays at stub-zero values and the engine produces
+    // meaningless results without any error. Guard here so the session fails visibly.
+    const CORE_FIELDS = new Set(['gross_pay', 'net_pay', 'employee_id']);
+    const baselineCoreCount = [...baselineLookup.values()].filter(col => CORE_FIELDS.has(col)).length;
+    const currentCoreCount = [...currentLookup.values()].filter(col => CORE_FIELDS.has(col)).length;
+    if (baselineCoreCount === 0 || currentCoreCount === 0) {
+      return res.status(400).json({
+        error: 'Insufficient column mapping',
+        details: 'At least one of gross_pay, net_pay, or employee_id must be mapped for each dataset',
+      });
+    }
 
     // 5. Transform and update employee records using confirmed mappings
     const NUMERIC_COLUMNS = new Set([

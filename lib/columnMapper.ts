@@ -46,7 +46,7 @@ export async function mapColumns(
 
 async function mapColumnsWithAI(
   headers: string[],
-  sampleRows: Record<string, string>[],
+  _sampleRows: Record<string, string>[],
 ): Promise<ColumnMapping[]> {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -54,10 +54,6 @@ async function mapColumnsWithAI(
     .filter(f => f.dataType !== 'array')
     .map(f => `- ${f.name} (${f.dataType}): ${f.description}`)
     .join('\n');
-
-  const sampleText = sampleRows.slice(0, 5).map((row, i) =>
-    `Row ${i + 1}: ${JSON.stringify(row)}`
-  ).join('\n');
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -67,24 +63,20 @@ async function mapColumnsWithAI(
     messages: [
       {
         role: 'system',
-        content: `You are a payroll data column mapper. Given CSV column headers and sample data rows, map each column to the closest field in the canonical payroll schema below. Return JSON only.
+        content: `You are a payroll data column mapper. Given CSV column headers, map each column to the closest field in the canonical payroll schema below. Return JSON only.
 
 Canonical Schema Fields:
 ${schemaDescription}
 
 Rules:
 - Map each uploaded column to exactly one canonical field, or null if no match.
-- Use semantic understanding, not just exact name matching.
-- Consider the sample data values to disambiguate (e.g., numeric vs string, date patterns).
+- Use semantic understanding of the column name, not just exact name matching.
 - Assign confidence 0.0-1.0 based on match quality.
 - Provide a brief reasoning for each mapping.`,
       },
       {
         role: 'user',
         content: `CSV Headers: ${JSON.stringify(headers)}
-
-Sample Data:
-${sampleText}
 
 Return a JSON object with this exact structure:
 {

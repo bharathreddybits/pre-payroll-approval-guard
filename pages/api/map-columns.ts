@@ -3,6 +3,7 @@ import { getServiceSupabase } from '../../lib/supabase';
 import { verifyToken } from '../../lib/auth/verifyToken';
 import { mapColumns } from '../../lib/columnMapper';
 import { checkAiMapping } from '../../lib/billing';
+import { checkSubscriptionAccess } from '../../lib/billing/entitlements';
 import { sanitizeErrorMessage } from '../../lib/errorHandler';
 
 /**
@@ -62,6 +63,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
     if (!callerMapping || callerMapping.organization_id !== session.organization_id) {
       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Subscription gate
+    const subAccess = await checkSubscriptionAccess(session.organization_id);
+    if (!subAccess.hasAccess) {
+      return res.status(402).json({ error: 'Subscription required', upgrade_url: '/pricing' });
     }
 
     // Check if AI mapping is available for this organization's tier

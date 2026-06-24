@@ -6,7 +6,7 @@ export type Tier = 'starter' | 'pro';
 
 export type PlanId = 'starter_monthly' | 'starter_annual' | 'pro_monthly' | 'pro_annual';
 
-export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'cancelled' | 'expired';
+export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'cancelled' | 'expired' | 'failed';
 
 export interface PricingPlan {
   id: PlanId;

@@ -86,8 +86,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log(`[dodo-webhook] Duplicate webhook-id=${id}, returning 200 (idempotent)`);
       return res.status(200).json({ received: true, duplicate: true });
     }
-    // Non-duplicate DB error — log but continue (dedup is best-effort guard)
-    console.error('[dodo-webhook] Dedup insert failed:', dedupError.message);
+    // Non-duplicate DB error: return 500 so Dodo retries when the DB is healthy.
+    // Continuing past a dedup failure could allow duplicate billing state mutations
+    // if the same webhook arrives again before the DB error resolves.
+    console.error('[dodo-webhook] Dedup insert failed (non-duplicate):', dedupError.message);
+    return res.status(500).json({ error: 'Webhook deduplication unavailable — please retry' });
   }
 
   console.log(`[dodo-webhook] Received: ${event.type}`);
@@ -108,8 +111,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break;
       case 'subscription.cancelled':
       case 'subscription.expired':
-      case 'subscription.failed':
         await handleSubscriptionEnded(event.data, event.type);
+        break;
+      case 'subscription.failed':
+        // subscription.failed = subscription CREATION failed — the customer never had a
+        // subscription. Treating it like cancelled/expired would downgrade an org that
+        // may have another valid subscription row or may just be retrying checkout.
+        // Only mark the subscription status as 'failed' without changing the tier.
+        await handleSubscriptionCreationFailed(event.data);
         break;
       case 'payment.succeeded':
       case 'payment.failed':
@@ -194,6 +203,14 @@ async function handleSubscriptionRenewed(data: any) {
 
   const nextBilling = data.next_billing_date ? new Date(data.next_billing_date) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+  // Read current tier before updating so we can sync organization_tier afterward
+  const { data: existingSub } = await supabase
+    .from('subscription')
+    .select('tier')
+    .eq('organization_id', organizationId)
+    .single();
+  const tier: Tier = (existingSub?.tier ?? 'starter') as Tier;
+
   await supabase
     .from('subscription')
     .update({
@@ -205,7 +222,10 @@ async function handleSubscriptionRenewed(data: any) {
     })
     .eq('organization_id', organizationId);
 
-  console.log(`[subscription.renewed] org=${organizationId}`);
+  // Sync organization_tier to keep both tables consistent — all other handlers
+  // call updateOrganizationTier; renewal was the only handler that did not.
+  await updateOrganizationTier(organizationId, tier);
+  console.log(`[subscription.renewed] org=${organizationId} tier=${tier}`);
 }
 
 async function handleSubscriptionUpdated(data: any) {
@@ -242,6 +262,31 @@ async function handleSubscriptionOnHold(data: any) {
     .eq('organization_id', organizationId);
 
   console.log(`[subscription.on_hold] org=${organizationId} — marked past_due`);
+}
+
+async function handleSubscriptionCreationFailed(data: any) {
+  // subscription.failed fires when the *creation* of a new subscription fails —
+  // e.g., card declined at checkout. The customer may not have an existing subscription
+  // row at all (first purchase attempt). Only update the status to 'failed' if a row
+  // already exists; do NOT downgrade the tier or set cancel_at_period_end because
+  // the customer may retry checkout immediately.
+  const supabase = getServiceSupabase();
+  const organizationId = data.metadata?.organization_id;
+  if (!organizationId) {
+    console.warn('[subscription.failed] Missing organization_id — skipping');
+    return;
+  }
+
+  const { error } = await supabase
+    .from('subscription')
+    .update({ status: 'failed' as SubscriptionStatus })
+    .eq('organization_id', organizationId)
+    .eq('status', 'active'); // Only update if currently active to avoid clobbering a trialing row
+
+  if (error) {
+    console.error('[subscription.failed] DB update failed:', error.message);
+  }
+  console.log(`[subscription.failed] org=${organizationId} — marked failed (no tier downgrade)`);
 }
 
 async function handleSubscriptionEnded(data: any, eventType: string) {
@@ -309,10 +354,21 @@ function verifySignature(
   });
 }
 
+const MAX_WEBHOOK_BODY_BYTES = 1 * 1024 * 1024; // 1 MB — Dodo webhook payloads are ~10 KB max
+
 function readRawBody(req: NextApiRequest): Promise<string> {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (chunk) => { body += chunk.toString(); });
+    let byteCount = 0;
+    req.on('data', (chunk: Buffer) => {
+      byteCount += chunk.length;
+      if (byteCount > MAX_WEBHOOK_BODY_BYTES) {
+        reject(new Error(`Webhook body exceeds ${MAX_WEBHOOK_BODY_BYTES} byte limit`));
+        req.destroy();
+        return;
+      }
+      body += chunk.toString();
+    });
     req.on('end', () => resolve(body));
     req.on('error', reject);
   });
