@@ -34,8 +34,8 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters');
       return;
     }
 
@@ -48,10 +48,7 @@ export default function SignupPage() {
         description: error.message,
       });
     } else {
-      toast.success('Account created!', {
-        description: 'Please check your email to verify your account.',
-      });
-      router.push('/login');
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     }
   };
 
@@ -121,19 +118,19 @@ export default function SignupPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                      password.length > 0 && password.length < 6 ? 'border-red-300' : 'border-gray-300'
+                      password.length > 0 && password.length < 8 ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    placeholder="At least 6 characters"
+                    placeholder="At least 8 characters"
                     autoComplete="new-password"
                     aria-describedby="password-hint"
                     required
                   />
                   {password.length > 0 && (
-                    <p id="password-hint" className={`mt-1 text-xs flex items-center gap-1 ${password.length >= 6 ? 'text-green-600' : 'text-red-500'}`}>
-                      {password.length >= 6 ? (
+                    <p id="password-hint" className={`mt-1 text-xs flex items-center gap-1 ${password.length >= 8 ? 'text-green-600' : 'text-red-500'}`}>
+                      {password.length >= 8 ? (
                         <><span>✓</span> Password looks good</>
                       ) : (
-                        <><span>✗</span> {6 - password.length} more character{6 - password.length !== 1 ? 's' : ''} needed</>
+                        <><span>✗</span> {8 - password.length} more character{8 - password.length !== 1 ? 's' : ''} needed</>
                       )}
                     </p>
                   )}

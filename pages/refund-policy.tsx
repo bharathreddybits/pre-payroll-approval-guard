@@ -95,13 +95,13 @@ export default function RefundPolicyPage() {
               </p>
               <ul className="space-y-2 mb-6">
                 <li className="text-slate-700">
-                  <strong>No credit card required:</strong> You can start your free trial without entering payment information.
+                  <strong>Credit card required at signup:</strong> A valid payment method is required to start your trial. Your card will not be charged until your 7-day trial ends.
                 </li>
                 <li className="text-slate-700">
-                  <strong>No automatic charges:</strong> Your subscription will only begin (and billing will start) after you explicitly choose to continue beyond the trial period.
+                  <strong>No charge during trial:</strong> Your subscription billing begins only after the 7-day trial period ends.
                 </li>
                 <li className="text-slate-700">
-                  <strong>Cancel anytime:</strong> You can cancel your trial at any time with no charges.
+                  <strong>Cancel anytime:</strong> You can cancel your trial at any time before it ends with no charges.
                 </li>
               </ul>
             </section>
@@ -117,8 +117,8 @@ export default function RefundPolicyPage() {
               <ol className="list-decimal list-inside space-y-3 mb-6">
                 <li className="text-slate-700">
                   <strong>Contact our support team</strong> via email at{' '}
-                  <a href="mailto:support@payrollshield.com" className="text-brand-blue hover:underline">
-                    support@payrollshield.com
+                  <a href="mailto:support@payrollshield.cloud" className="text-brand-blue hover:underline">
+                    support@payrollshield.cloud
                   </a>
                 </li>
                 <li className="text-slate-700">
@@ -161,8 +161,8 @@ export default function RefundPolicyPage() {
               </h2>
               <p className="text-slate-700 mb-4">
                 We understand that unusual situations may arise. If you have special circumstances not covered by this policy, please contact our support team at{' '}
-                <a href="mailto:support@payrollshield.com" className="text-brand-blue hover:underline">
-                  support@payrollshield.com
+                <a href="mailto:support@payrollshield.cloud" className="text-brand-blue hover:underline">
+                  support@payrollshield.cloud
                 </a>.
               </p>
               <p className="text-slate-700 mb-4">
@@ -191,8 +191,8 @@ export default function RefundPolicyPage() {
               <ul className="space-y-2">
                 <li className="text-slate-700">
                   <strong>Email:</strong>{' '}
-                  <a href="mailto:support@payrollshield.com" className="text-brand-blue hover:underline">
-                    support@payrollshield.com
+                  <a href="mailto:support@payrollshield.cloud" className="text-brand-blue hover:underline">
+                    support@payrollshield.cloud
                   </a>
                 </li>
                 <li className="text-slate-700">

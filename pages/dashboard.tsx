@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -92,6 +92,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Ref prevents stale closure in fetchDashboardData's append branch
+  const dataRef = useRef<DashboardData | null>(null);
+  dataRef.current = data;
 
   const fetchDashboardData = useCallback(async (offset = 0, append = false) => {
     if (offset === 0) setLoading(true);
@@ -115,8 +118,9 @@ export default function DashboardPage() {
       }
 
       const dashboardData: DashboardData = await response.json();
-      if (append && data) {
-        setData({ ...dashboardData, sessions: [...data.sessions, ...dashboardData.sessions] });
+      const current = dataRef.current;
+      if (append && current) {
+        setData({ ...dashboardData, sessions: [...current.sessions, ...dashboardData.sessions] });
       } else {
         setData(dashboardData);
       }
@@ -128,7 +132,8 @@ export default function DashboardPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [data]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchDashboardData(0);
