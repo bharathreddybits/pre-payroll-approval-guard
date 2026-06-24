@@ -12,6 +12,14 @@ const nextConfig = {
   // Optimize for production
   compress: true,
 
+  // Canonical URL redirects — common alternate slugs to actual routes
+  async redirects() {
+    return [
+      { source: '/privacy-policy', destination: '/privacy', permanent: true },
+      { source: '/terms-of-service', destination: '/terms', permanent: true },
+    ];
+  },
+
   // Security headers
   async headers() {
     return [

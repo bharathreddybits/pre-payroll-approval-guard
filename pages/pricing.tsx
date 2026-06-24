@@ -286,17 +286,32 @@ export default function PricingPage() {
                     </ul>
 
                     <div>
-                      <button
-                        onClick={() => handleSubscribe(plan.name)}
-                        disabled={loading}
-                        className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-blue ${
-                          plan.highlight
-                            ? 'bg-white text-brand-blue hover:bg-blue-50'
-                            : 'bg-slate-900 text-white hover:bg-slate-800'
-                        }`}
-                      >
-                        {loading ? 'Loading...' : user ? 'Subscribe Now' : plan.cta}
-                      </button>
+                      {/* For logged-out users, render a <Link> so the CTA works without JS.
+                          For logged-in users, a <button> triggers checkout. */}
+                      {user ? (
+                        <button
+                          onClick={() => handleSubscribe(plan.name)}
+                          disabled={loading}
+                          className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-blue ${
+                            plan.highlight
+                              ? 'bg-white text-brand-blue hover:bg-blue-50'
+                              : 'bg-slate-900 text-white hover:bg-slate-800'
+                          }`}
+                        >
+                          {loading ? 'Loading...' : 'Subscribe Now'}
+                        </button>
+                      ) : (
+                        <Link
+                          href="/signup"
+                          className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-blue ${
+                            plan.highlight
+                              ? 'bg-white text-brand-blue hover:bg-blue-50'
+                              : 'bg-slate-900 text-white hover:bg-slate-800'
+                          }`}
+                        >
+                          {plan.cta}
+                        </Link>
+                      )}
                       <p className={`text-xs text-center mt-3 ${plan.highlight ? 'text-blue-200' : 'text-slate-500'}`}>
                         Credit card required · No charge for 7 days
                       </p>
