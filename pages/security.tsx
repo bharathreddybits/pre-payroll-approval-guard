@@ -32,7 +32,7 @@ const securityFeatures = [
   {
     icon: ShieldCheck,
     title: 'Compliance Posture',
-    description: 'PayrollShield is built with SOC 2 Type II controls in mind. We follow industry-standard practices for data handling, access management, incident response, and vendor security.',
+    description: 'PayrollShield is built with SOC 2-aligned controls for data handling, access management, incident response, and vendor security. We are actively working toward formal certification.',
   },
 ];
 
@@ -98,7 +98,7 @@ export default function SecurityPage() {
                 Compliance-ready by design
               </h2>
               <p className="text-lg text-slate-500 leading-relaxed mb-8">
-                PayrollShield maintains controls aligned with SOC 2 Type II, including logical access management, change management, system monitoring, and incident response procedures. Our architecture supports audit requirements for organizations subject to SOX, GDPR, and industry-specific regulations.
+                PayrollShield is built with controls aligned with SOC 2 principles, including logical access management, change management, system monitoring, and incident response procedures. Our architecture supports audit requirements for organizations subject to SOX, GDPR, and industry-specific regulations. Formal SOC 2 certification is in progress.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-2xl mx-auto">
                 {['SOC 2 Ready', 'GDPR Aware', 'AES-256', 'TLS 1.3'].map((label) => (
