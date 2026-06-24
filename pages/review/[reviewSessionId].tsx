@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { toast } from 'sonner';
@@ -31,12 +31,8 @@ export default function ReviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchReviewData = useCallback(async () => {
     if (!reviewSessionId) return;
-    fetchReviewData();
-  }, [reviewSessionId]);
-
-  const fetchReviewData = async () => {
     setLoading(true);
     setError(null);
 
@@ -57,7 +53,11 @@ export default function ReviewPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [reviewSessionId]);
+
+  useEffect(() => {
+    fetchReviewData();
+  }, [fetchReviewData]);
 
   const handleApprove = async () => {
     try {

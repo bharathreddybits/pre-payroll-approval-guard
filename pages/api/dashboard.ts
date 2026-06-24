@@ -35,25 +35,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
     const organizationId = userMapping.organization_id;
 
-    // 1a. Get all-time stats (separate count query — not paginated)
-    const { data: allTimeSessions } = await supabase
-      .from('review_session')
-      .select('review_session_id, approval(approval_status)')
-      .eq('organization_id', organizationId);
+    // 1a. All-time stats via SQL COUNT aggregates — avoids loading all session rows.
+    // An org with 5,000 reviews would previously load all 5,000+ rows to count them.
+    const [
+      { count: totalReviews },
+      { count: approvedCount },
+      { count: rejectedCount },
+    ] = await Promise.all([
+      supabase.from('review_session').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId),
+      supabase.from('approval').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('approval_status', 'approved'),
+      supabase.from('approval').select('*', { count: 'exact', head: true }).eq('organization_id', organizationId).eq('approval_status', 'rejected'),
+    ]);
+    const total_reviews = totalReviews ?? 0;
+    const approved = approvedCount ?? 0;
+    const rejected = rejectedCount ?? 0;
+    const allTimeStats = { total_reviews, approved, rejected, pending: total_reviews - approved - rejected };
+    const hasCompletedReview = approved + rejected > 0;
 
-    const allTimeStats = { total_reviews: 0, approved: 0, rejected: 0, pending: 0 };
-    let hasCompletedReview = false;
-    for (const session of allTimeSessions ?? []) {
-      allTimeStats.total_reviews++;
-      const approval = Array.isArray(session.approval) ? session.approval[0] : session.approval as any;
-      const status = approval?.approval_status || 'pending';
-      if (status === 'approved') { allTimeStats.approved++; hasCompletedReview = true; }
-      else if (status === 'rejected') { allTimeStats.rejected++; hasCompletedReview = true; }
-      else allTimeStats.pending++;
-    }
-
-    // 1b. Get paginated review sessions — count: 'exact' gives the true total for pagination.
-    // Exclude approved_by (raw UUID) from approval join; it is never shown on the dashboard.
+    // 1b. Get paginated review sessions.
+    // delta_count/material_count/blocker_count are denormalized onto review_session
+    // (migration 017) so no payroll_delta join is needed — O(1) per session.
     const { data: sessions, error: sessionsError, count: totalSessionCount } = await supabase
       .from('review_session')
       .select(`
@@ -61,6 +62,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         organization_id,
         status,
         created_at,
+        delta_count,
+        material_count,
+        blocker_count,
         organization (
           organization_name
         ),

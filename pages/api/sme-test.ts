@@ -462,7 +462,10 @@ function runTestSuite(): ScenarioResult[] {
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (process.env.NODE_ENV === 'production') {
+  // Gate on explicit env flag rather than NODE_ENV.
+  // Vercel preview deployments set NODE_ENV='production', so the old check
+  // allowed this endpoint on every PR preview. Only enable when explicitly set.
+  if (process.env.ENABLE_SME_TEST !== 'true') {
     return res.status(404).json({ error: 'Not found' });
   }
 

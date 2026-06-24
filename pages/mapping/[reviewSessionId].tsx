@@ -343,7 +343,7 @@ export default function MappingPage() {
         <meta name="description" content="Review and confirm column mappings for your payroll data" />
       </Head>
 
-      <SubscriptionGuard loadingBehavior="pass">
+      <SubscriptionGuard loadingBehavior="block">
       <Header />
 
       <div className="min-h-screen bg-gray-50 py-12 px-4">

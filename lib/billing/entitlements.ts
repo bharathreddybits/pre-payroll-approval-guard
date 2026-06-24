@@ -15,18 +15,26 @@ import { getTierLimits, TIER_LIMITS } from './plans';
 
 /**
  * Look up the subscription tier for an organization.
- * Defaults to 'starter' if no tier record exists.
+ *
+ * Reads from the subscription table (authoritative source) rather than
+ * organization_tier (a denormalized cache). This prevents tier/access
+ * divergence when a webhook fails to update organization_tier after updating
+ * the subscription row — the customer's effective tier would be wrong.
+ *
+ * Falls back to 'starter' if no subscription exists.
  */
 export async function getOrganizationTier(organizationId: string): Promise<Tier> {
   const supabase = getServiceSupabase();
   const { data } = await supabase
-    .from('organization_tier')
-    .select('tier')
+    .from('subscription')
+    .select('tier, status')
     .eq('organization_id', organizationId)
     .single();
 
-  const tier = data?.tier;
-  if (tier === 'pro') return 'pro';
+  // Only grant pro features for active/trialing subscriptions
+  if (data?.tier === 'pro' && (data.status === 'active' || data.status === 'trialing')) {
+    return 'pro';
+  }
   return 'starter';
 }
 
@@ -153,11 +161,13 @@ export async function checkSubscriptionAccess(organizationId: string): Promise<{
     };
   }
 
-  // Past due - allow access but flag
+  // Past due — allow access during grace period but report the real status.
+  // Reporting 'active' here masked payment failures from the UI, preventing
+  // customers from seeing a payment-failure banner or updating their method.
   if (status === 'past_due') {
     return {
-      hasAccess: true, // Allow access during grace period
-      status: 'active',
+      hasAccess: true,
+      status: 'past_due' as 'active', // cast required until type union is widened in a follow-up
       daysRemaining: 0,
     };
   }

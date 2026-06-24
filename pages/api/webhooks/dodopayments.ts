@@ -65,11 +65,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Invalid signature' });
   }
 
+  // Idempotency: deduplicate on webhook-id (Standard Webhooks spec).
+  // Dodo retries on 5xx — without dedup, a retry after a partial DB write
+  // would re-apply the same event and could corrupt subscription state.
+  const supabaseForDedup = getServiceSupabase();
   let event: { type: string; data: any };
   try {
     event = JSON.parse(rawBody);
   } catch {
     return res.status(400).json({ error: 'Invalid JSON payload' });
+  }
+
+  const { error: dedupError } = await supabaseForDedup
+    .from('webhook_events')
+    .insert({ webhook_id: id, event_type: event.type });
+
+  if (dedupError) {
+    if (dedupError.code === '23505') {
+      // Duplicate key — this event was already processed successfully
+      console.log(`[dodo-webhook] Duplicate webhook-id=${id}, returning 200 (idempotent)`);
+      return res.status(200).json({ received: true, duplicate: true });
+    }
+    // Non-duplicate DB error — log but continue (dedup is best-effort guard)
+    console.error('[dodo-webhook] Dedup insert failed:', dedupError.message);
   }
 
   console.log(`[dodo-webhook] Received: ${event.type}`);
@@ -280,8 +298,15 @@ function verifySignature(
   const digest = crypto.createHmac('sha256', secretBytes).update(toSign).digest('base64');
   const expected = `v1,${digest}`;
 
-  // Header may contain multiple space-separated signatures (during secret rotation)
-  return signatureHeader.split(' ').some((sig) => sig === expected);
+  // Header may contain multiple space-separated signatures (during secret rotation).
+  // Use timingSafeEqual to prevent timing side-channel attacks — an attacker who
+  // can measure response latency could otherwise forge signatures character-by-character.
+  const expectedBuf = Buffer.from(expected, 'utf-8');
+  return signatureHeader.split(' ').some((sig) => {
+    const sigBuf = Buffer.from(sig, 'utf-8');
+    if (sigBuf.length !== expectedBuf.length) return false;
+    return crypto.timingSafeEqual(sigBuf, expectedBuf);
+  });
 }
 
 function readRawBody(req: NextApiRequest): Promise<string> {

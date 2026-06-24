@@ -56,3 +56,26 @@ export async function updateSessionStatus(
 
   if (error) throw new Error(`Failed to update session status to '${status}': ${error.message}`);
 }
+
+/**
+ * Write denormalized count columns to review_session (requires migration 017).
+ * These make the dashboard O(1) per session instead of loading all delta rows.
+ * Non-fatal on failure — counts are best-effort for display; the real data
+ * lives in payroll_delta and material_judgement.
+ */
+export async function updateSessionCounts(
+  reviewSessionId: string,
+  deltaCount: number,
+  materialCount: number,
+  blockerCount: number,
+): Promise<void> {
+  const supabase = getServiceSupabase();
+  const { error } = await supabase
+    .from('review_session')
+    .update({ delta_count: deltaCount, material_count: materialCount, blocker_count: blockerCount })
+    .eq('review_session_id', reviewSessionId);
+
+  if (error) {
+    console.error(`[Persistence] Failed to update session counts: ${error.message}`);
+  }
+}

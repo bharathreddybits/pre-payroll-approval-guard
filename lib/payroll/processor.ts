@@ -21,7 +21,7 @@ import { getServiceSupabase } from '../supabase';
 import { getOrganizationTier } from '../tierGating';
 import { calculateDeltas } from './diff';
 import { runRulesEngine } from './rulesEngine';
-import { saveDeltas, saveJudgements, updateSessionStatus } from './persistence';
+import { saveDeltas, saveJudgements, updateSessionStatus, updateSessionCounts } from './persistence';
 
 export interface ProcessingResult {
   success: boolean;
@@ -76,9 +76,12 @@ export async function processPayrollReview(reviewSessionId: string): Promise<Pro
     if (!baselineEmployees?.length) throw new Error('Baseline dataset has no employee records');
     if (!currentEmployees?.length) throw new Error('Current dataset has no employee records');
 
-    // Required by rule evaluation functions
+    // Initialize pay_components to [] if absent — rules that check component-level
+    // data (e.g., 401K_OVER_IRS_LIMIT) iterate this array. Overwriting existing
+    // data was a bug: if pay_components is ever joined from a separate table in
+    // future, the mutation would silently clear it before rule evaluation.
     for (const emp of [...baselineEmployees, ...currentEmployees]) {
-      emp.pay_components = [];
+      if (!emp.pay_components) emp.pay_components = [];
     }
 
     console.log(`[Processor] ${baselineEmployees.length} baseline, ${currentEmployees.length} current employees`);
@@ -107,6 +110,9 @@ export async function processPayrollReview(reviewSessionId: string): Promise<Pro
 
     // ── Step 7: Mark session complete ────────────────────────────────────
     await updateSessionStatus(reviewSessionId, 'completed');
+
+    // Write denormalized counts to review_session for O(1) dashboard reads
+    await updateSessionCounts(reviewSessionId, insertedDeltas.length, materialCount, blockerCount);
 
     console.log(`[Processor] Done ✓ — ${insertedDeltas.length} deltas, ${materialCount} material, ${blockerCount} blockers`);
 

@@ -29,30 +29,24 @@ const PROCESSING_TIMEOUT_MS = 25_000;
 // CSV Parsing — async I/O to avoid blocking the Node event loop
 // ---------------------------------------------------------------------------
 
-async function parseCSVGeneric(filePath: string): Promise<Record<string, string>[]> {
+// Read once; return both rows and headers to avoid redundant fs.readFile calls.
+async function parseCSVFull(filePath: string): Promise<{ rows: Record<string, string>[]; headers: string[] }> {
   const fileContent = await fs.promises.readFile(filePath, 'utf-8');
   return new Promise((resolve, reject) => {
     Papa.parse(fileContent, {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header) => header.toLowerCase().trim(),
-      complete: (results) => resolve(results.data as Record<string, string>[]),
+      complete: (results) =>
+        resolve({ rows: results.data as Record<string, string>[], headers: results.meta.fields ?? [] }),
       error: (error: Error) => reject(error),
     });
   });
 }
 
-async function getCSVHeaders(filePath: string): Promise<string[]> {
-  const fileContent = await fs.promises.readFile(filePath, 'utf-8');
-  return new Promise((resolve, reject) => {
-    Papa.parse(fileContent, {
-      header: true,
-      preview: 1,
-      skipEmptyLines: true,
-      complete: (results) => resolve(results.meta.fields || []),
-      error: (error: Error) => reject(error),
-    });
-  });
+// Keep backward-compat alias used by validateCSVStrict/validateCSVFlexible
+async function parseCSVGeneric(filePath: string): Promise<Record<string, string>[]> {
+  return (await parseCSVFull(filePath)).rows;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +98,7 @@ async function validateCSVStrict(
       });
     });
 
+    errors.push(...validateCellSafety(rows));
     return { valid: errors.length === 0, errors, warnings, row_count: rows.length };
   } catch (error: any) {
     return { valid: false, errors: [`Validation error: ${error.message}`], warnings: [], row_count: 0 };
@@ -113,6 +108,29 @@ async function validateCSVStrict(
 // ---------------------------------------------------------------------------
 // Paid-tier Validation (flexible — just check non-empty)
 // ---------------------------------------------------------------------------
+
+// Characters that trigger formula execution in spreadsheet applications.
+// A CSV cell starting with one of these chars could execute arbitrary code
+// when a finance team member opens the file in Excel or Google Sheets.
+const FORMULA_INJECTION_RE = /^[=+\-@\t\r]/;
+const MAX_CELL_LENGTH = 1000;
+
+function validateCellSafety(rows: Record<string, string>[]): string[] {
+  const errors: string[] = [];
+  for (let i = 0; i < rows.length && errors.length < 10; i++) {
+    const row = rows[i];
+    for (const [col, val] of Object.entries(row)) {
+      if (typeof val !== 'string') continue;
+      if (val.length > MAX_CELL_LENGTH) {
+        errors.push(`Row ${i + 2}, column "${col}": cell exceeds ${MAX_CELL_LENGTH} character limit`);
+      }
+      if (FORMULA_INJECTION_RE.test(val)) {
+        errors.push(`Row ${i + 2}, column "${col}": cell begins with a formula-injection character ('${val[0]}')`);
+      }
+    }
+  }
+  return errors;
+}
 
 async function validateCSVFlexible(
   filePath: string,
@@ -132,7 +150,8 @@ async function validateCSVFlexible(
       return { valid: false, errors, warnings: [], row_count: rows.length };
     }
 
-    return { valid: true, errors: [], warnings: [], row_count: rows.length };
+    errors.push(...validateCellSafety(rows));
+    return { valid: errors.length === 0, errors, warnings: [], row_count: rows.length };
   } catch (error: any) {
     return { valid: false, errors: [`Validation error: ${error.message}`], warnings: [], row_count: 0 };
   }
@@ -243,6 +262,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!baselineFile || !currentFile) {
       return res.status(400).json({ error: 'Both baseline and current CSV files are required' });
     }
+
+    // MIME type validation: only text/csv and text/plain are valid CSV uploads.
+    // Reject everything else early to prevent processing non-CSV binary data.
+    const ALLOWED_MIME_TYPES = new Set(['text/csv', 'text/plain', 'application/csv', 'application/vnd.ms-excel']);
+    for (const [label, file] of [['Baseline', baselineFile], ['Current', currentFile]] as const) {
+      const mime = file.mimetype ?? '';
+      if (!ALLOWED_MIME_TYPES.has(mime.split(';')[0].trim().toLowerCase())) {
+        return res.status(400).json({ error: `${label} file must be a CSV file (got: ${mime || 'unknown'})` });
+      }
+    }
+
     if (!organizationId || !periodStartDate || !periodEndDate || !payDate) {
       return res.status(400).json({ error: 'Missing required metadata fields' });
     }
@@ -256,6 +286,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (periodStartDate >= periodEndDate) {
       return res.status(400).json({ error: 'Period end date must be after period start date' });
+    }
+    // payDate must be within ±1 year of periodEndDate.
+    // A payDate more than a year away from the pay period is almost certainly a typo
+    // or a client-side manipulation attempt.
+    const payDateMs = new Date(payDate).getTime();
+    const periodEndMs = new Date(periodEndDate).getTime();
+    const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+    if (Math.abs(payDateMs - periodEndMs) > ONE_YEAR_MS) {
+      return res.status(400).json({ error: 'payDate must be within 1 year of periodEndDate' });
     }
     if (!['regular', 'off_cycle'].includes(runType as string)) {
       return res.status(400).json({ error: 'runType must be "regular" or "off_cycle"' });
@@ -362,13 +401,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const reviewSessionId = reviewSession.review_session_id;
 
-    // ── Parse CSV files ──────────────────────────────────────────────────
-    const [baselineRows, currentRows, baselineHeaders, currentHeaders] = await Promise.all([
-      parseCSVGeneric(baselineFile.filepath),
-      parseCSVGeneric(currentFile.filepath),
-      getCSVHeaders(baselineFile.filepath),
-      getCSVHeaders(currentFile.filepath),
+    // ── Parse CSV files (single read per file — rows + headers in one pass) ─
+    const [baselineParsed, currentParsed] = await Promise.all([
+      parseCSVFull(baselineFile.filepath),
+      parseCSVFull(currentFile.filepath),
     ]);
+    const { rows: baselineRows, headers: baselineHeaders } = baselineParsed;
+    const { rows: currentRows, headers: currentHeaders } = currentParsed;
 
     // ── Create datasets ──────────────────────────────────────────────────
     const dsFields = {

@@ -61,10 +61,10 @@ export function useSubscriptionStatus() {
           .single();
 
         if (subError || !subscription) {
-          // No subscription - allow access for now (grace period)
-          // In production, you might want to block access immediately
+          // No subscription row — block access. The server-side gate also enforces
+          // this, but the UI should reflect reality immediately.
           setSubscriptionStatus({
-            hasAccess: true, // Allow access even without subscription (for now)
+            hasAccess: false,
             status: 'none',
             loading: false,
             needsSubscription: true,
@@ -137,12 +137,14 @@ export function useSubscriptionStatus() {
           return;
         }
 
-        // Past due - allow access during grace period
+        // Past due — allow access during grace period but surface the real status
+        // so the UI can show a payment-failure banner.
         if (status === 'past_due') {
           setSubscriptionStatus({
             hasAccess: true,
-            status: 'active',
+            status: 'expired', // closest available status type for UI warning display
             daysRemaining: 0,
+            needsSubscription: true,
             loading: false,
           });
           return;

@@ -1,6 +1,9 @@
 import OpenAI from 'openai';
 import { CANONICAL_FIELDS, CanonicalField } from './canonicalSchema';
 
+// Set of valid canonical field names — used to reject hallucinated names from OpenAI
+const VALID_CANONICAL_NAMES = new Set<string>(CANONICAL_FIELDS.map(f => f.name));
+
 export interface ColumnMapping {
   uploadedColumn: string;
   canonicalField: string | null;
@@ -109,12 +112,21 @@ Return a JSON object with this exact structure:
   const rawMappings: unknown[] = parsed.mappings;
   return rawMappings
     .filter((m): m is Record<string, unknown> => m !== null && typeof m === 'object')
-    .map(m => ({
-      uploadedColumn: typeof m.uploaded_column === 'string' ? m.uploaded_column : '',
-      canonicalField: typeof m.canonical_field === 'string' ? m.canonical_field : null,
-      confidence: typeof m.confidence === 'number' ? m.confidence : 0,
-      reasoning: typeof m.reasoning === 'string' ? m.reasoning : '',
-    }))
+    .map(m => {
+      const rawCanonical = typeof m.canonical_field === 'string' ? m.canonical_field : null;
+      // Reject canonical field names not in the schema — prevents AI hallucinations
+      // from propagating a non-existent field name that would silently produce null lookups
+      // downstream (in confirm-mapping.ts buildMappingLookup via CANONICAL_FIELD_MAP).
+      const canonicalField = rawCanonical !== null && VALID_CANONICAL_NAMES.has(rawCanonical)
+        ? rawCanonical
+        : null;
+      return {
+        uploadedColumn: typeof m.uploaded_column === 'string' ? m.uploaded_column : '',
+        canonicalField,
+        confidence: canonicalField !== rawCanonical ? 0 : (typeof m.confidence === 'number' ? m.confidence : 0),
+        reasoning: typeof m.reasoning === 'string' ? m.reasoning : '',
+      };
+    })
     .filter(m => m.uploadedColumn !== '');
 }
 

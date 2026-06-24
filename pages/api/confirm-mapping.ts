@@ -218,8 +218,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     };
 
-    await transformAndUpdate(baselineRecords, baselineLookup);
-    await transformAndUpdate(currentRecords, currentLookup);
+    // If transformAndUpdate fails mid-batch (e.g. Vercel timeout), some records
+    // will have canonical values while others still hold stub zeros. Processing
+    // that partial state produces completely wrong judgements. Mark the session
+    // failed immediately so the user can re-upload rather than receiving a
+    // poisoned review result.
+    try {
+      await transformAndUpdate(baselineRecords, baselineLookup);
+      await transformAndUpdate(currentRecords, currentLookup);
+    } catch (updateError: any) {
+      console.error('Employee record update failed mid-batch:', updateError.message);
+      await supabase.from('review_session').update({ status: 'failed' }).eq('review_session_id', reviewSessionId);
+      return res.status(500).json({
+        error: 'Failed to apply column mappings to employee records',
+        details: sanitizeErrorMessage(updateError),
+        action: 'Please re-upload your payroll files and try again',
+      });
+    }
 
     // 6. Run processing with a 25-second timeout guard.
     // Vercel kills the function at 30s; we race to mark the session 'failed' cleanly

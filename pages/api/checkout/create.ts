@@ -2,7 +2,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceSupabase } from '../../../lib/supabase';
 import { verifyToken } from '../../../lib/auth/verifyToken';
 import { createCheckoutSession } from '../../../lib/billing/dodopayments';
+import { PLANS } from '../../../lib/billing/plans';
 import type { PlanId } from '../../../lib/billing/types';
+
+const VALID_PLAN_IDS = new Set<string>(Object.keys(PLANS));
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -21,6 +24,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         error: 'Missing required fields',
         required: ['planId', 'organizationId', 'organizationName'],
       });
+    }
+
+    // Allowlist planId against known plan keys — reject unknown or crafted values
+    // before they reach the Dodo Payments API, which would return a confusing error.
+    if (!VALID_PLAN_IDS.has(planId)) {
+      return res.status(400).json({ error: 'Invalid planId' });
     }
 
     // userEmail always comes from the verified JWT — never from client body

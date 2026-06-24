@@ -38,13 +38,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // derived from the authenticated user's token (see approvalData below).
     const { review_session_id, approval_status, approval_notes } = req.body;
 
-    // Validate required fields
     if (!review_session_id) {
       return res.status(400).json({ error: 'review_session_id is required' });
     }
-
     if (!approval_status || !['approved', 'rejected'].includes(approval_status)) {
       return res.status(400).json({ error: 'approval_status must be "approved" or "rejected"' });
+    }
+    if (approval_notes !== undefined && approval_notes !== null) {
+      if (typeof approval_notes !== 'string') {
+        return res.status(400).json({ error: 'approval_notes must be a string' });
+      }
+      if (approval_notes.length > 2000) {
+        return res.status(400).json({ error: 'approval_notes must not exceed 2000 characters' });
+      }
     }
 
     // If rejecting, notes are required (trim whitespace before length check)

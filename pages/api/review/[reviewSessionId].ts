@@ -95,15 +95,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Parse pagination parameters
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 1000;
-    const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+    // Parse pagination parameters — use Number.isFinite to guard against NaN
+    // (parseInt('abc') returns NaN; NaN < 1 and NaN > 1000 are both false, bypassing validation).
+    const rawLimit = req.query.limit ? parseInt(req.query.limit as string, 10) : 1000;
+    const rawOffset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
+    const limit = Number.isFinite(rawLimit) ? rawLimit : NaN;
+    const offset = Number.isFinite(rawOffset) ? rawOffset : NaN;
 
-    if (limit < 1 || limit > 1000) {
-      return res.status(400).json({ error: 'Invalid limit parameter', details: 'Limit must be between 1 and 1000' });
+    if (!Number.isFinite(limit) || limit < 1 || limit > 1000) {
+      return res.status(400).json({ error: 'Invalid limit parameter', details: 'Limit must be an integer between 1 and 1000' });
     }
-    if (offset < 0) {
-      return res.status(400).json({ error: 'Invalid offset parameter', details: 'Offset must be >= 0' });
+    if (!Number.isFinite(offset) || offset < 0) {
+      return res.status(400).json({ error: 'Invalid offset parameter', details: 'Offset must be a non-negative integer' });
     }
 
     // 2a. Aggregate counts for accurate verdict — independent of display pagination.

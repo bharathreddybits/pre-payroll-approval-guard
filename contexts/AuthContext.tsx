@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -17,12 +17,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  // Track which user ID has already had init-account called this session.
+  // onAuthStateChange fires on every tab-focus token refresh, not just on sign-in.
+  // Without this guard, init-account would be called many times per session,
+  // generating unnecessary DB round-trips and log noise.
+  const initDoneForRef = useRef<string | null>(null);
 
   // Helper function to initialize the trial on first login.
   // Organization creation is handled exclusively by the DB trigger in migration 008.
   // We do NOT fall back to client-side org creation — that would bypass RLS and let
   // the frontend write directly to organization tables with the anon key.
   const ensureUserHasOrganization = async (_user: User) => {
+    if (initDoneForRef.current === _user.id) return; // Already called for this user
+    initDoneForRef.current = _user.id; // Mark as called before the async fetch
     try {
       // Always attempt trial initialization — idempotent, returns early if
       // subscription already exists.

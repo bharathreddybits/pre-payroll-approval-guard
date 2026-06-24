@@ -12,25 +12,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const supabase = getServiceSupabase();
 
-    // Test database connection by querying organization table
-    const { data, error } = await supabase
-      .from('organization')
-      .select('organization_id')
-      .limit(1);
+    // Use SELECT 1 via RPC rather than querying a data table.
+    // Querying 'organization' for health checks returns tenant data in the
+    // response body and unnecessarily touches a multi-tenant table on every
+    // load-balancer ping.
+    const { error } = await supabase.rpc('ping').maybeSingle();
 
     if (error) {
-      console.error('Supabase connection error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Failed to connect to database',
-        error: error.message
-      });
+      // Fallback: rpc('ping') may not exist — try a minimal version check
+      const { error: fallbackErr } = await supabase.from('review_session').select('review_session_id').limit(0);
+      if (fallbackErr) {
+        console.error('Supabase connection error:', fallbackErr);
+        return res.status(500).json({
+          status: 'error',
+          message: 'Failed to connect to database',
+        });
+      }
     }
 
     return res.status(200).json({
       status: 'ok',
-      message: 'Supabase connection successful',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
     console.error('Health check failed:', error);

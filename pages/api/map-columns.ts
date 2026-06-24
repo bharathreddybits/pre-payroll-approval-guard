@@ -102,7 +102,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .filter(Boolean) as Record<string, string>[];
 
         const headers = rawRows.length > 0 ? Object.keys(rawRows[0]) : [];
-        return { headers, sample: rawRows.slice(0, 5) };
+
+        // Strip real cell values before sending to OpenAI — send only the column name
+        // and a synthetic placeholder. This prevents payroll PII (names, salaries, SSNs)
+        // from leaving the system. OpenAI only needs structure (header names) to suggest
+        // canonical field mappings; real values are not necessary for that task.
+        const redactedSample = rawRows.slice(0, 5).map(row =>
+          Object.fromEntries(headers.map(h => [h, '<sample>']))
+        );
+        return { headers, sample: redactedSample };
       };
 
       if (baselineDs && (!baselineHeaders?.length)) {
