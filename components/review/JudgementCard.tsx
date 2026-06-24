@@ -105,8 +105,12 @@ export function JudgementCard({ item }: JudgementCardProps) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'pending' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const saveStatusRef = useRef<'idle' | 'pending' | 'saving' | 'saved' | 'error'>('idle');
+  const notesRef = useRef(item.reviewer_notes || '');
+
   const saveNotes = useCallback(async (value: string) => {
     setSaveStatus('saving');
+    saveStatusRef.current = 'saving';
     try {
       const { data: { session: authSession } } = await supabase.auth.getSession();
       const res = await fetch('/api/judgement-notes', {
@@ -119,24 +123,44 @@ export function JudgementCard({ item }: JudgementCardProps) {
       });
       if (!res.ok) throw new Error('Save failed');
       setSaveStatus('saved');
+      saveStatusRef.current = 'saved';
       setTimeout(() => setSaveStatus('idle'), 2000);
     } catch {
       setSaveStatus('error');
+      saveStatusRef.current = 'error';
     }
   }, [item.judgement_id]);
 
   const handleNotesChange = (value: string) => {
     setNotes(value);
+    notesRef.current = value;
     setSaveStatus('pending');
+    saveStatusRef.current = 'pending';
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => saveNotes(value), 1000);
   };
 
+  // Warn on browser unload (tab close / hard refresh) if notes are unsaved
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (saveStatusRef.current === 'pending') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
+  // On unmount (Next.js client-nav), flush any pending save immediately
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (saveStatusRef.current === 'pending') {
+        saveNotes(notesRef.current);
+      }
     };
-  }, []);
+  }, [saveNotes]);
 
   const severity = getSeverityConfig(item.rule_severity);
   const confidence = getConfidenceBadge(item.confidence_level);

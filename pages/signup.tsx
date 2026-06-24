@@ -107,6 +107,7 @@ export default function SignupPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="you@company.com"
                     autoComplete="email"
+                    required
                   />
                 </div>
 
@@ -125,6 +126,7 @@ export default function SignupPage() {
                     placeholder="At least 6 characters"
                     autoComplete="new-password"
                     aria-describedby="password-hint"
+                    required
                   />
                   {password.length > 0 && (
                     <p id="password-hint" className={`mt-1 text-xs flex items-center gap-1 ${password.length >= 6 ? 'text-green-600' : 'text-red-500'}`}>
@@ -152,6 +154,7 @@ export default function SignupPage() {
                     placeholder="Confirm your password"
                     autoComplete="new-password"
                     aria-describedby="confirm-hint"
+                    required
                   />
                   {confirmPassword.length > 0 && confirmPassword !== password && (
                     <p id="confirm-hint" className="mt-1 text-xs text-red-500 flex items-center gap-1">

@@ -139,9 +139,10 @@ export default function PricingPage() {
     // Get the first organization (for now - in future could add org selector)
     const org = organizations[0];
     if (!org) {
-      toast.error('No organization found', {
-        description: 'Please contact support to set up your organization.',
+      toast.error('Account setup incomplete', {
+        description: 'Your organization is still being set up. Go to your dashboard and try again.',
       });
+      router.push('/dashboard');
       return;
     }
 

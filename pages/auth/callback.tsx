@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { supabase } from '../../lib/supabase';
@@ -6,8 +6,14 @@ import { supabase } from '../../lib/supabase';
 export default function AuthCallback() {
   const router = useRouter();
   const [message, setMessage] = useState('Confirming your email...');
+  const hasRun = useRef(false);
 
   useEffect(() => {
+    // React Strict Mode double-invokes effects in dev; the PKCE code is single-use,
+    // so the second call would fail with "code already used". Guard against that.
+    if (hasRun.current) return;
+    hasRun.current = true;
+
     const handleCallback = async () => {
       try {
         // Get the auth code from URL hash or query params

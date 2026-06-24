@@ -134,8 +134,10 @@ export default function DashboardPage() {
     fetchDashboardData(0);
   }, []);
 
-  // Show success toast when redirected back from checkout
+  // Show success toast when redirected back from checkout.
+  // Guard with router.isReady so query params are populated before we read them.
   useEffect(() => {
+    if (!router.isReady) return;
     if (router.query.checkout === 'success') {
       toast.success('Subscription activated!', {
         description: 'Welcome to PayrollShield. Your plan is now active.',
@@ -143,7 +145,7 @@ export default function DashboardPage() {
       });
       router.replace('/dashboard', undefined, { shallow: true });
     }
-  }, [router.query.checkout]);
+  }, [router.isReady, router.query.checkout]);
 
   return (
     <ProtectedRoute>
