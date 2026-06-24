@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../lib/supabase';
 import { mapColumns } from '../../lib/columnMapper';
 import { checkAiMapping } from '../../lib/billing';
+import { sanitizeErrorMessage } from '../../lib/errorHandler';
 
 /**
  * POST /api/map-columns
@@ -190,7 +191,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Map columns error:', error);
     return res.status(500).json({
       error: 'Failed to map columns',
-      details: error.message,
+      details: sanitizeErrorMessage(error),
     });
   }
 }

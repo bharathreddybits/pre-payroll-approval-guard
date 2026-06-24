@@ -4,6 +4,7 @@ import { getServiceSupabase } from '../../lib/supabase';
 import { CANONICAL_FIELD_MAP } from '../../lib/canonicalSchema';
 import { processReview } from '../../lib/processReview';
 import { checkFlexibleImport } from '../../lib/billing';
+import { sanitizeErrorMessage } from '../../lib/errorHandler';
 
 interface ConfirmedMapping {
   uploadedColumn: string;
@@ -216,10 +217,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }).filter(Boolean);
 
         const results = await Promise.all(updatePromises);
-        for (const result of results) {
-          if (result && result.error) {
-            console.error('Failed to update employee record:', result.error.message);
-          }
+        const failures = results.filter((r): r is NonNullable<typeof r> => !!r?.error);
+        if (failures.length > 0) {
+          const msgs = failures.map(r => r.error!.message).join('; ');
+          throw new Error(`Failed to update ${failures.length} employee record(s): ${msgs}`);
         }
       }
     };
@@ -256,7 +257,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Confirm mapping error:', error);
     return res.status(500).json({
       error: 'Failed to confirm mapping',
-      details: error.message,
+      details: sanitizeErrorMessage(error),
     });
   }
 }

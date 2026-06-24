@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -85,23 +85,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  // Show success toast when redirected back from LemonSqueezy checkout
-  useEffect(() => {
-    if (router.query.checkout === 'success') {
-      toast.success('Subscription activated!', {
-        description: 'Welcome to PayrollShield. Your plan is now active.',
-        duration: 6000,
-      });
-      // Remove the query param from the URL without a page reload
-      router.replace('/dashboard', undefined, { shallow: true });
-    }
-  }, [router.query.checkout]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -126,7 +110,22 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Show success toast when redirected back from checkout
+  useEffect(() => {
+    if (router.query.checkout === 'success') {
+      toast.success('Subscription activated!', {
+        description: 'Welcome to PayrollShield. Your plan is now active.',
+        duration: 6000,
+      });
+      router.replace('/dashboard', undefined, { shallow: true });
+    }
+  }, [router.query.checkout]);
 
   return (
     <ProtectedRoute>

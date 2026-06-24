@@ -12,6 +12,7 @@ import {
   isFeatureAvailable,
 } from '../../lib/billing';
 import { CANONICAL_FIELDS } from '../../lib/canonicalSchema';
+import { sanitizeErrorMessage } from '../../lib/errorHandler';
 
 // Disable body parser to handle multipart/form-data
 export const config = {
@@ -247,6 +248,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       if (!organizationId || !periodStartDate || !periodEndDate || !payDate) {
         return res.status(400).json({ error: 'Missing required metadata fields' });
+      }
+
+      // Server-side date validation — client-side checks are bypassed by direct API calls
+      const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+      for (const [field, value] of [['periodStartDate', periodStartDate], ['periodEndDate', periodEndDate], ['payDate', payDate]] as [string, string][]) {
+        if (!ISO_DATE_RE.test(value) || isNaN(new Date(value).getTime())) {
+          return res.status(400).json({ error: `Invalid date format for ${field} — expected YYYY-MM-DD` });
+        }
+      }
+      if (periodStartDate >= periodEndDate) {
+        return res.status(400).json({ error: 'Period end date must be after period start date' });
+      }
+      if (!['regular', 'off_cycle'].includes(runType as string)) {
+        return res.status(400).json({ error: 'runType must be "regular" or "off_cycle"' });
       }
 
       const supabase = getServiceSupabase();
@@ -507,18 +522,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Clean up uploaded files
         cleanupFiles(baselineFile.filepath, currentFile.filepath);
 
+        // Only return headers and row counts — raw sample rows contain payroll PII
+        // and are not needed by the client (mapping page extracts its own samples
+        // from stored metadata via /api/map-columns?extractFromSession=true).
         return res.status(200).json({
           success: true,
           needsMapping: true,
           review_session_id: reviewSessionId,
           baseline: {
             headers: baselineHeaders,
-            sample: baselineRows.slice(0, 10),
             row_count: baselineRows.length,
           },
           current: {
             headers: currentHeaders,
-            sample: currentRows.slice(0, 10),
             row_count: currentRows.length,
           },
         });
@@ -565,7 +581,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } catch (error: any) {
       console.error('Upload error:', error);
-      return res.status(500).json({ error: 'Failed to process upload', details: error.message });
+      return res.status(500).json({ error: 'Failed to process upload', details: sanitizeErrorMessage(error) });
     }
   });
 }

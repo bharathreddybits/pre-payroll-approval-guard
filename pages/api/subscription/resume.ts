@@ -48,6 +48,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    if (!subscription.cancel_at_period_end) {
+      return res.status(400).json({
+        error: 'Subscription is not pending cancellation',
+        message: 'This subscription is already set to renew automatically.',
+      });
+    }
+
     const client = new DodoPayments({
       bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
       environment: process.env.DODO_PAYMENTS_ENVIRONMENT === 'live_mode' ? 'live_mode' : 'test_mode',

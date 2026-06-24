@@ -21,13 +21,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
 
   try {
-    const { planId, organizationId, organizationName, userEmail } = req.body;
+    const { planId, organizationId, organizationName } = req.body;
 
-    if (!planId || !organizationId || !organizationName || !userEmail) {
+    if (!planId || !organizationId || !organizationName) {
       return res.status(400).json({
         error: 'Missing required fields',
-        required: ['planId', 'organizationId', 'organizationName', 'userEmail'],
+        required: ['planId', 'organizationId', 'organizationName'],
       });
+    }
+
+    // userEmail always comes from the verified JWT — never from client body
+    const userEmail = user.email;
+    if (!userEmail) {
+      return res.status(400).json({ error: 'Authenticated user has no email address' });
     }
 
     // Verify the organizationId belongs to the authenticated user

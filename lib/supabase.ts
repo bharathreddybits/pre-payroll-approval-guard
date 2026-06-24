@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Supabase client for browser-side operations (uses anon key)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -11,17 +11,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Server-side Supabase client with service role (bypass RLS)
-export function getServiceSupabase() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Singleton: reuse the same client across requests to share the HTTP connection pool.
+let _serviceClient: SupabaseClient | null = null;
 
+export function getServiceSupabase(): SupabaseClient {
+  if (_serviceClient) return _serviceClient;
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) {
     throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
   }
 
-  return createClient(supabaseUrl, serviceRoleKey, {
+  _serviceClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   });
+  return _serviceClient;
 }

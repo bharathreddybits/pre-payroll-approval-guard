@@ -57,13 +57,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         const accessToken = currentSession?.access_token;
         if (accessToken) {
-          fetch('/api/init-account', {
+          const initRes = await fetch('/api/init-account', {
             method: 'POST',
             headers: { Authorization: `Bearer ${accessToken}` },
           });
+          if (!initRes.ok) {
+            const body = await initRes.json().catch(() => ({}));
+            console.error('init-account failed:', initRes.status, body);
+          }
         }
-      } catch {
-        // Non-fatal: trial will be initialized on next login
+      } catch (initErr) {
+        // Non-fatal: trial will be re-attempted on next page load via SubscriptionGuard
+        console.error('init-account request failed:', initErr);
       }
     } catch (error) {
       // Silently fail - don't block auth flow

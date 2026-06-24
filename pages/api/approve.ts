@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '../../lib/supabase';
+import { sanitizeErrorMessage } from '../../lib/errorHandler';
 
 /**
  * POST /api/approve
@@ -39,7 +40,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
 
   try {
-    const { review_session_id, approval_status, approval_notes, approved_by } = req.body;
+    // approved_by is intentionally NOT accepted from the client body — it is always
+    // derived from the authenticated user's token (see approvalData below).
+    const { review_session_id, approval_status, approval_notes } = req.body;
 
     // Validate required fields
     if (!review_session_id) {
@@ -219,7 +222,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Approval error:', error);
     return res.status(500).json({
       error: 'Failed to process approval',
-      details: error.message,
+      details: sanitizeErrorMessage(error),
     });
   }
 }

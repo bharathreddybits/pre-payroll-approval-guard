@@ -15,6 +15,7 @@
  * Signature verification uses the Standard Webhooks spec (HMAC SHA256).
  */
 
+import crypto from 'crypto';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServiceSupabase } from '../../../lib/supabase';
 import { getPlanByDodoProductId } from '../../../lib/billing/plans';
@@ -36,24 +37,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Failed to read request body' });
   }
 
-  // Verify signature using Standard Webhooks spec
+  // Verify signature using Standard Webhooks spec — key is mandatory
   const webhookKey = process.env.DODO_PAYMENTS_WEBHOOK_KEY;
-  if (webhookKey) {
-    const id = req.headers['webhook-id'] as string;
-    const timestamp = req.headers['webhook-timestamp'] as string;
-    const signature = req.headers['webhook-signature'] as string;
+  if (!webhookKey) {
+    console.error('[dodo-webhook] DODO_PAYMENTS_WEBHOOK_KEY is not configured');
+    return res.status(500).json({ error: 'Webhook verification not configured' });
+  }
 
-    if (!id || !timestamp || !signature) {
-      return res.status(401).json({ error: 'Missing webhook signature headers' });
-    }
+  const id = req.headers['webhook-id'] as string;
+  const timestamp = req.headers['webhook-timestamp'] as string;
+  const signature = req.headers['webhook-signature'] as string;
 
-    const isValid = verifySignature(rawBody, id, timestamp, signature, webhookKey);
-    if (!isValid) {
-      console.error('[dodo-webhook] Invalid signature');
-      return res.status(401).json({ error: 'Invalid signature' });
-    }
-  } else {
-    console.warn('[dodo-webhook] DODO_PAYMENTS_WEBHOOK_KEY not set — skipping signature check');
+  if (!id || !timestamp || !signature) {
+    return res.status(401).json({ error: 'Missing webhook signature headers' });
+  }
+
+  // Reject replays: timestamp must be within ±5 minutes
+  const tsSeconds = parseInt(timestamp, 10);
+  if (isNaN(tsSeconds) || Math.abs(Date.now() / 1000 - tsSeconds) > 300) {
+    console.error('[dodo-webhook] Rejected stale or invalid timestamp:', timestamp);
+    return res.status(401).json({ error: 'Webhook timestamp out of range' });
+  }
+
+  const isValid = verifySignature(rawBody, id, timestamp, signature, webhookKey);
+  if (!isValid) {
+    console.error('[dodo-webhook] Invalid signature');
+    return res.status(401).json({ error: 'Invalid signature' });
   }
 
   let event: { type: string; data: any };
@@ -246,7 +255,11 @@ async function updateOrganizationTier(organizationId: string, tier: Tier) {
       { organization_id: organizationId, tier, updated_at: new Date().toISOString() },
       { onConflict: 'organization_id' },
     );
-  if (error) console.error('[updateOrganizationTier]', error.message);
+  if (error) {
+    // Throw so the webhook returns 500 and Dodo retries — tier divergence between
+    // subscription.tier and organization_tier.tier would cause billing/access mismatch.
+    throw new Error(`[updateOrganizationTier] Failed for org=${organizationId}: ${error.message}`);
+  }
 }
 
 /**
@@ -260,20 +273,15 @@ function verifySignature(
   signatureHeader: string,
   secret: string,
 ): boolean {
-  try {
-    const crypto = require('crypto');
-    // Dodo secrets are prefixed with "whsec_"; strip it before base64-decoding
-    const secretBase64 = secret.startsWith('whsec_') ? secret.slice(6) : secret;
-    const secretBytes = Buffer.from(secretBase64, 'base64');
-    const toSign = `${webhookId}.${timestamp}.${body}`;
-    const digest = crypto.createHmac('sha256', secretBytes).update(toSign).digest('base64');
-    const expected = `v1,${digest}`;
+  // Dodo secrets are prefixed with "whsec_"; strip it before base64-decoding
+  const secretBase64 = secret.startsWith('whsec_') ? secret.slice(6) : secret;
+  const secretBytes = Buffer.from(secretBase64, 'base64');
+  const toSign = `${webhookId}.${timestamp}.${body}`;
+  const digest = crypto.createHmac('sha256', secretBytes).update(toSign).digest('base64');
+  const expected = `v1,${digest}`;
 
-    // Header may contain multiple space-separated signatures (during secret rotation)
-    return signatureHeader.split(' ').some((sig) => sig === expected);
-  } catch {
-    return false;
-  }
+  // Header may contain multiple space-separated signatures (during secret rotation)
+  return signatureHeader.split(' ').some((sig) => sig === expected);
 }
 
 function readRawBody(req: NextApiRequest): Promise<string> {
